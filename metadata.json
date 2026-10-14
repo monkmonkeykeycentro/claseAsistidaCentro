@@ -1,0 +1,6 @@
+{
+  "name": "Estructura de una clase",
+  "description": "Herramienta interactiva para aprender la sintaxis y organización de clases en Processing Java.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
