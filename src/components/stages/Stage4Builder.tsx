@@ -8,13 +8,10 @@ import {
   REFERENCE_PROCESSING_CODE,
 } from '../../data/stageData';
 import { ProcessingCodeBlock } from '../ProcessingCodeBlock';
-import { VisualRelationsPanel } from '../VisualRelationsPanel';
+import { ConstructorSketchSummary } from '../ConstructorSketchSummary';
 import {
-  CheckCircle2,
-  AlertTriangle,
   RotateCcw,
   Sparkles,
-  Copy,
   Check,
   HelpCircle,
   Eye,
@@ -38,22 +35,11 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
 }) => {
   const [builder, setBuilder] = useState<BuilderState>(savedState || INITIAL_BUILDER_STATE);
   const [activeHighlight, setActiveHighlight] = useState<string | null>('Gato');
-  const [activeSectionType, setActiveSectionType] = useState<
-    'className' | 'fields' | 'constructor' | 'methods'
-  >('className');
   const [diagnostics, setDiagnostics] = useState<DiagnosticMessage[]>([]);
   const [hasRunDiagnostics, setHasRunDiagnostics] = useState<boolean>(false);
   const [hintIndex, setHintIndex] = useState<number>(0);
   const [showHintModal, setShowHintModal] = useState<boolean>(false);
   const [showReferenceModal, setShowReferenceModal] = useState<boolean>(false);
-  const [activeRelation, setActiveRelation] = useState<
-    'assignment' | 'constructor-match' | 'method-structure' | null
-  >('assignment');
-  const [selectedTokenInfo, setSelectedTokenInfo] = useState<{
-    token: string;
-    label: string;
-    explanation: string;
-  } | null>(null);
 
   // Generate real-time Processing Java code string
   const generatedCode = useMemo(() => {
@@ -102,11 +88,9 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
     setHasRunDiagnostics(false);
   };
 
-  // Form field handlers
   const handleClassNameChange = (val: string) => {
     updateState((prev) => ({ ...prev, className: val }));
     setActiveHighlight(val);
-    setActiveSectionType('className');
   };
 
   const handleAddField = () => {
@@ -115,7 +99,6 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
       ...prev,
       fields: [...prev.fields, { id: newId, type: 'int', name: 'nuevaVar' }],
     }));
-    setActiveSectionType('fields');
     setActiveHighlight('nuevaVar');
   };
 
@@ -137,7 +120,6 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
       fields: prev.fields.map((f) => (f.id === id ? { ...f, [key]: val } : f)),
     }));
     setActiveHighlight(val);
-    setActiveSectionType('fields');
   };
 
   const handleAddParam = () => {
@@ -155,7 +137,6 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
         },
       ],
     }));
-    setActiveSectionType('constructor');
   };
 
   const handleRemoveParam = (id: string) => {
@@ -177,7 +158,6 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
       ),
     }));
     setActiveHighlight(val);
-    setActiveSectionType('constructor');
   };
 
   const handleAddMethod = () => {
@@ -190,11 +170,10 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
           id: newId,
           name: 'nuevaAccion',
           params: [],
-          comment: 'Instrucciones del nuevo método.',
+          comment: 'Instrucciones del método.',
         },
       ],
     }));
-    setActiveSectionType('methods');
   };
 
   const handleRemoveMethod = (id: string) => {
@@ -210,10 +189,9 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
       methods: prev.methods.map((m) => (m.id === id ? { ...m, name: val } : m)),
     }));
     setActiveHighlight(val);
-    setActiveSectionType('methods');
   };
 
-  // Run comprehensive diagnostic check with specific, constructive feedback
+  // Diagnostic check
   const handleReviewStructure = () => {
     const msgs: DiagnosticMessage[] = [];
 
@@ -245,7 +223,7 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
       });
     }
 
-    // 2. Constructor name check (must match class name!)
+    // 2. Constructor name check
     msgs.push({
       id: 'info-constructor-rule',
       type: 'tip',
@@ -260,7 +238,7 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
         id: 'warn-no-fields',
         type: 'organization-suggestion',
         title: 'Clase sin atributos',
-        message: 'Una clase de Processing comúnmente define al menos un campo o atributo (como x, y, o nombre) para almacenar su estado.',
+        message: 'Una clase de Processing comúnmente define al menos un campo o atributo para almacenar su estado.',
         targetArea: 'fields',
       });
     } else {
@@ -280,7 +258,7 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             id: `err-field-dup-${field.id}`,
             type: 'syntax-error',
             title: 'Atributo duplicado',
-            message: `El atributo "${fName}" ya fue declarado en esta clase. Cada atributo debe tener un nombre único.`,
+            message: `El atributo "${fName}" ya fue declarado en esta clase.`,
             targetArea: 'fields',
           });
         } else {
@@ -300,7 +278,7 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
           type: 'organization-suggestion',
           title: 'Parámetros sin asociar a atributos',
           message:
-            'Algunos parámetros del constructor no están asociados directamente a un atributo. Generalmente cada parámetro inicializa un campo.',
+            'Algunos parámetros del constructor no están asociados directamente a un atributo.',
           targetArea: 'constructor',
         });
       } else {
@@ -343,8 +321,8 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
       msgs.unshift({
         id: 'success-overall',
         type: 'valid',
-        title: '¡Estructura válida y completa!',
-        message: 'La estructura de la clase cumple con la sintaxis de Processing Java. ¡Excelente trabajo!',
+        title: 'Estructura válida y completa',
+        message: 'La estructura de la clase cumple con la sintaxis de Processing Java.',
       });
       onComplete();
     }
@@ -374,128 +352,108 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-4">
-        <div className="flex items-center justify-between">
+    <div className="space-y-10">
+      {/* Stage Header */}
+      <div className="border-b border-zinc-200 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-                Etapa 4
-              </span>
-              <span className="text-slate-500">·</span>
-              <span className="text-xs text-slate-400">Construcción y diagnóstico</span>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-100 mt-1">
-              Construir la clase con Processing Java
+            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider block">
+              Etapa 04
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 mt-1">
+              Construir la clase en Processing Java
             </h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={() => setShowReferenceModal(true)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors flex items-center gap-1.5"
+              className="min-h-[44px] px-4 py-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium transition-colors flex items-center gap-1.5"
             >
-              <Eye className="w-3.5 h-3.5" />
-              Ver solución de referencia
+              <Eye className="w-3.5 h-3.5 text-zinc-500" />
+              <span>Ver referencia</span>
             </button>
             {isCompleted && (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/60 border border-emerald-500/40 rounded-full text-xs font-medium text-emerald-300">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Clase construida con éxito
+              <div className="flex items-center gap-1.5 text-xs text-zinc-600 font-mono py-1">
+                <Check className="w-3.5 h-3.5 text-zinc-900" />
+                <span>Clase construida</span>
               </div>
             )}
           </div>
         </div>
-        <p className="text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
-          Configura cada parte de la clase mediante los campos guiados. El código de Processing Java se actualizará en tiempo real a la derecha resaltando cada cambio. Cuando termines, pulsa <strong>Revisar estructura</strong> para diagnosticar la sintaxis.
+        <p className="text-sm text-zinc-600 mt-2 max-w-2xl leading-relaxed">
+          Configura los atributos, constructor y métodos de tu clase. El código Processing Java se actualizará en tiempo real a la derecha.
         </p>
       </div>
 
-      {/* Main 3-Area Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Area 1: Elementos y Formulario de Construcción (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
+      {/* Spacious 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Form & Configuration (6 cols) */}
+        <div className="lg:col-span-6 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              1. Configuración de partes
-            </h3>
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Partes de la clase
+            </span>
             <button
               onClick={handleReset}
-              className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
+              className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1"
             >
               <RotateCcw className="w-3 h-3" />
-              Reiniciar ejercicio
+              <span>Reiniciar</span>
             </button>
           </div>
 
-          <div className="space-y-4 max-h-[750px] overflow-y-auto pr-1 custom-scrollbar">
+          {/* Form Card */}
+          <div className="bg-white border border-zinc-200 rounded-xl p-5 sm:p-6 space-y-5">
             {/* 1. Nombre de la clase */}
-            <div
-              onClick={() => setActiveSectionType('className')}
-              className={`p-4 rounded-xl border transition-all ${
-                activeSectionType === 'className'
-                  ? 'bg-slate-900 border-cyan-500/70 shadow-sm'
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  A. Nombre de la clase
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-zinc-800 uppercase tracking-wider">
+                  Nombre de la clase
                 </label>
-                <span className="text-[10px] text-amber-400 font-mono">class Gato</span>
+                <span className="text-[11px] text-zinc-400 font-mono">PascalCase</span>
               </div>
               <input
                 type="text"
                 value={builder.className}
                 onChange={(e) => handleClassNameChange(e.target.value)}
-                placeholder="Nombre de la clase (ej. Gato)"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                placeholder="Gato"
+                className="w-full min-h-[44px] bg-white border border-zinc-300 rounded-lg px-3.5 py-2 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900"
               />
-              <span className="text-[11px] text-slate-400 block mt-1.5">
-                Convención: Primera letra mayúscula (PascalCase).
-              </span>
             </div>
 
             {/* 2. Atributos o campos */}
-            <div
-              onClick={() => setActiveSectionType('fields')}
-              className={`p-4 rounded-xl border transition-all ${
-                activeSectionType === 'fields'
-                  ? 'bg-slate-900 border-cyan-500/70 shadow-sm'
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
+            <div className="space-y-3 pt-3 border-t border-zinc-100">
+              <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                    B. Atributos o campos
+                  <label className="text-xs font-semibold text-zinc-800 uppercase tracking-wider block">
+                    Atributos o campos
                   </label>
-                  <span className="text-[10px] text-slate-400 block">
-                    Variables de instancia terminadas en ;
+                  <span className="text-[11px] text-zinc-400">
+                    Variables terminadas en ;
                   </span>
                 </div>
                 <button
                   onClick={handleAddField}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-medium flex items-center gap-1 transition-colors"
+                  className="min-h-[44px] px-3 py-1 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
                 >
-                  <Plus className="w-3 h-3" />
-                  Agregar campo
+                  <Plus className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>Agregar campo</span>
                 </button>
               </div>
 
               <div className="space-y-2">
-                {builder.fields.map((f, idx) => (
+                {builder.fields.map((f) => (
                   <div
                     key={f.id}
-                    className="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-slate-800"
+                    className="flex items-center gap-2 bg-zinc-50 p-2 rounded-lg border border-zinc-200"
                   >
                     <select
                       value={f.type}
                       onChange={(e) =>
                         handleFieldChange(f.id, 'type', e.target.value as any)
                       }
-                      className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-300 font-mono focus:outline-none"
+                      className="min-h-[44px] bg-white border border-zinc-300 rounded-lg px-2.5 py-1 text-xs text-zinc-800 font-mono focus:outline-none"
                     >
                       <option value="String">String</option>
                       <option value="int">int</option>
@@ -509,15 +467,15 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                       value={f.name}
                       onChange={(e) => handleFieldChange(f.id, 'name', e.target.value)}
                       placeholder="nombre"
-                      className="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none"
+                      className="flex-1 min-h-[44px] bg-white border border-zinc-300 rounded-lg px-3 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:ring-1 focus:ring-zinc-900"
                     />
 
-                    <span className="text-slate-400 font-mono font-bold text-xs">;</span>
+                    <span className="text-zinc-500 font-mono font-bold text-xs px-1">;</span>
 
                     {builder.fields.length > 1 && (
                       <button
                         onClick={() => handleRemoveField(f.id)}
-                        className="p-1 text-slate-500 hover:text-rose-400 transition-colors"
+                        className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
                         title="Eliminar campo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -529,37 +487,30 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             </div>
 
             {/* 3. Constructor y Parámetros */}
-            <div
-              onClick={() => setActiveSectionType('constructor')}
-              className={`p-4 rounded-xl border transition-all ${
-                activeSectionType === 'constructor'
-                  ? 'bg-slate-900 border-cyan-500/70 shadow-sm'
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
+            <div className="space-y-3 pt-3 border-t border-zinc-100">
+              <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                    C. Constructor y Parámetros
+                  <label className="text-xs font-semibold text-zinc-800 uppercase tracking-wider block">
+                    Constructor y Parámetros
                   </label>
-                  <span className="text-[10px] text-amber-400 block font-mono">
+                  <span className="text-[11px] text-zinc-400 font-mono">
                     {builder.className}(...) — Mismo nombre, sin void
                   </span>
                 </div>
                 <button
                   onClick={handleAddParam}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-medium flex items-center gap-1 transition-colors"
+                  className="min-h-[44px] px-3 py-1 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
                 >
-                  <Plus className="w-3 h-3" />
-                  Agregar parámetro
+                  <Plus className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>Agregar parámetro</span>
                 </button>
               </div>
 
-              <div className="space-y-2 mt-3">
+              <div className="space-y-2">
                 {builder.constructorParams.map((p) => (
                   <div
                     key={p.id}
-                    className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5"
+                    className="p-3 rounded-lg bg-zinc-50 border border-zinc-200 space-y-2"
                   >
                     <div className="flex items-center gap-2">
                       <select
@@ -567,7 +518,7 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                         onChange={(e) =>
                           handleParamChange(p.id, 'type', e.target.value)
                         }
-                        className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-purple-300 font-mono"
+                        className="min-h-[44px] bg-white border border-zinc-300 rounded-lg px-2.5 py-1 text-xs text-zinc-800 font-mono"
                       >
                         <option value="String">String</option>
                         <option value="int">int</option>
@@ -583,27 +534,28 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                           handleParamChange(p.id, 'name', e.target.value)
                         }
                         placeholder="paramTemp"
-                        className="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-purple-200 font-mono"
+                        className="flex-1 min-h-[44px] bg-white border border-zinc-300 rounded-lg px-3 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:ring-1 focus:ring-zinc-900"
                       />
 
                       {builder.constructorParams.length > 1 && (
                         <button
                           onClick={() => handleRemoveParam(p.id)}
-                          className="p-1 text-slate-500 hover:text-rose-400"
+                          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-900"
+                          title="Eliminar parámetro"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono pt-1">
+                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono pt-1">
                       <span>Asignar a atributo:</span>
                       <select
                         value={p.targetFieldId}
                         onChange={(e) =>
                           handleParamChange(p.id, 'targetFieldId', e.target.value)
                         }
-                        className="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-[11px] text-cyan-300 font-mono"
+                        className="min-h-[44px] bg-white border border-zinc-300 rounded-lg px-2.5 py-1 text-xs text-zinc-800 font-mono focus:outline-none"
                       >
                         {builder.fields.map((f) => (
                           <option key={f.id} value={f.id}>
@@ -618,58 +570,52 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             </div>
 
             {/* 4. Métodos */}
-            <div
-              onClick={() => setActiveSectionType('methods')}
-              className={`p-4 rounded-xl border transition-all ${
-                activeSectionType === 'methods'
-                  ? 'bg-slate-900 border-cyan-500/70 shadow-sm'
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
+            <div className="space-y-3 pt-3 border-t border-zinc-100">
+              <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                    D. Métodos (Acciones void)
+                  <label className="text-xs font-semibold text-zinc-800 uppercase tracking-wider block">
+                    Métodos (void)
                   </label>
-                  <span className="text-[10px] text-rose-400 block font-mono">
+                  <span className="text-[11px] text-zinc-400 font-mono">
                     void nombreAccion(...) {'{ ... }'}
                   </span>
                 </div>
                 <button
                   onClick={handleAddMethod}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-medium flex items-center gap-1 transition-colors"
+                  className="min-h-[44px] px-3 py-1 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
                 >
-                  <Plus className="w-3 h-3" />
-                  Agregar método
+                  <Plus className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>Agregar método</span>
                 </button>
               </div>
 
-              <div className="space-y-2 mt-3">
+              <div className="space-y-2">
                 {builder.methods.map((m) => (
                   <div
                     key={m.id}
-                    className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 text-xs font-mono"
+                    className="p-3 rounded-lg bg-zinc-50 border border-zinc-200 space-y-1.5 text-xs font-mono"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-400 font-bold">void</span>
+                      <span className="text-zinc-600 font-semibold italic">void</span>
                       <input
                         type="text"
                         value={m.name}
                         onChange={(e) => handleMethodNameChange(m.id, e.target.value)}
                         placeholder="nombreMetodo"
-                        className="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-blue-200 font-mono"
+                        className="flex-1 min-h-[44px] bg-white border border-zinc-300 rounded-lg px-3 py-1 text-xs text-zinc-900 font-mono focus:outline-none focus:ring-1 focus:ring-zinc-900"
                       />
-                      <span>()</span>
+                      <span className="text-zinc-400">()</span>
                       {builder.methods.length > 1 && (
                         <button
                           onClick={() => handleRemoveMethod(m.id)}
-                          className="p-1 text-slate-500 hover:text-rose-400"
+                          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-900"
+                          title="Eliminar método"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-400 font-sans italic">
+                    <div className="text-[11px] text-zinc-400 font-sans italic">
                       // {m.comment}
                     </div>
                   </div>
@@ -677,45 +623,16 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Area 2: Espacio para construir la clase / Visor en Vivo (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              2. Código Processing Java resultante
-            </h3>
-            <span className="text-xs text-emerald-400 font-mono">En vivo</span>
-          </div>
-
-          <ProcessingCodeBlock
-            code={generatedCode}
-            highlightedSection={activeHighlight}
-            onSelectToken={(token, ctx) => {
-              if (token === 'Gato') {
-                setActiveRelation('constructor-match');
-              } else if (token === '=') {
-                setActiveRelation('assignment');
-              } else if (token === 'caminar' || token === 'void') {
-                setActiveRelation('method-structure');
-              }
-              setSelectedTokenInfo({
-                token,
-                label: ctx,
-                explanation: `Elemento de tipo ${ctx} en la clase ${builder.className}.`,
-              });
-            }}
-          />
-
-          {/* Action strip */}
-          <div className="space-y-2.5">
-            <div className="grid grid-cols-2 gap-2">
+          {/* Action Row */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleReviewStructure}
-                className="w-full py-2.5 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs transition-colors flex items-center justify-center gap-2 shadow-sm"
+                className="min-h-[44px] w-full py-2.5 px-3 rounded-lg bg-zinc-900 hover:bg-black text-white font-medium text-xs sm:text-sm transition-colors flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
-                Revisar estructura
+                <span>Revisar estructura</span>
               </button>
 
               <button
@@ -723,124 +640,118 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                   handleNextHint();
                   setShowHintModal(true);
                 }}
-                className="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs transition-colors flex items-center justify-center gap-1.5"
+                className="min-h-[44px] w-full py-2.5 px-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-medium text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5"
               >
-                <HelpCircle className="w-4 h-4 text-amber-400" />
-                Ver una pista ({hintIndex + 1}/5)
+                <HelpCircle className="w-4 h-4 text-zinc-500" />
+                <span>Pista ({hintIndex + 1}/5)</span>
               </button>
             </div>
 
-            {/* Hint alert */}
+            {/* Hint Box */}
             {showHintModal && (
-              <div className="p-3 bg-amber-950/40 border border-amber-800/50 rounded-xl text-xs text-amber-200 flex items-start justify-between">
+              <div className="p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-700 flex items-start justify-between">
                 <div>
-                  <span className="font-semibold text-amber-300 block mb-0.5">
+                  <span className="font-semibold text-zinc-900 block mb-0.5">
                     Pista pedagógica #{hintIndex + 1}:
                   </span>
-                  {HINTS[hintIndex]}
+                  <p className="text-zinc-600 leading-relaxed text-[12px]">{HINTS[hintIndex]}</p>
                 </div>
                 <button
                   onClick={() => setShowHintModal(false)}
-                  className="text-slate-400 hover:text-white text-xs ml-2"
+                  className="text-zinc-400 hover:text-zinc-700 text-xs ml-3"
                 >
                   ✕
                 </button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Area 3: Explicación contextual y Diagnóstico (3 cols) */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              3. Diagnóstico y relaciones
-            </h3>
-            <span className="text-xs text-cyan-400 font-medium">Análisis</span>
-          </div>
-
-          {/* Diagnostics feedback container */}
-          {hasRunDiagnostics ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="text-xs font-bold text-slate-200">
-                  Resultado de la revisión:
+          {/* Diagnostics Results */}
+          {hasRunDiagnostics && (
+            <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+                <span className="text-xs font-semibold text-zinc-900">
+                  Resultado de la revisión
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[11px] text-zinc-400 font-mono">
                   {diagnostics.length} observaciones
                 </span>
               </div>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
                 {diagnostics.map((diag) => (
                   <div
                     key={diag.id}
-                    className={`p-2.5 rounded-lg border text-xs space-y-0.5 ${
-                      diag.type === 'valid'
-                        ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200'
-                        : diag.type === 'syntax-error'
-                        ? 'bg-rose-950/60 border-rose-500/50 text-rose-200'
-                        : diag.type === 'organization-suggestion'
-                        ? 'bg-amber-950/50 border-amber-500/40 text-amber-200'
-                        : 'bg-slate-950 border-slate-800 text-slate-300'
-                    }`}
+                    className="p-3 rounded-lg border border-zinc-200 bg-zinc-50 text-xs space-y-1"
                   >
-                    <div className="font-semibold text-[11px] flex items-center gap-1.5">
-                      {diag.type === 'valid' ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : diag.type === 'syntax-error' ? (
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                      ) : (
-                        <Info className="w-3.5 h-3.5 text-amber-400" />
-                      )}
-                      {diag.title}
+                    <div className="font-medium text-xs text-zinc-900 flex items-center gap-1.5">
+                      <span className="text-zinc-500 font-mono text-[11px]">
+                        {diag.type === 'valid' ? '✓' : '·'}
+                      </span>
+                      <span>{diag.title}</span>
                     </div>
-                    <p className="text-[11px] leading-relaxed opacity-90">
+                    <p className="text-[12px] leading-relaxed text-zinc-600">
                       {diag.message}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl text-xs text-slate-400 text-center space-y-2">
-              <Sparkles className="w-5 h-5 mx-auto text-cyan-400" />
-              <p>
-                Pulsa <strong>Revisar estructura</strong> para ejecutar la comprobación sintáctica y recibir sugerencias.
-              </p>
-            </div>
           )}
+        </div>
 
-          {/* Interactive visual relations panel */}
-          <VisualRelationsPanel
-            activeRelation={activeRelation}
-            onSelectRelation={(rel) => setActiveRelation(rel)}
-            selectedTokenInfo={selectedTokenInfo}
+        {/* Right Column: Real-Time Processing Code Viewer (6 cols) */}
+        <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-24">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Código Processing Java resultante
+            </span>
+            <span className="text-xs text-zinc-500 font-mono">En vivo</span>
+          </div>
+
+          <ProcessingCodeBlock
+            code={generatedCode}
+            highlightedSection={activeHighlight}
           />
+
+          <div className="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs text-zinc-600 space-y-1">
+            <div className="flex items-center gap-2 text-zinc-900 font-medium">
+              <Info className="w-4 h-4 text-zinc-500 shrink-0" />
+              <span>Sintaxis en vivo</span>
+            </div>
+            <p className="leading-relaxed text-[12px]">
+              El código se actualiza al instante conforme editas los atributos, parámetros y métodos.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Modal: Referencia Oficial con advertencia previa */}
+      {/* Constructor summary in sketch.pde */}
+      <div id="constructor-sketch-summary" className="pt-4">
+        <ConstructorSketchSummary builder={builder} />
+      </div>
+
+      {/* Modal: Referencia Oficial */}
       {showReferenceModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white border border-zinc-200 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <div className="flex items-center gap-2">
-                <Eye className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-base font-bold text-slate-100">
+                <Eye className="w-4 h-4 text-zinc-600" />
+                <h3 className="text-sm font-semibold text-zinc-900">
                   Código de referencia: clase Gato
                 </h3>
               </div>
               <button
                 onClick={() => setShowReferenceModal(false)}
-                className="text-slate-400 hover:text-white text-sm"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-900 text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Esta es la estructura limpia y canónica de la clase Gato en Processing Java. Puedes consultarla para comparar con tu solución:
+            <p className="text-xs text-zinc-600 leading-relaxed">
+              Estructura canónica de la clase Gato en Processing Java:
             </p>
 
             <ProcessingCodeBlock code={REFERENCE_PROCESSING_CODE} />
@@ -848,9 +759,9 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowReferenceModal(false)}
-                className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition-colors"
+                className="min-h-[44px] px-4 py-2 rounded-lg bg-zinc-900 hover:bg-black text-white text-xs font-medium transition-colors"
               >
-                Entendido, volver a mi ejercicio
+                Volver a mi ejercicio
               </button>
             </div>
           </div>

@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { ETAPA3_EXERCISES } from '../../data/stageData';
 import { SyntaxExercise } from '../../types/classStructure';
 import {
-  CheckCircle2,
-  AlertCircle,
+  Check,
   HelpCircle,
   ArrowRight,
   ChevronLeft,
   ChevronRight,
   RotateCcw,
-  Sparkles,
   Info,
 } from 'lucide-react';
 
@@ -51,15 +49,10 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
         [blankId]: val,
       },
     }));
-    // Reset feedback on change
     setFeedbackState((prev) => ({
       ...prev,
       [currentExercise.id]: { status: 'idle', message: '' },
     }));
-  };
-
-  const handleQuickInsert = (blankId: string, text: string) => {
-    handleInputChange(blankId, text);
   };
 
   const handleCheckCurrent = () => {
@@ -81,12 +74,12 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
         const isNotKeyword = !['class', 'void', 'int', 'String', 'float', 'boolean', 'new'].includes(val);
         if (!isValidIdentifier) {
           allValid = false;
-          errorDetail = `"${val}" no es un nombre de variable válido en Java. Debe empezar por una letra o guión bajo y no contener espacios.`;
+          errorDetail = `"${val}" no es un nombre de variable válido en Java.`;
           break;
         }
         if (!isNotKeyword) {
           allValid = false;
-          errorDetail = `"${val}" es una palabra reservada del lenguaje y no puede usarse como nombre de atributo.`;
+          errorDetail = `"${val}" es una palabra reservada del lenguaje.`;
           break;
         }
       } else {
@@ -96,7 +89,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
 
         if (!match) {
           allValid = false;
-          errorDetail = `Respuesta no esperada para "${blank.label}". Pista: ${blank.hint}`;
+          errorDetail = `Respuesta no esperada para "${blank.label}".`;
           break;
         }
       }
@@ -107,12 +100,11 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
         ...prev,
         [currentExercise.id]: {
           status: 'success',
-          message: '¡Excelente! Sintaxis correcta y validada.',
+          message: 'Sintaxis correcta.',
         },
       }));
       onSaveCompletedExercise(currentExercise.id);
 
-      // Check if all exercises are now completed
       const updatedList = Array.from(
         new Set([...completedExerciseIds, currentExercise.id])
       );
@@ -142,66 +134,34 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
     setShowHint(false);
   };
 
-  // Helper quick buttons based on current exercise
-  const getQuickButtons = () => {
-    switch (currentExercise.id) {
-      case 'ex-a-class':
-        return ['class', 'void', 'new', 'Gato'];
-      case 'ex-b-attribute':
-        return ['nombre', 'color', 'raza', 'edad', 'peso'];
-      case 'ex-c-constructor':
-        return ['Gato', 'gato', 'void', 'new'];
-      case 'ex-d-params':
-        return ['void', 'int', 'String', 'float'];
-      case 'ex-e-assignment':
-        return ['=', ';', '==', ':'];
-      case 'ex-f-braces':
-        return ['{', '}', '(', ')'];
-      case 'ex-g-parentheses':
-        return ['(', ')', '{', '}'];
-      case 'ex-h-commas':
-        return [',', ';', ':', '.'];
-      case 'ex-i-semicolons':
-        return [';', ',', ':', '{'];
-      default:
-        return [];
-    }
-  };
-
-  const isCurrentDone = completedExerciseIds.includes(currentExercise.id);
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-4">
-        <div className="flex items-center justify-between">
+    <div className="space-y-10">
+      {/* Stage Header */}
+      <div className="border-b border-zinc-200 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-                Etapa 3
-              </span>
-              <span className="text-slate-500">·</span>
-              <span className="text-xs text-slate-400">Micro-ejercicios sintácticos</span>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-100 mt-1">
+            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider block">
+              Etapa 03
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 mt-1">
               Completar la sintaxis de Processing Java
             </h2>
           </div>
           {isCompleted && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/60 border border-emerald-500/40 rounded-full text-xs font-medium text-emerald-300">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Todos los ejercicios completados ({ETAPA3_EXERCISES.length}/{ETAPA3_EXERCISES.length})
+            <div className="flex items-center gap-1.5 text-xs text-zinc-600 font-mono py-1">
+              <Check className="w-3.5 h-3.5 text-zinc-900" />
+              <span>Ejercicios superados ({ETAPA3_EXERCISES.length}/{ETAPA3_EXERCISES.length})</span>
             </div>
           )}
         </div>
-        <p className="text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
-          Escribe o selecciona los elementos faltantes en cada caso. Aprenderás el papel exacto de palabras clave, nombres de atributos, nombres del constructor, tipos y signos como llaves <code className="text-amber-300 font-mono">{'{ }'}</code>, paréntesis <code className="text-purple-300 font-mono">( )</code>, comas <code className="text-slate-300 font-mono">,</code> y puntos y coma <code className="text-slate-300 font-mono">;</code>.
+        <p className="text-sm text-zinc-600 mt-2 max-w-2xl leading-relaxed">
+          Escribe las partes faltantes en cada ejercicio para asimilar la estructura de clases, nombres, constructor, métodos y delimitadores.
         </p>
       </div>
 
-      {/* Progress navigation strip */}
-      <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
-        <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar py-1">
+      {/* Clean Exercise Navigation Bar */}
+      <div className="flex items-center justify-between bg-zinc-50 border border-zinc-200 p-2 rounded-xl">
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
           {ETAPA3_EXERCISES.map((ex, idx) => {
             const isCompletedEx = completedExerciseIds.includes(ex.id);
             const isCurrent = currentIdx === idx;
@@ -212,22 +172,22 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
                   setCurrentIdx(idx);
                   setShowHint(false);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                   isCurrent
-                    ? 'bg-cyan-600 text-white shadow-sm'
+                    ? 'bg-zinc-900 text-white font-semibold shadow-xs'
                     : isCompletedEx
-                    ? 'bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/60 border border-emerald-800/40'
-                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-zinc-800 border border-zinc-200'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
                 }`}
               >
                 <span>{ex.title.split(':')[0]}</span>
-                {isCompletedEx && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
+                {isCompletedEx && <Check className="w-3.5 h-3.5 text-zinc-500" strokeWidth={2.5} />}
               </button>
             );
           })}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 ml-4">
+        <div className="flex items-center gap-1 shrink-0 ml-3">
           <button
             onClick={() => {
               if (currentIdx > 0) {
@@ -236,12 +196,12 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
               }
             }}
             disabled={currentIdx === 0}
-            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 disabled:opacity-30 text-zinc-600 transition-colors"
             title="Anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono text-slate-400 px-1">
+          <span className="text-xs font-mono text-zinc-500 px-1">
             {currentIdx + 1}/{ETAPA3_EXERCISES.length}
           </span>
           <button
@@ -252,7 +212,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
               }
             }}
             disabled={currentIdx === ETAPA3_EXERCISES.length - 1}
-            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 disabled:opacity-30 text-zinc-600 transition-colors"
             title="Siguiente"
           >
             <ChevronRight className="w-4 h-4" />
@@ -260,105 +220,31 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
         </div>
       </div>
 
-      {/* 3-Area Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Area 1: Elementos y botones rápidos (3 cols) */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              1. Sugerencias rápidas
-            </h3>
-            <span className="text-[11px] text-slate-500">Insertar al campo</span>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-            <div className="text-xs text-slate-300">
-              Opciones sintácticas comunes para este ejercicio:
+      {/* Spacious 2-Column Resolution View */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Interactive Exercise Card (7 cols) */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-7 space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <h3 className="text-base font-semibold text-zinc-900">
+                {currentExercise.title}
+              </h3>
+              <span className="text-xs font-mono text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-md">
+                {currentExercise.badge}
+              </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {getQuickButtons().map((token) => (
-                <button
-                  key={token}
-                  onClick={() => {
-                    // Fill the first empty blank or the first blank
-                    const targetBlank =
-                      currentExercise.blanks.find((b) => !currentInputs[b.id]) ||
-                      currentExercise.blanks[0];
-                    if (targetBlank) {
-                      handleQuickInsert(targetBlank.id, token);
-                    }
-                  }}
-                  className="px-2.5 py-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-cyan-300 font-mono text-xs font-semibold transition-colors flex items-center justify-center gap-1"
-                >
-                  <span>{token}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-[11px] text-slate-500 pt-1">
-              También puedes escribir directamente con el teclado en cada casilla.
-            </p>
-          </div>
 
-          {/* Semicolon & Bracket didactic reminder */}
-          <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-xs">
-            <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-xs">
-              <Info className="w-3.5 h-3.5 text-amber-400" />
-              <span>Regla de oro sobre puntos y coma</span>
-            </div>
-            <p className="text-slate-300 text-[11px] leading-relaxed">
-              <strong>¡No todas las líneas llevan punto y coma!</strong> Las líneas que abren bloques mediante una llave <code className="text-amber-300 font-mono">{'{'}</code> (como <code className="text-slate-200 font-mono">class Gato</code> o <code className="text-slate-200 font-mono">void dibujar()</code>) <strong>NUNCA</strong> llevan punto y coma.
-            </p>
-          </div>
-        </div>
-
-        {/* Area 2: Espacio interactivo de resolución (6 cols) */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              2. {currentExercise.title}
-            </h3>
-            <span className="text-xs text-cyan-400 font-medium font-mono">
-              {currentExercise.badge}
-            </span>
-          </div>
-
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-5">
             {/* Prompt */}
-            <div className="text-sm font-medium text-slate-200">
+            <p className="text-sm font-medium text-zinc-800 leading-relaxed">
               {currentExercise.prompt}
-            </div>
+            </p>
 
-            {/* Interactive Fill-in Fields */}
-            <div className="space-y-3 bg-slate-900/80 p-5 rounded-xl border border-slate-800">
-              <div className="text-xs font-semibold text-slate-400 mb-2">
-                Completa los espacios en blanco:
+            {/* Code Snippet with Live Replacement */}
+            <div className="p-4 sm:p-5 bg-zinc-50 rounded-xl border border-zinc-200 font-mono text-xs sm:text-sm text-zinc-900">
+              <div className="text-[11px] text-zinc-400 font-sans uppercase tracking-wider mb-2">
+                Código:
               </div>
-
-              {currentExercise.blanks.map((blank) => {
-                const val = currentInputs[blank.id] || '';
-                return (
-                  <div key={blank.id} className="flex items-center gap-3">
-                    <label className="text-xs font-mono text-slate-300 min-w-36">
-                      {blank.label}:
-                    </label>
-                    <input
-                      type="text"
-                      value={val}
-                      onChange={(e) => handleInputChange(blank.id, e.target.value)}
-                      placeholder={blank.placeholder || blank.label}
-                      className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Code Snippet Preview with user inputs filled */}
-            <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 font-mono text-xs text-slate-300">
-              <div className="text-[11px] text-slate-500 font-sans mb-1">
-                Visualización de código resultante:
-              </div>
-              <pre className="whitespace-pre overflow-x-auto text-emerald-300">
+              <pre className="whitespace-pre overflow-x-auto leading-relaxed">
                 {(() => {
                   let rendered = currentExercise.codeSnippet;
                   currentExercise.blanks.forEach((b) => {
@@ -370,73 +256,89 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
               </pre>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-2">
+            {/* Input Blanks */}
+            <div className="space-y-3 pt-1">
+              {currentExercise.blanks.map((blank) => {
+                const val = currentInputs[blank.id] || '';
+                return (
+                  <div key={blank.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <label className="text-xs font-mono text-zinc-600 min-w-36">
+                      {blank.label}:
+                    </label>
+                    <input
+                      type="text"
+                      value={val}
+                      onChange={(e) => handleInputChange(blank.id, e.target.value)}
+                      placeholder={blank.placeholder || 'Escribe aquí...'}
+                      className="min-h-[44px] flex-1 bg-white border border-zinc-300 rounded-lg px-3.5 py-2 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Action buttons with 44px min touch target */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-zinc-100">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleCheckCurrent}
-                  className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs transition-colors shadow-sm"
+                  className="min-h-[44px] flex-1 sm:flex-none px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-black text-white font-medium text-xs sm:text-sm transition-colors flex items-center justify-center gap-2"
                 >
-                  Comprobar respuesta
+                  <Check className="w-4 h-4" />
+                  <span>Comprobar</span>
                 </button>
                 <button
                   onClick={handleResetCurrent}
-                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors flex items-center gap-1"
+                  className="min-h-[44px] px-3.5 py-2.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 text-xs transition-colors flex items-center justify-center gap-1.5"
+                  title="Limpiar campos"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Limpiar
+                  <span>Limpiar</span>
                 </button>
               </div>
 
               <button
                 onClick={() => setShowHint(!showHint)}
-                className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                className="min-h-[44px] text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition-colors self-end sm:self-auto px-2"
               >
-                <HelpCircle className="w-3.5 h-3.5" />
-                {showHint ? 'Ocultar pista' : 'Ver pista'}
+                <HelpCircle className="w-3.5 h-3.5 text-zinc-400" />
+                <span>{showHint ? 'Ocultar pista' : 'Pista'}</span>
               </button>
             </div>
 
             {/* Hint Box */}
             {showHint && (
-              <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded-xl text-xs text-amber-200 space-y-1">
-                <div className="font-semibold text-amber-300">Pista:</div>
+              <div className="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs text-zinc-700 space-y-1">
+                <span className="font-semibold text-zinc-900 block">Pista:</span>
                 {currentExercise.blanks.map((b) => (
-                  <div key={b.id}>
-                    • <strong>{b.label}:</strong> {b.hint}
+                  <div key={b.id} className="text-zinc-600 text-[12px]">
+                    — <strong>{b.label}:</strong> {b.hint}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Feedback alert */}
+            {/* Sober feedback message */}
             {currentFeedback.status !== 'idle' && (
               <div
-                className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
+                className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 ${
                   currentFeedback.status === 'success'
-                    ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-200'
-                    : 'bg-rose-950/60 border-rose-500/50 text-rose-200'
+                    ? 'bg-zinc-50 border-zinc-300 text-zinc-900 font-medium'
+                    : 'bg-zinc-50 border-zinc-300 text-zinc-600'
                 }`}
               >
-                {currentFeedback.status === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <div className="font-semibold">
-                    {currentFeedback.status === 'success' ? '¡Bien hecho!' : 'Revisión sintáctica'}
-                  </div>
-                  <div>{currentFeedback.message}</div>
-                </div>
+                <span className="font-mono text-zinc-900 font-bold">
+                  {currentFeedback.status === 'success' ? '✓' : '—'}
+                </span>
+                <span>{currentFeedback.message}</span>
               </div>
             )}
           </div>
 
           {/* Navigation to next exercise */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">
-              Ejercicios superados: {completedExerciseIds.length} de {ETAPA3_EXERCISES.length}
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs text-zinc-500 font-mono">
+              {completedExerciseIds.length}/{ETAPA3_EXERCISES.length} superados
             </span>
 
             {currentIdx < ETAPA3_EXERCISES.length - 1 ? (
@@ -445,67 +347,59 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
                   setCurrentIdx(currentIdx + 1);
                   setShowHint(false);
                 }}
-                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5"
+                className="min-h-[44px] px-5 py-2 rounded-lg bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-900 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2"
               >
-                Siguiente ejercicio
+                <span>Siguiente ejercicio</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={onGoNext}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors flex items-center gap-1.5"
+                className="min-h-[44px] px-5 py-2 rounded-lg bg-zinc-900 hover:bg-black text-white text-xs sm:text-sm font-medium transition-colors flex items-center gap-2"
               >
-                Avanzar a Etapa 4: Construir clase
+                <span>Avanzar a Etapa 4: Construir clase</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Area 3: Explicación de los signos y sintaxis (3 cols) */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              3. Rol del signo / palabra
-            </h3>
-            <span className="text-xs text-cyan-400 font-medium">Concepto</span>
+        {/* Right Column: Synthetic Role & Delimiter Explanation (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Función sintáctica
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4 text-xs">
+          <div className="bg-white border border-zinc-200 rounded-xl p-5 space-y-4 text-xs">
             <div>
-              <span className="font-semibold text-slate-200 block mb-1">
-                Función en Processing Java:
+              <span className="font-semibold text-zinc-900 block mb-1">
+                Rol en Processing Java:
               </span>
-              <p className="text-slate-300 leading-relaxed">
+              <p className="text-zinc-600 leading-relaxed text-xs sm:text-sm">
                 {currentExercise.signRoleExplanation}
               </p>
             </div>
 
             {currentExercise.counterConceptNote && (
-              <div className="p-3 bg-rose-950/30 border border-rose-800/40 rounded-lg text-rose-200 space-y-1">
-                <span className="font-semibold text-rose-300 block">
-                  Error común a evitar:
+              <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-700 space-y-1 text-xs">
+                <span className="font-semibold text-zinc-900 block">
+                  A tener en cuenta:
                 </span>
-                <p className="text-[11px] leading-relaxed">
+                <p className="leading-relaxed text-zinc-600">
                   {currentExercise.counterConceptNote}
                 </p>
               </div>
             )}
 
-            <div className="border-t border-slate-800 pt-3 space-y-2">
-              <span className="font-semibold text-slate-300 block">
-                Detalle de los campos:
-              </span>
-              {currentExercise.blanks.map((blank) => (
-                <div key={blank.id} className="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80">
-                  <span className="text-cyan-300 font-mono font-medium block">
-                    {blank.label}
-                  </span>
-                  <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
-                    {blank.explanation}
-                  </p>
-                </div>
-              ))}
+            {/* Note on semicolons in Java */}
+            <div className="p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl space-y-1.5 text-xs text-zinc-600">
+              <div className="flex items-center gap-2 text-zinc-900 font-medium">
+                <Info className="w-4 h-4 text-zinc-500 shrink-0" />
+                <span>Punto y coma en Java</span>
+              </div>
+              <p className="leading-relaxed text-[12px]">
+                No todas las líneas terminan con punto y coma. Las cabeceras como <code className="text-zinc-900 font-mono bg-zinc-100 px-1 py-0.5 rounded">class Gato</code> o <code className="text-zinc-900 font-mono bg-zinc-100 px-1 py-0.5 rounded">void dibujar()</code> abren un bloque con llave y <strong>no</strong> llevan punto y coma.
+              </p>
             </div>
           </div>
         </div>

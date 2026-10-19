@@ -31,15 +31,13 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
 
   const lines = code.split('\n');
 
-  // Simple token highlight helper for Processing Java
+  // Token rendering with elegant light-theme contrast
   const renderTokens = (line: string, lineIndex: number) => {
-    // If it's a comment line
     const trimmed = line.trim();
     if (trimmed.startsWith('//')) {
-      return <span className="text-slate-400 italic">{line}</span>;
+      return <span className="text-zinc-400 italic">{line}</span>;
     }
 
-    // Split preserving whitespace and delimiters
     const parts = line.split(/(\s+|[{}();,=])/g);
 
     return parts.map((part, pIdx) => {
@@ -50,14 +48,14 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
         return <span key={pIdx}>{part}</span>;
       }
 
-      // Check keywords
+      // Keywords
       if (['class', 'new', 'this', 'return'].includes(part)) {
         return (
           <span
             key={pIdx}
             onClick={() => onSelectToken?.(part, 'keyword')}
-            className={`font-semibold text-amber-400 cursor-pointer rounded px-0.5 hover:bg-amber-400/20 transition-colors ${
-              selectedToken === part ? 'bg-amber-400/30 ring-1 ring-amber-400' : ''
+            className={`font-semibold text-zinc-950 cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
+              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500 font-bold' : ''
             }`}
           >
             {part}
@@ -71,8 +69,8 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
           <span
             key={pIdx}
             onClick={() => onSelectToken?.('void', 'return-type')}
-            className={`font-semibold text-rose-400 cursor-pointer rounded px-0.5 hover:bg-rose-400/20 transition-colors ${
-              selectedToken === 'void' ? 'bg-rose-400/30 ring-1 ring-rose-400' : ''
+            className={`font-medium italic text-zinc-800 cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
+              selectedToken === 'void' ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
             }`}
           >
             {part}
@@ -86,8 +84,8 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
           <span
             key={pIdx}
             onClick={() => onSelectToken?.(part, 'type')}
-            className={`font-medium text-cyan-300 cursor-pointer rounded px-0.5 hover:bg-cyan-400/20 transition-colors ${
-              selectedToken === part ? 'bg-cyan-400/30 ring-1 ring-cyan-400' : ''
+            className={`font-medium text-zinc-700 cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
+              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500 text-zinc-950' : ''
             }`}
           >
             {part}
@@ -105,9 +103,9 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
             onClick={() => onSelectToken?.(part, 'brace')}
             className={`font-bold cursor-pointer rounded px-0.5 transition-colors ${
               hoveredBraceId !== null
-                ? 'text-yellow-300 bg-yellow-400/20 ring-1 ring-yellow-400/50'
-                : 'text-amber-200 hover:bg-amber-200/20'
-            } ${selectedToken === part ? 'ring-2 ring-yellow-300' : ''}`}
+                ? 'bg-zinc-200 ring-1 ring-zinc-400 text-zinc-950'
+                : 'text-zinc-800 hover:bg-zinc-200'
+            } ${selectedToken === part ? 'ring-1 ring-zinc-600 bg-zinc-200 text-zinc-950' : ''}`}
           >
             {part}
           </span>
@@ -120,7 +118,9 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
           <span
             key={pIdx}
             onClick={() => onSelectToken?.(part, 'parenthesis')}
-            className="text-purple-300 font-semibold cursor-pointer hover:bg-purple-400/20 rounded px-0.5"
+            className={`text-zinc-600 font-semibold cursor-pointer hover:bg-zinc-200 rounded px-0.5 ${
+              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
+            }`}
           >
             {part}
           </span>
@@ -133,8 +133,8 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
           <span
             key={pIdx}
             onClick={() => onSelectToken?.(';', 'semicolon')}
-            className={`text-slate-400 font-bold cursor-pointer hover:text-white hover:bg-slate-700/50 rounded px-0.5 ${
-              selectedToken === ';' ? 'bg-slate-700 text-white ring-1 ring-slate-400' : ''
+            className={`text-zinc-500 font-bold cursor-pointer hover:text-zinc-900 hover:bg-zinc-200 rounded px-0.5 ${
+              selectedToken === ';' ? 'bg-zinc-200 ring-1 ring-zinc-500 text-zinc-950' : ''
             }`}
           >
             {part}
@@ -148,8 +148,8 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
           <span
             key={pIdx}
             onClick={() => onSelectToken?.('=', 'operator')}
-            className={`text-emerald-400 font-bold cursor-pointer rounded px-1 hover:bg-emerald-400/20 ${
-              selectedToken === '=' ? 'bg-emerald-400/30 ring-1 ring-emerald-400' : ''
+            className={`text-zinc-950 font-bold cursor-pointer rounded px-1 hover:bg-zinc-200 ${
+              selectedToken === '=' ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
             }`}
           >
             {part}
@@ -163,8 +163,8 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
           <span
             key={pIdx}
             onClick={() => onSelectToken?.('Gato', 'class-constructor-name')}
-            className={`text-emerald-300 font-bold cursor-pointer rounded px-0.5 hover:bg-emerald-400/20 transition-colors ${
-              selectedToken === 'Gato' ? 'bg-emerald-400/30 ring-2 ring-emerald-400' : ''
+            className={`text-zinc-950 font-bold cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
+              selectedToken === 'Gato' ? 'bg-zinc-200 ring-1 ring-zinc-600' : ''
             }`}
           >
             {part}
@@ -172,14 +172,14 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
         );
       }
 
-      // Parameters ending with Temp or starting with paso
+      // Parameters
       if (part.endsWith('Temp') || part.startsWith('paso')) {
         return (
           <span
             key={pIdx}
             onClick={() => onSelectToken?.(part, 'param')}
-            className={`text-purple-300 cursor-pointer rounded px-0.5 hover:bg-purple-400/20 ${
-              selectedToken === part ? 'bg-purple-400/30 ring-1 ring-purple-400' : ''
+            className={`text-zinc-700 cursor-pointer rounded px-0.5 hover:bg-zinc-200 ${
+              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500 text-zinc-950' : ''
             }`}
           >
             {part}
@@ -193,8 +193,8 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
           <span
             key={pIdx}
             onClick={() => onSelectToken?.(part, 'method-name')}
-            className={`text-blue-300 font-semibold cursor-pointer rounded px-0.5 hover:bg-blue-400/20 ${
-              selectedToken === part ? 'bg-blue-400/30 ring-1 ring-blue-400' : ''
+            className={`text-zinc-950 font-semibold cursor-pointer rounded px-0.5 hover:bg-zinc-200 ${
+              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
             }`}
           >
             {part}
@@ -202,13 +202,13 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
         );
       }
 
-      // Standard identifiers (fields like nombre, x, y)
+      // Standard identifiers
       return (
         <span
           key={pIdx}
           onClick={() => onSelectToken?.(part, 'identifier')}
-          className={`text-slate-100 cursor-pointer rounded px-0.5 hover:bg-slate-700/50 ${
-            selectedToken === part ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-400' : ''
+          className={`text-zinc-800 cursor-pointer rounded px-0.5 hover:bg-zinc-200 ${
+            selectedToken === part ? 'bg-zinc-200 text-zinc-950 ring-1 ring-zinc-500' : ''
           }`}
         >
           {part}
@@ -218,30 +218,34 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
   };
 
   return (
-    <div className={`relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden font-mono text-sm ${className}`}>
+    <div
+      className={`relative bg-[#fcfcfd] border border-zinc-200 rounded-xl overflow-hidden font-mono text-xs sm:text-sm ${className}`}
+    >
       {/* Editor top header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-900/90 border-b border-slate-800 text-xs text-slate-400">
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 border-b border-zinc-200 text-xs text-zinc-500">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-          <span className="ml-2 font-mono text-slate-300">Gato.pde (Processing Java)</span>
+          <span className="w-2 h-2 rounded-full bg-zinc-300" />
+          <span className="w-2 h-2 rounded-full bg-zinc-300" />
+          <span className="w-2 h-2 rounded-full bg-zinc-300" />
+          <span className="ml-2 font-mono text-zinc-600 text-[11px] sm:text-xs">
+            Gato.pde
+          </span>
         </div>
         {showCopyButton && (
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs transition-colors"
             title="Copiar código al portapapeles"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-medium">¡Copiado!</span>
+                <Check className="w-3.5 h-3.5 text-zinc-900" />
+                <span className="text-zinc-900 font-medium">Copiado</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copiar código</span>
+                <Copy className="w-3.5 h-3.5 text-zinc-500" />
+                <span>Copiar</span>
               </>
             )}
           </button>
@@ -249,7 +253,7 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
       </div>
 
       {/* Code body with line numbers */}
-      <div className="p-4 overflow-x-auto custom-scrollbar">
+      <div className="p-4 sm:p-5 overflow-x-auto custom-scrollbar">
         <pre className="leading-relaxed">
           {lines.map((line, idx) => {
             const lineNum = idx + 1;
@@ -263,13 +267,13 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
                 key={idx}
                 className={`flex items-start transition-colors px-2 py-0.5 rounded ${
                   isLineActive
-                    ? 'bg-cyan-950/60 ring-1 ring-cyan-500/50'
+                    ? 'bg-zinc-100 ring-1 ring-zinc-300'
                     : isSectionActive
-                    ? 'bg-amber-950/40 ring-1 ring-amber-500/40'
-                    : 'hover:bg-slate-900/50'
+                    ? 'bg-zinc-100/80 ring-1 ring-zinc-300'
+                    : 'hover:bg-zinc-100/50'
                 }`}
               >
-                <span className="w-8 select-none text-right pr-4 text-slate-600 text-xs font-mono">
+                <span className="w-8 select-none text-right pr-4 text-zinc-400 text-xs font-mono">
                   {lineNum}
                 </span>
                 <span className="flex-1 whitespace-pre">{renderTokens(line, idx)}</span>
@@ -279,14 +283,14 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
         </pre>
       </div>
 
-      {/* Subtle footer hint */}
+      {/* Footer hint */}
       {onSelectToken && (
-        <div className="px-4 py-1.5 bg-slate-900/50 border-t border-slate-800/80 text-[11px] text-slate-500 flex items-center justify-between">
-          <span className="flex items-center gap-1">
-            <Eye className="w-3 h-3 text-slate-400" />
-            Haz clic en cualquier palabra o símbolo para ver su explicación y relaciones
+        <div className="px-4 py-2 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <Eye className="w-3 h-3 text-zinc-400" />
+            Haz clic en un elemento para ver su función
           </span>
-          <span className="text-slate-400 font-mono">Sintaxis Processing Java</span>
+          <span className="text-zinc-400 font-mono hidden sm:inline">Processing Java</span>
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ETAPA2_CARDS } from '../../data/stageData';
 import { CardItem, ZoneId, DetailedToken } from '../../types/classStructure';
 import { VisualRelationsPanel } from '../VisualRelationsPanel';
-import { CheckCircle2, ArrowRight, RotateCcw, HelpCircle, Layers, MousePointer } from 'lucide-react';
+import { Check, ArrowRight, RotateCcw, Layers, Info } from 'lucide-react';
 
 interface Stage2Props {
   onComplete: () => void;
@@ -19,31 +19,27 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
   initialPlacements = {},
   onSavePlacements,
 }) => {
-  // Placement map: cardId -> zoneId | null
   const [placements, setPlacements] = useState<Record<string, ZoneId>>(initialPlacements);
   const [selectedCardId, setSelectedCardId] = useState<string>('card-fields');
   const [selectedToken, setSelectedToken] = useState<DetailedToken | null>(null);
   const [activeRelation, setActiveRelation] = useState<'assignment' | 'constructor-match' | 'method-structure' | null>('assignment');
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
-  const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'warning' | 'info'; text: string } | null>(null);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
-  const zones: Array<{ id: ZoneId; title: string; subtitle: string; label: string }> = [
+  const zones: Array<{ id: ZoneId; title: string; label: string }> = [
     {
       id: 'fields',
-      title: '1. Campos o atributos',
-      subtitle: 'Variables que guardan el estado de la instancia',
+      title: 'Campos o atributos',
       label: '// Campos o atributos',
     },
     {
       id: 'constructor',
-      title: '2. Constructor',
-      subtitle: 'Inicializa los atributos con los parámetros recibidos',
+      title: 'Constructor',
       label: '// Constructor',
     },
     {
       id: 'methods',
-      title: '3. Métodos',
-      subtitle: 'Comportamientos y acciones de la clase',
+      title: 'Métodos',
       label: '// Métodos',
     },
   ];
@@ -56,19 +52,12 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
 
     if (card) {
       if (card.correctZone === zoneId) {
-        setFeedbackMsg({
-          type: 'success',
-          text: `¡Correcto! "${card.name}" pertenece a la sección de ${zones.find((z) => z.id === zoneId)?.title}.`,
-        });
+        setFeedbackMsg(`"${card.name}" ubicada correctamente.`);
       } else {
-        setFeedbackMsg({
-          type: 'warning',
-          text: `"${card.name}" suele ubicarse en "${zones.find((z) => z.id === card.correctZone)?.title}". En Java el compilador es flexible, pero didácticamente se recomienda colocarla allí.`,
-        });
+        setFeedbackMsg(`"${card.name}" suele ubicarse didácticamente en "${zones.find((z) => z.id === card.correctZone)?.title}".`);
       }
     }
 
-    // Check completion: all 4 cards placed in their correct zone
     const allPlacedCorrectly = ETAPA2_CARDS.every(
       (c) => newPlacements[c.id] === c.correctZone
     );
@@ -80,82 +69,70 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
   const handleResetPlacements = () => {
     setPlacements({});
     onSavePlacements?.({});
-    setFeedbackMsg({
-      type: 'info',
-      text: 'Se han reiniciado las ubicaciones. Vuelve a colocar cada tarjeta.',
-    });
+    setFeedbackMsg(null);
   };
 
   const selectedCard = ETAPA2_CARDS.find((c) => c.id === selectedCardId) || ETAPA2_CARDS[0];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-4">
-        <div className="flex items-center justify-between">
+    <div className="space-y-10">
+      {/* Stage Header */}
+      <div className="border-b border-zinc-200 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-                Etapa 2
-              </span>
-              <span className="text-slate-500">·</span>
-              <span className="text-xs text-slate-400">Organización y tokens</span>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-100 mt-1">
-              Ubicar las partes de la clase Gato
+            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider block">
+              Etapa 02
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 mt-1">
+              Ubicar las partes de la clase
             </h2>
           </div>
           {isCompleted && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/60 border border-emerald-500/40 rounded-full text-xs font-medium text-emerald-300">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Todas las partes ubicadas
+            <div className="flex items-center gap-1.5 text-xs text-zinc-600 font-mono py-1">
+              <Check className="w-3.5 h-3.5 text-zinc-900" />
+              <span>Partes organizadas</span>
             </div>
           )}
         </div>
-        <p className="text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
-          Coloca cada bloque de código en su sección correspondiente dentro de la clase. Puedes usar los botones de acción rápida o arrastrar la tarjeta. Además, haz clic en cualquier elemento para inspeccionar su tipo, nombre y rol sintáctico.
+        <p className="text-sm text-zinc-600 mt-2 max-w-2xl leading-relaxed">
+          Ubica cada bloque de código en su sección dentro de la clase Gato usando los botones o arrastrándolos. Selecciona cualquier ficha para consultar su rol sintáctico.
         </p>
       </div>
 
       {feedbackMsg && (
-        <div
-          className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
-            feedbackMsg.type === 'success'
-              ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200'
-              : feedbackMsg.type === 'warning'
-              ? 'bg-amber-950/50 border-amber-500/40 text-amber-200'
-              : 'bg-cyan-950/50 border-cyan-500/40 text-cyan-200'
-          }`}
-        >
-          <span>{feedbackMsg.text}</span>
+        <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50 text-xs text-zinc-700 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-zinc-500 shrink-0" />
+            <span>{feedbackMsg}</span>
+          </div>
           <button
             onClick={() => setFeedbackMsg(null)}
-            className="text-slate-400 hover:text-white text-xs underline ml-4"
+            className="text-zinc-400 hover:text-zinc-700 text-xs ml-4"
           >
-            Entendido
+            ✕
           </button>
         </div>
       )}
 
-      {/* 3-Area Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Area 1: Elementos disponibles (Cards to place) (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
+      {/* Spacious 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Cards to position & Token Inspector (5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
-              1. Tarjetas disponibles
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5" />
+              Bloques a ubicar
             </h3>
             <button
               onClick={handleResetPlacements}
-              className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
+              className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1"
             >
               <RotateCcw className="w-3 h-3" />
-              Reiniciar
+              <span>Reiniciar</span>
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {ETAPA2_CARDS.map((card) => {
               const currentZone = placements[card.id];
               const isSelected = selectedCardId === card.id;
@@ -168,40 +145,35 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                   onClick={() => setSelectedCardId(card.id)}
                   className={`p-4 rounded-xl border transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-800/90 border-cyan-500 shadow-md shadow-cyan-950/30'
-                      : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                      ? 'bg-white border-zinc-900 shadow-xs'
+                      : 'bg-white border-zinc-200 hover:border-zinc-300'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-xs text-slate-200">
+                    <span className="font-semibold text-xs text-zinc-900">
                       {card.name}
                     </span>
                     {currentZone ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-medium">
-                        Ubicado en {zones.find((z) => z.id === currentZone)?.title.split('.')[1]}
+                      <span className="text-[11px] font-mono text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded">
+                        {zones.find((z) => z.id === currentZone)?.title}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-amber-400 font-mono">
+                      <span className="text-[11px] font-mono text-zinc-400">
                         Pendiente
                       </span>
                     )}
                   </div>
 
-                  {/* Code snippet inside card */}
-                  <pre className="p-2.5 bg-slate-950 rounded-lg text-slate-200 font-mono text-xs overflow-x-auto whitespace-pre border border-slate-800/80 my-2">
+                  <pre className="p-3 bg-zinc-50 rounded-lg text-zinc-800 font-mono text-xs overflow-x-auto whitespace-pre border border-zinc-200 my-2 leading-relaxed">
                     {card.code}
                   </pre>
 
-                  <div className="text-[11px] text-slate-400 mb-3">
-                    {card.previewNote}
-                  </div>
-
-                  {/* Quick placement buttons */}
-                  <div className="pt-2 border-t border-slate-800/80">
-                    <div className="text-[10px] text-slate-500 mb-1.5 font-medium">
-                      Ubicar mediante botones:
+                  {/* Quick placement buttons with 44px min touch height */}
+                  <div className="pt-2.5 border-t border-zinc-100">
+                    <div className="text-[11px] text-zinc-500 mb-2">
+                      Colocar en:
                     </div>
-                    <div className="grid grid-cols-3 gap-1">
+                    <div className="grid grid-cols-3 gap-1.5">
                       {zones.map((zone) => (
                         <button
                           key={zone.id}
@@ -209,13 +181,13 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                             e.stopPropagation();
                             handlePlaceCard(card.id, zone.id);
                           }}
-                          className={`px-2 py-1 text-[10px] rounded transition-colors font-medium ${
+                          className={`min-h-[44px] px-2 py-1 text-xs rounded-lg transition-colors font-medium border ${
                             currentZone === zone.id
-                              ? 'bg-cyan-600 text-white'
-                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100 border-zinc-200'
                           }`}
                         >
-                          {zone.id === 'fields' ? 'Campos' : zone.id === 'constructor' ? 'Constructor' : 'Métodos'}
+                          {zone.title.split(' ')[0]}
                         </button>
                       ))}
                     </div>
@@ -224,128 +196,12 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
               );
             })}
           </div>
-        </div>
 
-        {/* Area 2: Espacio para construir la clase (Canvas with drop zones) (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              2. Esqueleto de la clase Gato
-            </h3>
-            <span className="text-xs text-slate-500 font-mono">class Gato {'{ ... }'}</span>
-          </div>
-
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 font-mono text-xs space-y-3">
-            {/* Class Header */}
-            <div className="text-amber-400 font-bold text-sm">
-              class Gato <span className="text-slate-100">{'{'}</span>
-            </div>
-
-            {/* Drop Zones for each part */}
-            {zones.map((zone) => {
-              const cardsInZone = ETAPA2_CARDS.filter(
-                (c) => placements[c.id] === zone.id
-              );
-
-              return (
-                <div
-                  key={zone.id}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => {
-                    if (draggedCardId) {
-                      handlePlaceCard(draggedCardId, zone.id);
-                      setDraggedCardId(null);
-                    }
-                  }}
-                  className={`p-3.5 rounded-xl border border-dashed transition-all ml-4 ${
-                    cardsInZone.length > 0
-                      ? 'border-slate-700 bg-slate-900/60'
-                      : 'border-slate-800 bg-slate-900/20 hover:border-cyan-500/50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-slate-500 italic text-[11px]">
-                      {zone.label}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-sans">
-                      {cardsInZone.length} bloque(s)
-                    </span>
-                  </div>
-
-                  {cardsInZone.length === 0 ? (
-                    <div className="py-4 text-center text-slate-600 text-xs font-sans">
-                      Arrastra aquí o pulsa el botón correspondiente
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {cardsInZone.map((card) => (
-                        <div
-                          key={card.id}
-                          onClick={() => setSelectedCardId(card.id)}
-                          className={`p-2.5 rounded-lg bg-slate-950 border transition-all cursor-pointer ${
-                            selectedCardId === card.id
-                              ? 'border-cyan-500 text-cyan-100'
-                              : 'border-slate-800 text-slate-200 hover:border-slate-700'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-sans font-semibold text-slate-300">
-                              {card.name}
-                            </span>
-                            <span className="text-[10px] text-cyan-400 font-sans flex items-center gap-1">
-                              <MousePointer className="w-3 h-3" />
-                              Clic para inspeccionar
-                            </span>
-                          </div>
-                          <pre className="text-xs whitespace-pre overflow-x-auto text-emerald-300">
-                            {card.code}
-                          </pre>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Class Footer */}
-            <div className="text-slate-100 font-bold text-sm">{'}'}</div>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-slate-400">
-              Progreso: {Object.keys(placements).length} de {ETAPA2_CARDS.length} tarjetas ubicadas
+          {/* Tokens inspection card for selected block */}
+          <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 space-y-3">
+            <span className="text-xs font-semibold text-zinc-900 block">
+              Tokens en {selectedCard.name}:
             </span>
-            <button
-              onClick={onGoNext}
-              className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs transition-colors flex items-center gap-1.5"
-            >
-              Continuar a Etapa 3
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Area 3: Explicación contextual e Inspector de Tokens (3 cols) */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              3. Identificador de partes
-            </h3>
-            <span className="text-xs text-cyan-400 font-medium">Inspección</span>
-          </div>
-
-          {/* Tokens of selected card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-            <div>
-              <span className="text-xs font-bold text-slate-200">
-                Elementos identificables en {selectedCard.name}:
-              </span>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Selecciona cualquier token para entender su tipo y función:
-              </p>
-            </div>
-
             <div className="flex flex-wrap gap-1.5">
               {selectedCard.tokens.map((token) => {
                 const isTokSelected = selectedToken?.id === token.id;
@@ -360,10 +216,10 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                         setActiveRelation('constructor-match');
                       }
                     }}
-                    className={`px-2 py-1 rounded text-xs font-mono transition-all border ${
+                    className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-mono transition-colors border ${
                       isTokSelected
-                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 ring-1 ring-cyan-400'
-                        : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white'
+                        ? 'bg-zinc-900 border-zinc-900 text-white font-bold'
+                        : 'bg-zinc-50 border-zinc-200 text-zinc-800 hover:bg-zinc-100'
                     }`}
                   >
                     {token.text}
@@ -372,28 +228,107 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
               })}
             </div>
 
-            {selectedToken ? (
-              <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1 text-xs">
+            {selectedToken && (
+              <div className="p-3 bg-zinc-50 rounded-lg border border-zinc-200 space-y-1 text-xs mt-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-cyan-300">
+                  <span className="font-mono font-bold text-zinc-900">
                     {selectedToken.text}
                   </span>
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wide">
+                  <span className="text-[10px] text-zinc-500 font-mono uppercase">
                     {selectedToken.label}
                   </span>
                 </div>
-                <p className="text-slate-300 text-xs leading-relaxed pt-1">
+                <p className="text-zinc-600 text-xs leading-relaxed pt-1">
                   {selectedToken.explanation}
                 </p>
               </div>
-            ) : (
-              <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-[11px] text-slate-500 text-center">
-                Haz clic en una ficha para ver su definición
-              </div>
             )}
           </div>
+        </div>
 
-          {/* Visual relations summary */}
+        {/* Right Column: Class skeleton and Relational view (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                Esqueleto de la clase Gato
+              </h3>
+              <span className="text-xs text-zinc-400 font-mono">
+                {Object.keys(placements).length}/{ETAPA2_CARDS.length} ubicadas
+              </span>
+            </div>
+
+            <div className="bg-[#fcfcfd] border border-zinc-200 rounded-xl p-5 font-mono text-xs space-y-4">
+              <div className="text-zinc-900 font-bold text-sm">
+                class Gato <span className="text-zinc-500">{'{'}</span>
+              </div>
+
+              {/* Drop Zones */}
+              {zones.map((zone) => {
+                const cardsInZone = ETAPA2_CARDS.filter(
+                  (c) => placements[c.id] === zone.id
+                );
+
+                return (
+                  <div
+                    key={zone.id}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (draggedCardId) {
+                        handlePlaceCard(draggedCardId, zone.id);
+                        setDraggedCardId(null);
+                      }
+                    }}
+                    className={`p-4 rounded-xl border border-dashed transition-colors ml-2 sm:ml-4 ${
+                      cardsInZone.length > 0
+                        ? 'border-zinc-300 bg-white'
+                        : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-zinc-500 italic text-[11px]">
+                        {zone.label}
+                      </span>
+                      <span className="text-[11px] text-zinc-400 font-mono">
+                        {cardsInZone.length} bloque(s)
+                      </span>
+                    </div>
+
+                    {cardsInZone.length === 0 ? (
+                      <div className="py-4 text-center text-zinc-400 text-xs font-sans">
+                        Arrastra o pulsa un botón para ubicar aquí
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {cardsInZone.map((card) => (
+                          <div
+                            key={card.id}
+                            onClick={() => setSelectedCardId(card.id)}
+                            className={`p-3 rounded-lg bg-zinc-50 border transition-all cursor-pointer ${
+                              selectedCardId === card.id
+                                ? 'border-zinc-900 text-zinc-900'
+                                : 'border-zinc-200 text-zinc-700 hover:border-zinc-300'
+                            }`}
+                          >
+                            <span className="text-xs font-sans font-semibold text-zinc-900 block mb-1">
+                              {card.name}
+                            </span>
+                            <pre className="text-xs whitespace-pre overflow-x-auto text-zinc-800 font-mono">
+                              {card.code}
+                            </pre>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div className="text-zinc-500 font-bold text-sm">{'}'}</div>
+            </div>
+          </div>
+
+          {/* Relational view */}
           <VisualRelationsPanel
             activeRelation={activeRelation}
             onSelectRelation={(rel) => setActiveRelation(rel)}
@@ -407,6 +342,17 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                 : null
             }
           />
+
+          {/* Navigation Action */}
+          <div className="flex items-center justify-end pt-2">
+            <button
+              onClick={onGoNext}
+              className="min-h-[44px] px-6 py-2.5 rounded-lg bg-zinc-900 hover:bg-black text-white font-medium text-xs sm:text-sm transition-colors flex items-center gap-2"
+            >
+              <span>Ir a Etapa 3: Completar sintaxis</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

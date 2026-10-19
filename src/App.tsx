@@ -11,7 +11,7 @@ import { Stage1Structure } from './components/stages/Stage1Structure';
 import { Stage2Placement } from './components/stages/Stage2Placement';
 import { Stage3Syntax } from './components/stages/Stage3Syntax';
 import { Stage4Builder } from './components/stages/Stage4Builder';
-import { BookOpen, CheckCircle2, Award } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 const STORAGE_KEY = 'processing_class_structure_progress';
 
@@ -127,7 +127,7 @@ export default function App() {
     progress.stageCompleted[4];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans">
       <Header
         currentStage={currentStage}
         onSelectStage={(st) => setCurrentStage(st)}
@@ -135,23 +135,22 @@ export default function App() {
         onResetAllProgress={handleResetAllProgress}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Global Progress Celebration Banner when all 4 are done */}
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Sober, quiet completion summary */}
         {allStagesCompleted && (
-          <div className="mb-8 p-4 bg-gradient-to-r from-emerald-950/70 via-slate-900 to-cyan-950/70 border border-emerald-500/50 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Award className="w-8 h-8 text-emerald-400 shrink-0" />
-              <div>
-                <h3 className="text-sm font-bold text-emerald-200">
-                  ¡Felicitaciones! Has completado todas las etapas de la clase Gato
-                </h3>
-                <p className="text-xs text-slate-300">
-                  Ya dominas la declaración de clases, campos, constructor, parámetros, métodos vacíos y la puntuación de Processing Java.
-                </p>
-              </div>
+          <div className="mb-8 p-4 rounded-xl border border-zinc-200 bg-zinc-50 flex items-center justify-between text-xs text-zinc-700">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
+              <span className="font-medium text-zinc-900">
+                Todas las etapas completadas
+              </span>
+              <span className="text-zinc-400">·</span>
+              <span className="text-zinc-600 hidden sm:inline">
+                Estructura, organización, sintaxis y construcción de clases
+              </span>
             </div>
-            <span className="text-xs font-mono text-emerald-400 px-3 py-1 bg-emerald-950 rounded-lg border border-emerald-800">
-              100% Completado
+            <span className="font-mono text-zinc-500 text-[11px] shrink-0">
+              4/4 etapas
             </span>
           </div>
         )}
@@ -196,17 +195,16 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-400 bg-slate-950">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-zinc-200 py-6 text-xs text-zinc-500 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-cyan-400" />
-            <span className="font-semibold text-slate-300">Estructura de una clase</span>
-            <span>· Guía didáctica de sintaxis para Processing Java</span>
+            <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="font-medium text-zinc-700">Estructura de una clase</span>
+            <span className="text-zinc-300">·</span>
+            <span className="text-zinc-500">Processing Java</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-400 text-[11px]">
-            <span>Convención didáctica: Campos → Constructor → Métodos</span>
-            <span>·</span>
-            <span>Progreso guardado localmente</span>
+          <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+            <span>Campos → Constructor → Métodos</span>
           </div>
         </div>
       </footer>

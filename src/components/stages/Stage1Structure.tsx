@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ETAPA1_SECTIONS, ORGANIZATIONAL_DIDACTIC_NOTE } from '../../data/stageData';
 import { ProcessingCodeBlock } from '../ProcessingCodeBlock';
-import { CheckCircle2, Info, ChevronRight, HelpCircle, Check, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight, Info, ChevronRight } from 'lucide-react';
 
 interface Stage1Props {
   onComplete: () => void;
@@ -15,9 +15,6 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
   onGoNext,
 }) => {
   const [selectedSectionId, setSelectedSectionId] = useState<string>('declaration');
-  const [showDidacticNote, setShowDidacticNote] = useState<boolean>(true);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
-  const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
 
   const selectedSection =
     ETAPA1_SECTIONS.find((s) => s.id === selectedSectionId) || ETAPA1_SECTIONS[0];
@@ -30,118 +27,68 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
   // Métodos
 }`;
 
-  // Mini quiz to verify comprehension
-  const QUIZ_QUESTIONS = [
-    {
-      id: 'q1',
-      question: '¿Qué sección inicializa los datos del objeto cuando se ejecuta `new`?',
-      correct: 'constructor',
-      options: [
-        { id: 'fields', label: 'Campos o atributos' },
-        { id: 'constructor', label: 'Constructor' },
-        { id: 'methods', label: 'Métodos' },
-      ],
-      explanation: 'El constructor tiene como fin principal inicializar los atributos del objeto.',
-    },
-    {
-      id: 'q2',
-      question: '¿El orden campos -> constructor -> métodos es obligatorio por Java?',
-      correct: 'no',
-      options: [
-        { id: 'yes', label: 'Sí, si se cambia el orden el compilador da error' },
-        { id: 'no', label: 'No, es una organización didáctica y de buenas prácticas' },
-      ],
-      explanation: 'Java permite escribir métodos antes o después, pero seguir este orden facilita enormemente la lectura y el aprendizaje.',
-    },
-    {
-      id: 'q3',
-      question: '¿Qué signo cierra toda declaración de atributo como `int x;`?',
-      correct: 'semicolon',
-      options: [
-        { id: 'semicolon', label: 'Punto y coma (;)' },
-        { id: 'brace', label: 'Llave ({})' },
-        { id: 'colon', label: 'Dos puntos (:)' },
-      ],
-      explanation: 'Toda declaración de campo en Processing Java termina con punto y coma (;).',
-    },
-  ];
-
-  const handleSelectQuiz = (qId: string, optId: string) => {
-    setQuizAnswers((prev) => ({ ...prev, [qId]: optId }));
-  };
-
-  const handleVerifyQuiz = () => {
-    setQuizSubmitted(true);
-    const allCorrect = QUIZ_QUESTIONS.every((q) => quizAnswers[q.id] === q.correct);
-    if (allCorrect) {
-      onComplete();
-    }
+  const handleSelectSection = (id: string) => {
+    setSelectedSectionId(id);
+    onComplete();
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Stage Header */}
-      <div className="border-b border-slate-800 pb-4">
-        <div className="flex items-center justify-between">
+      <div className="border-b border-zinc-200 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-                Etapa 1
-              </span>
-              <span className="text-slate-500">·</span>
-              <span className="text-xs text-slate-400">Fundamentos sintácticos</span>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-100 mt-1">
+            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider block">
+              Etapa 01
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 mt-1">
               Reconocer la estructura de una clase
             </h2>
           </div>
           {isCompleted && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/60 border border-emerald-500/40 rounded-full text-xs font-medium text-emerald-300">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Etapa completada
+            <div className="flex items-center gap-1.5 text-xs text-zinc-600 font-mono py-1">
+              <Check className="w-3.5 h-3.5 text-zinc-900" />
+              <span>Estructura reconocida</span>
             </div>
           )}
         </div>
-        <p className="text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
-          Una clase en Processing Java funciona como un molde o plano que define cómo son (atributos) y qué hacen (métodos) los objetos creados a partir de ella. Explora cada sección para comprender su propósito.
+        <p className="text-sm text-zinc-600 mt-2 max-w-2xl leading-relaxed">
+          Una clase en Processing Java actúa como molde para crear objetos. Revisa cada una de sus tres secciones principales para comprender su función y sintaxis.
         </p>
       </div>
 
-      {/* Main 3-Area Experience */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Area 1: Elementos disponibles / Selector de Secciones (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              1. Partes de la clase
-            </h3>
-            <span className="text-xs text-slate-500">Selecciona para explorar</span>
+      {/* Spacious 2-Column Experience: Selection on left, Code and Explanation on right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Sections List (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Partes de la clase
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {ETAPA1_SECTIONS.map((sec) => {
               const isSelected = selectedSectionId === sec.id;
               return (
                 <button
                   key={sec.id}
-                  onClick={() => setSelectedSectionId(sec.id)}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between ${
+                  onClick={() => handleSelectSection(sec.id)}
+                  className={`w-full min-h-[56px] text-left p-4 rounded-xl border transition-all flex items-center justify-between gap-3 ${
                     isSelected
-                      ? 'bg-slate-800/90 border-cyan-500/80 text-white shadow-lg shadow-cyan-950/40'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800/50 hover:border-slate-700'
+                      ? 'bg-zinc-900 border-zinc-900 text-white shadow-xs'
+                      : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50'
                   }`}
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{sec.title}</span>
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="font-medium text-sm truncate">
+                      {sec.title}
                     </div>
-                    <div className="text-xs text-slate-400 line-clamp-1">
-                      {sec.whatItIs}
+                    <div className={`text-xs line-clamp-1 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                      {sec.badge}
                     </div>
                   </div>
                   <ChevronRight
                     className={`w-4 h-4 shrink-0 transition-transform ${
-                      isSelected ? 'text-cyan-400 translate-x-1' : 'text-slate-600'
+                      isSelected ? 'text-white translate-x-0.5' : 'text-zinc-400'
                     }`}
                   />
                 </button>
@@ -149,191 +96,110 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
             })}
           </div>
 
-          {/* Didactic Note Box */}
-          <div className="p-4 bg-amber-950/20 border border-amber-800/40 rounded-xl space-y-2 text-xs">
-            <div className="flex items-center gap-1.5 text-amber-300 font-semibold">
-              <Info className="w-4 h-4 shrink-0 text-amber-400" />
+          {/* Clean Didactic Note */}
+          <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl space-y-1.5 text-xs text-zinc-600">
+            <div className="flex items-center gap-2 text-zinc-900 font-medium">
+              <Info className="w-4 h-4 text-zinc-500 shrink-0" />
               <span>{ORGANIZATIONAL_DIDACTIC_NOTE.title}</span>
             </div>
-            <p className="text-slate-300 leading-relaxed">
-              En Java el orden de métodos, constructor y campos <strong>no es un requisito obligatorio del compilador</strong>; sin embargo, agrupar primero los <strong>campos</strong>, luego el <strong>constructor</strong> y finalmente los <strong>métodos</strong> es el orden didáctico universal para mantener el código claro y estructurado.
+            <p className="leading-relaxed text-[12px]">
+              El orden <strong>campos → constructor → métodos</strong> es una convención didáctica de lectura recomendada, no un orden estricto exigido por Java.
             </p>
           </div>
         </div>
 
-        {/* Area 2: Espacio visual de la clase (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              2. Esquema estructural base
-            </h3>
-            <span className="text-xs text-slate-500 font-mono">Gato.pde</span>
-          </div>
-
-          <ProcessingCodeBlock
-            code={SKELETON_CODE}
-            highlightedSection={
-              selectedSectionId === 'fields'
-                ? 'Campos'
-                : selectedSectionId === 'constructor'
-                ? 'Constructor'
-                : selectedSectionId === 'methods'
-                ? 'Métodos'
-                : selectedSectionId === 'declaration'
-                ? 'class Gato'
-                : null
-            }
-            showCopyButton={false}
-          />
-
-          <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-xs">
-            <span className="text-xs font-semibold text-slate-200">
-              Ejemplo simplificado de esta sección:
-            </span>
-            <pre className="p-3 bg-slate-950 rounded-lg text-emerald-300 font-mono text-xs overflow-x-auto whitespace-pre border border-slate-800">
-              {selectedSection.example}
-            </pre>
-          </div>
-        </div>
-
-        {/* Area 3: Explicación contextual de la parte seleccionada (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              3. Explicación contextual
-            </h3>
-            <span className="text-xs text-cyan-400 font-medium">
-              {selectedSection.badge}
-            </span>
-          </div>
-
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4 text-xs">
-            <div>
-              <h4 className="font-semibold text-sm text-slate-100 mb-1">
-                ¿Qué representa?
-              </h4>
-              <p className="text-slate-300 leading-relaxed">
-                {selectedSection.whatItIs}
-              </p>
+        {/* Right Column: Code viewer & Explanatory details (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                Esquema canónico
+              </div>
+              <span className="text-xs font-mono text-zinc-400">Gato.pde</span>
             </div>
 
-            <div>
-              <h4 className="font-semibold text-sm text-slate-100 mb-1">
-                ¿Cómo se escribe?
-              </h4>
-              <p className="text-slate-300 leading-relaxed">
-                {selectedSection.howToWrite}
-              </p>
+            <ProcessingCodeBlock
+              code={SKELETON_CODE}
+              highlightedSection={
+                selectedSectionId === 'fields'
+                  ? 'Campos'
+                  : selectedSectionId === 'constructor'
+                  ? 'Constructor'
+                  : selectedSectionId === 'methods'
+                  ? 'Métodos'
+                  : selectedSectionId === 'declaration'
+                  ? 'class Gato'
+                  : null
+              }
+              showCopyButton={false}
+            />
+          </div>
+
+          {/* Concise explanation of the active section */}
+          <div className="bg-white border border-zinc-200 rounded-xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <h3 className="font-semibold text-base text-zinc-900">
+                {selectedSection.title}
+              </h3>
+              <span className="text-xs font-mono text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-md">
+                {selectedSection.badge}
+              </span>
             </div>
 
-            <div>
-              <h4 className="font-semibold text-sm text-slate-100 mb-1.5">
-                ¿Qué elementos contiene?
-              </h4>
-              <ul className="space-y-1.5">
-                {selectedSection.whatItContains.map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-slate-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {selectedSection.pedagogicalNote && (
-              <div className="p-3 bg-cyan-950/30 border border-cyan-800/40 rounded-lg text-cyan-200">
-                <span className="font-semibold text-cyan-300 block mb-0.5">
-                  Consejo pedagógico:
+            <div className="space-y-3 text-sm text-zinc-700">
+              <div>
+                <span className="font-medium text-zinc-900 block mb-0.5 text-xs uppercase tracking-wider text-zinc-500">
+                  ¿Qué representa?
                 </span>
-                {selectedSection.pedagogicalNote}
+                <p className="leading-relaxed text-zinc-700 text-xs sm:text-sm">
+                  {selectedSection.whatItIs}
+                </p>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Verification Checkpoint */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-semibold text-slate-100">
-              Comprobación rápida de la Etapa 1
-            </h3>
-          </div>
-          <span className="text-xs text-slate-400">Responde para desbloquear el avance</span>
-        </div>
+              <div>
+                <span className="font-medium text-zinc-900 block mb-0.5 text-xs uppercase tracking-wider text-zinc-500">
+                  ¿Cómo se escribe?
+                </span>
+                <p className="leading-relaxed text-zinc-700 text-xs sm:text-sm">
+                  {selectedSection.howToWrite}
+                </p>
+              </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {QUIZ_QUESTIONS.map((q, idx) => {
-            const isUserAnswer = quizAnswers[q.id];
-            const isCorrect = isUserAnswer === q.correct;
-            return (
-              <div
-                key={q.id}
-                className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3 text-xs flex flex-col justify-between"
-              >
-                <div>
-                  <div className="text-slate-400 font-mono text-[11px] mb-1">
-                    Pregunta {idx + 1} de {QUIZ_QUESTIONS.length}
-                  </div>
-                  <div className="text-slate-100 font-medium leading-snug">
-                    {q.question}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  {q.options.map((opt) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleSelectQuiz(q.id, opt.id)}
-                      className={`w-full text-left p-2.5 rounded-lg border transition-all text-xs ${
-                        isUserAnswer === opt.id
-                          ? quizSubmitted
-                            ? isCorrect
-                              ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200'
-                              : 'bg-rose-950/60 border-rose-500 text-rose-200'
-                            : 'bg-cyan-950/50 border-cyan-500 text-cyan-200'
-                          : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
+              <div>
+                <span className="font-medium text-zinc-900 block mb-1 text-xs uppercase tracking-wider text-zinc-500">
+                  Elementos que contiene:
+                </span>
+                <ul className="space-y-1 text-xs sm:text-sm text-zinc-600 pl-1">
+                  {selectedSection.whatItContains.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-zinc-400 font-mono select-none">—</span>
+                      <span>{item}</span>
+                    </li>
                   ))}
-                </div>
-
-                {quizSubmitted && (
-                  <div
-                    className={`p-2 rounded text-[11px] ${
-                      isCorrect
-                        ? 'bg-emerald-950/40 text-emerald-300'
-                        : 'bg-rose-950/40 text-rose-300'
-                    }`}
-                  >
-                    {isCorrect ? '¡Correcto!' : `Sugerencia: ${q.explanation}`}
-                  </div>
-                )}
+                </ul>
               </div>
-            );
-          })}
-        </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-          <button
-            onClick={handleVerifyQuiz}
-            className="px-5 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs transition-colors flex items-center gap-2"
-          >
-            <Check className="w-4 h-4" />
-            Comprobar respuestas
-          </button>
+              <div className="pt-2">
+                <span className="font-medium text-zinc-900 block mb-1 text-xs uppercase tracking-wider text-zinc-500">
+                  Ejemplo en Gato:
+                </span>
+                <pre className="p-3 bg-zinc-50 rounded-lg text-zinc-900 font-mono text-xs overflow-x-auto border border-zinc-200">
+                  {selectedSection.example}
+                </pre>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={onGoNext}
-            className="px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium text-xs transition-colors flex items-center gap-2"
-          >
-            Continuar a Etapa 2
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          {/* Navigation Action */}
+          <div className="flex items-center justify-end pt-2">
+            <button
+              onClick={onGoNext}
+              className="min-h-[44px] px-6 py-2.5 rounded-lg bg-zinc-900 hover:bg-black text-white font-medium text-xs sm:text-sm transition-colors flex items-center gap-2"
+            >
+              <span>Ir a Etapa 2: Ubicar partes</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
