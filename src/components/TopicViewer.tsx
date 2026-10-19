@@ -17,12 +17,14 @@ interface TopicViewerProps {
   topic: TopicItem;
   onNavigateTopic: (topicId: string) => void;
   onOpenCatalogue: () => void;
+  onBackToHome?: () => void;
 }
 
 export const TopicViewer: React.FC<TopicViewerProps> = ({
   topic,
   onNavigateTopic,
   onOpenCatalogue,
+  onBackToHome,
 }) => {
   const [activeConceptIdx, setActiveConceptIdx] = useState<number>(0);
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
@@ -40,6 +42,18 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
       {/* Top Breadcrumb & Navigation Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
         <div className="flex items-center gap-2 text-xs text-zinc-500">
+          {onBackToHome && (
+            <>
+              <button
+                onClick={onBackToHome}
+                className="hover:text-zinc-900 transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-900"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Inicio</span>
+              </button>
+              <span>/</span>
+            </>
+          )}
           <button
             onClick={onOpenCatalogue}
             className="hover:text-zinc-900 transition-colors font-medium flex items-center gap-1"
@@ -64,10 +78,10 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
           </button>
           <button
             onClick={() => onNavigateTopic('classes')}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-black text-white text-xs font-medium transition-colors flex items-center gap-1.5"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <span>Ir al taller de Clases (POO)</span>
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
