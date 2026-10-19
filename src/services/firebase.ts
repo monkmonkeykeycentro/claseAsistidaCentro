@@ -21,6 +21,9 @@ import { UserProgress, BuilderState } from '../types/classStructure';
 // Initialize Firebase app once
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
+export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
+export { firebaseConfig };
+
 const databaseId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
 export const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 export const auth = getAuth(app);
