@@ -14,6 +14,13 @@ import { Stage1Structure } from './components/stages/Stage1Structure';
 import { Stage2Placement } from './components/stages/Stage2Placement';
 import { Stage3Syntax } from './components/stages/Stage3Syntax';
 import { Stage4Builder } from './components/stages/Stage4Builder';
+import { AuthModal } from './components/AuthModal';
+import {
+  AppUser,
+  subscribeToAuth,
+  saveUserTopicProgress,
+  loadUserTopicProgress,
+} from './services/firebase';
 import { BookOpen, Sparkles } from 'lucide-react';
 
 const STORAGE_KEY = 'processing_class_structure_progress';
@@ -45,7 +52,10 @@ export default function App() {
   });
 
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState<StageId>(1);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [progress, setProgress] = useState<UserProgress>(() => {
     try {
@@ -71,7 +81,39 @@ export default function App() {
     return INITIAL_BUILDER_STATE;
   });
 
-  // Save topic change
+  // Subscribe to Firebase Auth state
+  useEffect(() => {
+    const unsubscribe = subscribeToAuth(async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        try {
+          setIsSyncing(true);
+          const cloudData = await loadUserTopicProgress(user.uid, currentTopicId);
+          if (cloudData && cloudData.progress) {
+            setProgress((prev) => ({
+              ...prev,
+              ...cloudData.progress,
+              stageCompleted: {
+                ...prev.stageCompleted,
+                ...(cloudData.progress.stageCompleted || {}),
+              },
+            }));
+            if (cloudData.builderState) {
+              setSavedBuilderState(cloudData.builderState);
+            }
+          }
+        } catch (e) {
+          console.warn('Could not sync initial progress from cloud:', e);
+        } finally {
+          setIsSyncing(false);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentTopicId]);
+
+  // Save topic change locally
   useEffect(() => {
     try {
       localStorage.setItem(TOPIC_STORAGE_KEY, currentTopicId);
@@ -80,7 +122,7 @@ export default function App() {
     }
   }, [currentTopicId]);
 
-  // Save progress changes
+  // Save progress changes locally
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
@@ -88,6 +130,23 @@ export default function App() {
       // Ignore storage error
     }
   }, [progress]);
+
+  // Auto-sync progress to Firebase Firestore if logged in
+  useEffect(() => {
+    if (!currentUser) return;
+    const timeout = setTimeout(async () => {
+      try {
+        setIsSyncing(true);
+        await saveUserTopicProgress(currentUser.uid, currentTopicId, progress, savedBuilderState);
+      } catch (err) {
+        console.warn('Auto-save progress to cloud error:', err);
+      } finally {
+        setIsSyncing(false);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timeout);
+  }, [progress, savedBuilderState, currentUser, currentTopicId]);
 
   const handleStageComplete = (stage: StageId) => {
     setProgress((prev) => ({
@@ -168,6 +227,9 @@ export default function App() {
         onSelectStage={(st) => setCurrentStage(st)}
         progress={progress}
         onResetAllProgress={handleResetAllProgress}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        isSyncing={isSyncing}
       />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -282,6 +344,13 @@ export default function App() {
         classesProgressCount={
           Object.values(progress.stageCompleted).filter(Boolean).length
         }
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
       />
 
       {/* Footer */}

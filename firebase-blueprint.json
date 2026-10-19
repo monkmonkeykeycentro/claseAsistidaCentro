@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile document containing authentication metadata and institutional verification",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID matching request.auth.uid"
+        },
+        "email": {
+          "type": "string",
+          "description": "Verified Google email address (e.g. jmartineza@centro.edu.mx)"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full name from Google profile"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar picture URL"
+        },
+        "isCentroStudent": {
+          "type": "boolean",
+          "description": "Whether the user belongs to centro.edu.mx domain"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["student", "teacher", "admin"],
+          "description": "Assigned role in the platform"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of user creation"
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "ISO timestamp of recent login"
+        }
+      },
+      "required": ["uid", "email", "displayName"]
+    },
+    "UserTopicProgress": {
+      "title": "UserTopicProgress",
+      "description": "Topic and workshop progress state saved for each user",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The user ID who owns this progress record"
+        },
+        "topicId": {
+          "type": "string",
+          "description": "Identifier of the topic, e.g. classes"
+        },
+        "completedStages": {
+          "type": "string",
+          "description": "JSON stringified state of completed stages map"
+        },
+        "stage3CompletedExercises": {
+          "type": "string",
+          "description": "JSON stringified list of completed exercise IDs"
+        },
+        "stage2Placements": {
+          "type": "string",
+          "description": "JSON stringified map of card placements"
+        },
+        "stage4BuilderCustomized": {
+          "type": "boolean",
+          "description": "Whether the custom class builder was modified"
+        },
+        "savedBuilderState": {
+          "type": "string",
+          "description": "JSON stringified builder state (fields, constructor, methods)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of progress update"
+        }
+      },
+      "required": ["userId", "topicId", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profiles with individual owner access control"
+    },
+    "/users/{userId}/progress/{topicId}": {
+      "schema": "UserTopicProgress",
+      "description": "Stores per-topic student workshop progress securely scoped to the authenticated student"
+    }
+  }
+}

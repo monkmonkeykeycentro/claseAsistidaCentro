@@ -1,7 +1,8 @@
 import React from 'react';
 import { StageId, UserProgress } from '../types/classStructure';
 import { TOPICS_DATA } from '../data/topicsData';
-import { RotateCcw, Check, BookOpen, ChevronDown, Sparkles } from 'lucide-react';
+import { RotateCcw, Check, BookOpen, ChevronDown, Sparkles, User, Cloud, CloudCheck } from 'lucide-react';
+import { AppUser } from '../services/firebase';
 
 interface HeaderProps {
   currentTopicId: string;
@@ -11,6 +12,9 @@ interface HeaderProps {
   onSelectStage: (stage: StageId) => void;
   progress: UserProgress;
   onResetAllProgress: () => void;
+  currentUser: AppUser | null;
+  onOpenAuth: () => void;
+  isSyncing?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,6 +25,9 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectStage,
   progress,
   onResetAllProgress,
+  currentUser,
+  onOpenAuth,
+  isSyncing,
 }) => {
   const currentTopic =
     TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5];
@@ -106,8 +113,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* Zone 3: Actions */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Zone 3: Actions & Account */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <button
               onClick={onOpenCatalogue}
               className="min-h-[44px] px-3 py-1.5 text-xs font-medium text-zinc-700 hover:text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200 rounded-lg transition-colors hidden sm:flex items-center gap-1.5"
@@ -124,13 +131,56 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <button
                   onClick={onResetAllProgress}
-                  className="min-h-[44px] px-3 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
+                  className="min-h-[44px] px-2.5 sm:px-3 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
                   title="Reiniciar progreso del taller de clases"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-zinc-500" />
-                  <span className="hidden sm:inline">Reiniciar</span>
+                  <span className="hidden xl:inline">Reiniciar</span>
                 </button>
               </>
+            )}
+
+            {/* Auth / Student Account button */}
+            {currentUser ? (
+              <button
+                onClick={onOpenAuth}
+                className="min-h-[44px] flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-medium text-zinc-900 transition-colors cursor-pointer"
+                title={`${currentUser.displayName} (${currentUser.email})`}
+              >
+                {currentUser.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt={currentUser.displayName || ''}
+                    className="w-5 h-5 rounded-full object-cover border border-zinc-300 shrink-0"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-zinc-900 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
+                    {currentUser.displayName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+                <span className="max-w-[70px] sm:max-w-[100px] truncate text-xs font-medium hidden xs:inline">
+                  {currentUser.displayName?.split(' ')[0]}
+                </span>
+                {currentUser.isCentroStudent && (
+                  <span className="hidden md:inline text-[9px] font-mono uppercase bg-zinc-900 text-white px-1 py-0.5 rounded font-semibold">
+                    CENTRO
+                  </span>
+                )}
+                {isSyncing ? (
+                  <Cloud className="w-3.5 h-3.5 text-amber-500 animate-pulse shrink-0" />
+                ) : (
+                  <Cloud className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-colors cursor-pointer shadow-2xs"
+                title="Iniciar sesión para guardar tu avance"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Entrar</span>
+              </button>
             )}
           </div>
         </div>
