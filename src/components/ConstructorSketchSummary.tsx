@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BuilderState } from '../types/classStructure';
 import { Code2, ArrowDown, Copy, Check, Info } from 'lucide-react';
+import { ProcessingCodeBlock } from './ProcessingCodeBlock';
 
 interface ConstructorSketchSummaryProps {
   builder: BuilderState;
@@ -93,15 +94,17 @@ void draw() {
         </button>
       </div>
 
-      {/* Main Sketch Call Preview */}
+      {/* Main Sketch Call Preview with Processing Colors */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-zinc-600">
-          <span>Invocación en <code className="text-zinc-900 font-mono bg-zinc-100 px-1 py-0.5 rounded">setup()</code> con la palabra <code className="text-zinc-900 font-mono bg-zinc-100 px-1 py-0.5 rounded">new</code>:</span>
+          <span>Invocación en <code className="text-[#006699] font-mono bg-blue-50 px-1.5 py-0.5 rounded font-semibold">setup()</code> con la palabra reservada <code className="text-[#E2661A] font-mono bg-orange-50 px-1.5 py-0.5 rounded font-bold">new</code>:</span>
           <span className="font-mono text-[11px] text-zinc-400">sketch.pde</span>
         </div>
-        <pre className="p-4 bg-zinc-50 rounded-xl border border-zinc-200 font-mono text-xs text-zinc-800 overflow-x-auto leading-relaxed">
-          {mainSketchCode}
-        </pre>
+        <ProcessingCodeBlock
+          code={mainSketchCode}
+          filename="sketch.pde"
+          showCopyButton={false}
+        />
       </div>
 
       {/* Positional Table: Parameter Order & Types */}
@@ -117,7 +120,7 @@ void draw() {
 
         {builder.constructorParams.length === 0 ? (
           <div className="p-4 bg-zinc-50 rounded-lg border border-zinc-200 text-xs text-zinc-500 text-center">
-            Este constructor no recibe parámetros. En el sketch se invoca como: <code className="text-zinc-900 font-mono">new {className}()</code>.
+            Este constructor no recibe parámetros. En el sketch se invoca como: <code className="text-zinc-900 font-mono"><span className="text-[#E2661A] font-bold">new</span> {className}()</code>.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -146,19 +149,27 @@ void draw() {
                         {idx + 1}º
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-900 font-semibold text-[11px]">
+                        <span className="px-2 py-0.5 rounded bg-orange-50 border border-orange-200 text-[#E2661A] font-bold text-[11px]">
                           {p.type}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-zinc-700">
+                      <td className="py-2.5 px-3 text-zinc-700 italic">
                         {p.name}
                       </td>
                       <td className="py-2.5 px-3 text-zinc-900 font-semibold">
                         {targetAttrName}
                       </td>
                       <td className="py-2.5 px-3">
-                        <code className="text-zinc-900 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
-                          {exampleVal}
+                        <code className="bg-zinc-50 px-2 py-0.5 rounded border border-zinc-200 font-mono">
+                          {exampleVal.startsWith('"') ? (
+                            <span className="text-[#7D4793]">{exampleVal}</span>
+                          ) : exampleVal === 'true' || exampleVal === 'false' ? (
+                            <span className="text-[#718A00] font-medium">{exampleVal}</span>
+                          ) : exampleVal.includes('color(') ? (
+                            <span><span className="text-[#006699] font-semibold">color</span><span className="text-zinc-600">(255, 100, 0)</span></span>
+                          ) : (
+                            <span className="text-[#006699]">{exampleVal}</span>
+                          )}
                         </code>
                       </td>
                     </tr>

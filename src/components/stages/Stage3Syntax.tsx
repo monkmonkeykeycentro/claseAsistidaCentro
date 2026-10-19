@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Info,
 } from 'lucide-react';
+import { renderSnippetWithBlanks } from '../../utils/processingSyntax';
 
 interface Stage3Props {
   onComplete: () => void;
@@ -239,21 +240,19 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
               {currentExercise.prompt}
             </p>
 
-            {/* Code Snippet with Live Replacement */}
-            <div className="p-4 sm:p-5 bg-zinc-50 rounded-xl border border-zinc-200 font-mono text-xs sm:text-sm text-zinc-900">
-              <div className="text-[11px] text-zinc-400 font-sans uppercase tracking-wider mb-2">
-                Código:
+            {/* Code Snippet with Processing Java syntax highlighting & live blanks */}
+            <div className="p-4 sm:p-5 bg-white rounded-xl border border-zinc-200 font-mono text-xs sm:text-sm text-zinc-900 shadow-2xs">
+              <div className="flex items-center justify-between text-[11px] text-zinc-400 font-sans uppercase tracking-wider mb-2.5 border-b border-zinc-100 pb-1.5">
+                <span>Código en Processing:</span>
+                <span className="font-mono text-zinc-400">Processing Java</span>
               </div>
-              <pre className="whitespace-pre overflow-x-auto leading-relaxed">
-                {(() => {
-                  let rendered = currentExercise.codeSnippet;
-                  currentExercise.blanks.forEach((b) => {
-                    const filled = currentInputs[b.id] || '___';
-                    rendered = rendered.replace('___', filled);
-                  });
-                  return rendered;
-                })()}
-              </pre>
+              <div className="whitespace-pre overflow-x-auto leading-relaxed">
+                {renderSnippetWithBlanks(
+                  currentExercise.codeSnippet,
+                  currentExercise.blanks,
+                  currentInputs
+                )}
+              </div>
             </div>
 
             {/* Input Blanks */}

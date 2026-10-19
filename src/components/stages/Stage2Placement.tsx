@@ -3,6 +3,7 @@ import { ETAPA2_CARDS } from '../../data/stageData';
 import { CardItem, ZoneId, DetailedToken } from '../../types/classStructure';
 import { VisualRelationsPanel } from '../VisualRelationsPanel';
 import { Check, ArrowRight, RotateCcw, Layers, Info } from 'lucide-react';
+import { renderProcessingLine } from '../../utils/processingSyntax';
 
 interface Stage2Props {
   onComplete: () => void;
@@ -164,9 +165,11 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                     )}
                   </div>
 
-                  <pre className="p-3 bg-zinc-50 rounded-lg text-zinc-800 font-mono text-xs overflow-x-auto whitespace-pre border border-zinc-200 my-2 leading-relaxed">
-                    {card.code}
-                  </pre>
+                  <div className="p-3 bg-zinc-50 rounded-lg font-mono text-xs overflow-x-auto whitespace-pre border border-zinc-200 my-2 leading-relaxed">
+                    {card.code.split('\n').map((line, lIdx) => (
+                      <div key={lIdx}>{renderProcessingLine(line, lIdx)}</div>
+                    ))}
+                  </div>
 
                   {/* Quick placement buttons with 44px min touch height */}
                   <div className="pt-2.5 border-t border-zinc-100">
@@ -259,8 +262,8 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
             </div>
 
             <div className="bg-[#fcfcfd] border border-zinc-200 rounded-xl p-5 font-mono text-xs space-y-4">
-              <div className="text-zinc-900 font-bold text-sm">
-                class Gato <span className="text-zinc-500">{'{'}</span>
+              <div className="text-zinc-950 font-bold text-sm">
+                <span className="text-[#E2661A] font-bold">class</span> Gato <span className="text-zinc-500 font-bold">{'{'}</span>
               </div>
 
               {/* Drop Zones */}
@@ -313,9 +316,11 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                             <span className="text-xs font-sans font-semibold text-zinc-900 block mb-1">
                               {card.name}
                             </span>
-                            <pre className="text-xs whitespace-pre overflow-x-auto text-zinc-800 font-mono">
-                              {card.code}
-                            </pre>
+                            <div className="text-xs whitespace-pre overflow-x-auto font-mono leading-relaxed">
+                              {card.code.split('\n').map((line, lIdx) => (
+                                <div key={lIdx}>{renderProcessingLine(line, lIdx)}</div>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>

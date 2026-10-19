@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Copy, Check, Eye } from 'lucide-react';
+import { renderProcessingLine } from '../utils/processingSyntax';
 
 interface ProcessingCodeBlockProps {
   code: string;
@@ -9,6 +10,7 @@ interface ProcessingCodeBlockProps {
   selectedToken?: string | null;
   showCopyButton?: boolean;
   className?: string;
+  filename?: string;
 }
 
 export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
@@ -19,6 +21,7 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
   selectedToken = null,
   showCopyButton = true,
   className = '',
+  filename = 'Gato.pde',
 }) => {
   const [copied, setCopied] = useState(false);
   const [hoveredBraceId, setHoveredBraceId] = useState<number | null>(null);
@@ -31,210 +34,24 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
 
   const lines = code.split('\n');
 
-  // Token rendering with elegant light-theme contrast
-  const renderTokens = (line: string, lineIndex: number) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('//')) {
-      return <span className="text-zinc-400 italic">{line}</span>;
-    }
-
-    const parts = line.split(/(\s+|[{}();,=])/g);
-
-    return parts.map((part, pIdx) => {
-      if (!part) return null;
-
-      const isSpace = /^\s+$/.test(part);
-      if (isSpace) {
-        return <span key={pIdx}>{part}</span>;
-      }
-
-      // Keywords
-      if (['class', 'new', 'this', 'return'].includes(part)) {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.(part, 'keyword')}
-            className={`font-semibold text-zinc-950 cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
-              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500 font-bold' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Return type void
-      if (part === 'void') {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.('void', 'return-type')}
-            className={`font-medium italic text-zinc-800 cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
-              selectedToken === 'void' ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Types
-      if (['String', 'int', 'float', 'boolean', 'color'].includes(part)) {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.(part, 'type')}
-            className={`font-medium text-zinc-700 cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
-              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500 text-zinc-950' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Braces
-      if (part === '{' || part === '}') {
-        return (
-          <span
-            key={pIdx}
-            onMouseEnter={() => setHoveredBraceId(lineIndex)}
-            onMouseLeave={() => setHoveredBraceId(null)}
-            onClick={() => onSelectToken?.(part, 'brace')}
-            className={`font-bold cursor-pointer rounded px-0.5 transition-colors ${
-              hoveredBraceId !== null
-                ? 'bg-zinc-200 ring-1 ring-zinc-400 text-zinc-950'
-                : 'text-zinc-800 hover:bg-zinc-200'
-            } ${selectedToken === part ? 'ring-1 ring-zinc-600 bg-zinc-200 text-zinc-950' : ''}`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Parentheses
-      if (part === '(' || part === ')') {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.(part, 'parenthesis')}
-            className={`text-zinc-600 font-semibold cursor-pointer hover:bg-zinc-200 rounded px-0.5 ${
-              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Semicolon
-      if (part === ';') {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.(';', 'semicolon')}
-            className={`text-zinc-500 font-bold cursor-pointer hover:text-zinc-900 hover:bg-zinc-200 rounded px-0.5 ${
-              selectedToken === ';' ? 'bg-zinc-200 ring-1 ring-zinc-500 text-zinc-950' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Operator
-      if (part === '=') {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.('=', 'operator')}
-            className={`text-zinc-950 font-bold cursor-pointer rounded px-1 hover:bg-zinc-200 ${
-              selectedToken === '=' ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Class / Constructor name
-      if (part === 'Gato') {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.('Gato', 'class-constructor-name')}
-            className={`text-zinc-950 font-bold cursor-pointer rounded px-0.5 hover:bg-zinc-200 transition-colors ${
-              selectedToken === 'Gato' ? 'bg-zinc-200 ring-1 ring-zinc-600' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Parameters
-      if (part.endsWith('Temp') || part.startsWith('paso')) {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.(part, 'param')}
-            className={`text-zinc-700 cursor-pointer rounded px-0.5 hover:bg-zinc-200 ${
-              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500 text-zinc-950' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Methods
-      if (['dibujar', 'caminar'].includes(part)) {
-        return (
-          <span
-            key={pIdx}
-            onClick={() => onSelectToken?.(part, 'method-name')}
-            className={`text-zinc-950 font-semibold cursor-pointer rounded px-0.5 hover:bg-zinc-200 ${
-              selectedToken === part ? 'bg-zinc-200 ring-1 ring-zinc-500' : ''
-            }`}
-          >
-            {part}
-          </span>
-        );
-      }
-
-      // Standard identifiers
-      return (
-        <span
-          key={pIdx}
-          onClick={() => onSelectToken?.(part, 'identifier')}
-          className={`text-zinc-800 cursor-pointer rounded px-0.5 hover:bg-zinc-200 ${
-            selectedToken === part ? 'bg-zinc-200 text-zinc-950 ring-1 ring-zinc-500' : ''
-          }`}
-        >
-          {part}
-        </span>
-      );
-    });
-  };
-
   return (
     <div
-      className={`relative bg-[#fcfcfd] border border-zinc-200 rounded-xl overflow-hidden font-mono text-xs sm:text-sm ${className}`}
+      className={`relative bg-[#ffffff] border border-zinc-200 rounded-xl overflow-hidden font-mono text-xs sm:text-sm shadow-xs ${className}`}
     >
       {/* Editor top header */}
       <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 border-b border-zinc-200 text-xs text-zinc-500">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-zinc-300" />
-          <span className="w-2 h-2 rounded-full bg-zinc-300" />
-          <span className="w-2 h-2 rounded-full bg-zinc-300" />
-          <span className="ml-2 font-mono text-zinc-600 text-[11px] sm:text-xs">
-            Gato.pde
+          <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+          <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+          <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+          <span className="ml-2 font-mono text-zinc-700 font-medium text-[11px] sm:text-xs">
+            {filename}
           </span>
         </div>
         {showCopyButton && (
           <button
             onClick={handleCopy}
-            className="min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs transition-colors"
+            className="min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium transition-colors"
             title="Copiar código al portapapeles"
           >
             {copied ? (
@@ -253,7 +70,7 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
       </div>
 
       {/* Code body with line numbers */}
-      <div className="p-4 sm:p-5 overflow-x-auto custom-scrollbar">
+      <div className="p-4 sm:p-5 overflow-x-auto custom-scrollbar bg-white">
         <pre className="leading-relaxed">
           {lines.map((line, idx) => {
             const lineNum = idx + 1;
@@ -267,32 +84,58 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
                 key={idx}
                 className={`flex items-start transition-colors px-2 py-0.5 rounded ${
                   isLineActive
-                    ? 'bg-zinc-100 ring-1 ring-zinc-300'
+                    ? 'bg-amber-50/60 ring-1 ring-amber-300'
                     : isSectionActive
-                    ? 'bg-zinc-100/80 ring-1 ring-zinc-300'
-                    : 'hover:bg-zinc-100/50'
+                    ? 'bg-zinc-50 ring-1 ring-zinc-200'
+                    : 'hover:bg-zinc-50/80'
                 }`}
               >
-                <span className="w-8 select-none text-right pr-4 text-zinc-400 text-xs font-mono">
+                <span className="w-8 select-none text-right pr-4 text-zinc-300 text-xs font-mono">
                   {lineNum}
                 </span>
-                <span className="flex-1 whitespace-pre">{renderTokens(line, idx)}</span>
+                <span className="flex-1 whitespace-pre">
+                  {renderProcessingLine(line, idx, {
+                    activeLine,
+                    highlightedSection,
+                    onSelectToken,
+                    selectedToken,
+                    hoveredBraceId,
+                    onHoverBrace: setHoveredBraceId,
+                  })}
+                </span>
               </div>
             );
           })}
         </pre>
       </div>
 
-      {/* Footer hint */}
-      {onSelectToken && (
-        <div className="px-4 py-2 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <Eye className="w-3 h-3 text-zinc-400" />
-            Haz clic en un elemento para ver su función
+      {/* Footer with Processing Java syntax guide */}
+      <div className="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex flex-wrap items-center justify-between gap-2">
+        {onSelectToken ? (
+          <span className="flex items-center gap-1.5 text-zinc-600">
+            <Eye className="w-3.5 h-3.5 text-zinc-400" />
+            Haz clic en una palabra para inspeccionar su sintaxis
           </span>
-          <span className="text-zinc-400 font-mono hidden sm:inline">Processing Java</span>
+        ) : (
+          <span className="font-mono text-zinc-400">Processing Java PDE</span>
+        )}
+        
+        {/* Visual syntax legend */}
+        <div className="flex items-center gap-3 text-[10px] font-mono">
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#E2661A]" />
+            <span className="text-[#E2661A] font-bold">reservadas/tipos</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#006699]" />
+            <span className="text-[#006699] font-medium">funciones</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#718A00]" />
+            <span className="text-[#718A00] font-medium">sistema</span>
+          </span>
         </div>
-      )}
+      </div>
     </div>
   );
 };
