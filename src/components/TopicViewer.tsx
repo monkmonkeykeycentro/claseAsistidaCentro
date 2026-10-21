@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TopicItem } from '../data/topicsData';
 import { ProcessingCodeBlock } from './ProcessingCodeBlock';
+import { ObjectArraysSessionView } from './ObjectArraysSessionView';
 import {
   BookOpen,
   ArrowRight,
@@ -18,6 +19,7 @@ interface TopicViewerProps {
   onNavigateTopic: (topicId: string) => void;
   onOpenCatalogue: () => void;
   onBackToHome?: () => void;
+  onCompleteChallenge?: (challengeId: string) => void;
 }
 
 export const TopicViewer: React.FC<TopicViewerProps> = ({
@@ -25,10 +27,24 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
   onNavigateTopic,
   onOpenCatalogue,
   onBackToHome,
+  onCompleteChallenge,
 }) => {
   const [activeConceptIdx, setActiveConceptIdx] = useState<number>(0);
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
   const [showAnswerFeedback, setShowAnswerFeedback] = useState<boolean>(false);
+
+  // If this is Topic 7 (Object Arrays & Collections), display the full interactive session view
+  if (topic.id === 'object-arrays') {
+    return (
+      <ObjectArraysSessionView
+        topic={topic}
+        onNavigateHome={onBackToHome || (() => {})}
+        onOpenCatalogue={onOpenCatalogue}
+        onNavigateTopic={onNavigateTopic}
+        onCompleteChallenge={onCompleteChallenge}
+      />
+    );
+  }
 
   const activeConcept = topic.concepts[activeConceptIdx] || topic.concepts[0];
 

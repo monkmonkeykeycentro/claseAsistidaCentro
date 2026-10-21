@@ -438,60 +438,125 @@ void draw() {
     number: 7,
     title: 'Arreglos y Colecciones de Objetos',
     category: 'Programación Orientada a Objetos',
-    badge: 'Gato[] misGatos',
-    summary: 'Gestión de múltiples instancias: arreglos de objetos, inicialización en bucle y simulación de enjambres o partículas.',
-    estimatedTime: '25 min',
-    conceptsCount: 2,
-    hasInteractiveWorkshop: false,
+    badge: 'Gato[] y ArrayList<Gato>',
+    summary: 'Gestión masiva de instancias: reserva en memoria, inicialización canónica en bucle, el error de NullPointerException y sistemas dinámicos con ArrayList.',
+    estimatedTime: '35 min',
+    conceptsCount: 4,
+    hasInteractiveWorkshop: true,
     concepts: [
       {
-        id: 'oa-array',
-        title: 'Arreglo de Objetos con tamaño fijo',
-        summary: 'Crear una lista de N objetos y construirlos en un bucle for dentro de setup().',
-        explanation: 'En lugar de tener gato1, gato2, gato3... declaras un arreglo "Gato[] gatos = new Gato[50];". Luego usas un for para instanciar cada uno con posiciones aleatorias.',
-        codeSnippet: `Gato[] camada = new Gato[20]; // Arreglo de 20 gatos
+        id: 'oa-scale',
+        title: '1. El problema de escala: de 1 a N objetos',
+        summary: 'Por qué declarar gato1, gato2, gato3... no escala y cómo un arreglo agrupa referencias bajo un solo nombre.',
+        explanation: 'En el módulo anterior creamos un solo objeto con "Gato miGato = new Gato(...)". Pero en el diseño generativo queremos simular 20, 100 o 1,000 entidades. Un arreglo de objetos (Gato[]) permite tratar a todo un conjunto de criaturas como una sola entidad indexada de [0] a [N-1].',
+        codeSnippet: `// ❌ NO ESCALA: Declarar variables individuales
+// Gato gato1, gato2, gato3, gato4, gato5;
+
+// ✅ ESCALA: Un arreglo homogéneo de referencias a Gato
+Gato[] camada = new Gato[60]; // 60 ranuras reservadas en memoria`,
+        didacticTip: 'El corchete [] después del tipo de dato (Gato[]) le indica a Java que no estás creando un gato, sino un contenedor de gatos.',
+        commonMistake: 'Confundir el tamaño total del arreglo con el último índice: si el tamaño es 60, los índices van de 0 a 59 (camada[60] lanzará ArrayIndexOutOfBoundsException).',
+      },
+      {
+        id: 'oa-npe',
+        title: '2. Anatomía en Memoria y el temido NullPointerException',
+        summary: 'new Gato[N] solo reserva casillas vacías (null); debes instanciar cada casilla individualmente.',
+        explanation: 'El error más común en Processing ocurre al declarar "Gato[] camada = new Gato[10];" e inmediatamente intentar llamar a "camada[0].dibujar();". El programa colapsa con "NullPointerException" porque la casilla [0] está vacía (apunta a null). Para que exista un gato real, debes ejecutar "camada[0] = new Gato(...)".',
+        codeSnippet: `Gato[] camada = new Gato[5]; // Las 5 casillas contienen 'null'
+
+void setup() {
+  size(400, 300);
+  
+  // ⚠️ ERROR CLÁSICO:
+  // camada[0].dibujar(); // ¡Lanza NullPointerException!
+
+  // ✅ SOLUCIÓN: Construir el objeto antes de usarlo
+  camada[0] = new Gato("Michi Alfa", 100, 150);
+  camada[0].dibujar(); // ¡Ahora sí funciona!
+}`,
+        didacticTip: 'Piensa en el arreglo como un casillero de estacionamiento: "new Gato[10]" construye los 10 cajones vacíos. "new Gato(...)" estaciona el automóvil en cada cajón.',
+        commonMistake: 'Olvidar el bucle for en setup() que rellena cada casilla con un new Gato(...).',
+      },
+      {
+        id: 'oa-loop',
+        title: '3. El Bucle Canónico de Dos Tiempos (setup y draw)',
+        summary: 'Tiempo 1 en setup() para instanciar con new; Tiempo 2 en draw() para actualizar y dibujar en bucle.',
+        explanation: 'El patrón arquitectónico universal en Processing para arreglos de objetos consta de dos bucles for idénticos: el primero en setup() usa "camada[i] = new Gato(...)" para dar vida a cada elemento. El segundo en draw() usa "camada[i].actualizar(); camada[i].dibujar();" en cada fotograma.',
+        codeSnippet: `Gato[] camada = new Gato[40];
 
 void setup() {
   size(600, 400);
+  // TIEMPO 1: Inicialización masiva en bucle
   for (int i = 0; i < camada.length; i++) {
-    // Instancia cada gato en una posición aleatoria:
     camada[i] = new Gato("Gato" + i, random(width), random(height));
   }
 }
 
 void draw() {
   background(255);
+  // TIEMPO 2: Actualización y render continuo
   for (int i = 0; i < camada.length; i++) {
-    camada[i].dibujar(); // Dibuja todos los gatos
+    camada[i].mover();
+    camada[i].dibujar();
   }
 }`,
-        didacticTip: 'Crear el arreglo "new Gato[20]" solo reserva 20 espacios vacíos (null). Debes construir cada uno individualmente con "camada[i] = new Gato(...)".',
+        didacticTip: 'Usa siempre "camada.length" (sin paréntesis) para la condición del bucle for. Así, si luego cambias el tamaño de 40 a 200, todo tu código se adaptará automáticamente.',
+        commonMistake: 'Escribir "camada.length()" con paréntesis. En Java, los arreglos nativos usan la propiedad .length sin paréntesis; las cadenas String usan .length().',
       },
       {
         id: 'oa-arraylist',
-        title: 'Colecciones dinámicas con ArrayList',
-        summary: 'Para juegos donde los objetos nacen y mueren continuamente, ArrayList permite agregar (add) y remover (remove) instancias.',
-        explanation: 'A diferencia de los arreglos con tamaño estático, un ArrayList crece o disminuye dinámicamente según sea necesario.',
+        title: '4. Colecciones Dinámicas con ArrayList<Gato>',
+        summary: 'Para sistemas de partículas o entidades que nacen y mueren continuamente, ArrayList permite crecer y decrecer.',
+        explanation: 'Los arreglos normales Gato[] tienen un tamaño estático que no puede cambiar. Si un usuario hace clic para crear gatos o las partículas desaparecen al envejecer, usamos ArrayList<Gato>. Sus métodos clave son: .add(nuevoObjeto), .get(i) para leer, .size() para saber cuántos hay, y .remove(i) para eliminar.',
         codeSnippet: `ArrayList<Gato> gatos = new ArrayList<Gato>();
 
 void setup() {
-  size(400, 400);
+  size(600, 400);
 }
 
 void draw() {
   background(255);
-  for (int i = 0; i < gatos.size(); i++) {
+  // Recorrido inverso seguro para poder remover sin saltar índices:
+  for (int i = gatos.size() - 1; i >= 0; i--) {
     Gato g = gatos.get(i);
+    g.mover();
     g.dibujar();
+    
+    // Si el gato sale de la pantalla o expira, se elimina:
+    if (g.haMuerto()) {
+      gatos.remove(i);
+    }
   }
 }
 
 void mousePressed() {
-  // Cada clic crea y añade un nuevo gato en el mouse:
+  // Cada clic añade un nuevo gato en el puntero del mouse:
   gatos.add(new Gato("Gatito", mouseX, mouseY));
 }`,
-        didacticTip: 'Usa ArrayList cuando no sepas de antemano cuántos objetos existirán durante la ejecución del sketch.',
+        didacticTip: 'Cuando elimines elementos con .remove(i) dentro de un bucle for, SIEMPRE recorre la lista de atrás hacia adelante (i = gatos.size() - 1; i >= 0; i--). Si recorres hacia adelante, al borrar un elemento los siguientes se desplazan y el bucle se saltará uno.',
+        commonMistake: 'Intentar acceder con corchetes "gatos[i]" a un ArrayList. En ArrayList debes usar siempre el método "gatos.get(i)".',
       },
     ],
+    quickChallenge: {
+      question: 'Si ejecutas "Gato[] lista = new Gato[10];" y en la siguiente línea ejecutas "lista[0].dibujar();", ¿qué sucederá?',
+      codeTemplate: 'Gato[] lista = new Gato[10];\nlista[0].dibujar(); // ???',
+      options: [
+        {
+          text: 'Ocurrirá un NullPointerException porque solo se reservó el espacio, pero no se ha creado ningún Gato con "new".',
+          isCorrect: true,
+          feedback: '¡Exacto! "new Gato[10]" solo crea 10 casillas que contienen "null". Debes hacer "lista[0] = new Gato(...);" antes de llamar a sus métodos.',
+        },
+        {
+          text: 'Se dibujará un gato con valores por defecto (0, 0, color negro).',
+          isCorrect: false,
+          feedback: 'Incorrecto. Java no crea objetos automáticamente en arreglos de clases; la casilla permanece en "null" hasta que tú llames explícitamente al constructor.',
+        },
+        {
+          text: 'Dará un error de compilación porque los arreglos solo pueden almacenar números (int y float).',
+          isCorrect: false,
+          feedback: 'Incorrecto. Los arreglos en Java pueden almacenar cualquier tipo de dato, incluyendo objetos de clases que tú mismo hayas definido.',
+        },
+      ],
+    },
   },
 ];

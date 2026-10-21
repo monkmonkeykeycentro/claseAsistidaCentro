@@ -125,9 +125,15 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
                       </span>
                       <div className="flex items-center gap-1.5">
                         {isClasses && (
-                          <span className="flex items-center gap-1 text-[11px] font-medium bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full">
-                            <Sparkles className="w-3 h-3 text-amber-600" />
+                          <span className="flex items-center gap-1 text-[11px] font-medium bg-zinc-100 text-zinc-900 border border-zinc-300 px-2 py-0.5 rounded">
+                            <Sparkles className="w-3 h-3 text-zinc-800" />
                             Taller interactivo
+                          </span>
+                        )}
+                        {topic.id === 'object-arrays' && (
+                          <span className="flex items-center gap-1 text-[11px] font-medium bg-zinc-100 text-zinc-900 border border-zinc-300 px-2 py-0.5 rounded">
+                            <Sparkles className="w-3 h-3 text-zinc-800" />
+                            Laboratorio en vivo
                           </span>
                         )}
                         <span className="text-[11px] font-mono text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">

@@ -1,11 +1,12 @@
 import React from 'react';
 import { AppUser } from '../services/firebase';
-import { User, Cloud, BookOpen } from 'lucide-react';
+import { User, Cloud, BookOpen, Sparkles } from 'lucide-react';
 
 interface HeaderProps {
-  currentView: 'home' | 'workshop' | 'topic';
+  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab';
   onNavigateHome: () => void;
   onOpenCatalogue: () => void;
+  onNavigateOopLab: () => void;
   currentUser: AppUser | null;
   onOpenAuth: () => void;
   isSyncing?: boolean;
@@ -15,6 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigateHome,
   onOpenCatalogue,
+  onNavigateOopLab,
   currentUser,
   onOpenAuth,
   isSyncing,
@@ -56,6 +58,18 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               Inicio
+            </button>
+
+            <button
+              onClick={onNavigateOopLab}
+              className={`min-h-[44px] px-3 py-2 text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                currentView === 'oop-lab'
+                  ? 'bg-zinc-900 text-white font-semibold shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Laboratorio POO</span>
             </button>
 
             <button

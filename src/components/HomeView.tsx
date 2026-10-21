@@ -17,6 +17,7 @@ import {
 
 interface HomeViewProps {
   onOpenWorkshop: (stage?: StageId) => void;
+  onOpenOopLab: () => void;
   onSelectTopic: (topicId: string) => void;
   progress: UserProgress;
   currentUser: AppUser | null;
@@ -26,6 +27,7 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onOpenWorkshop,
+  onOpenOopLab,
   onSelectTopic,
   progress,
   currentUser,
@@ -200,6 +202,61 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Card 2: Laboratorio de Objetos & Arreglos Dinámicos */}
+        <div className="relative rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-900 to-zinc-950 text-white p-6 sm:p-8 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
+                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                  <span>LABORATORIO POO</span>
+                </span>
+                <span>Módulo 1: Pelota · Módulo 2: Burbuja · Constructor & Eventos</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+                Laboratorio de Objetos: Construcción Progresiva y Arreglos
+              </h2>
+
+              <p className="text-sm sm:text-base text-zinc-300 leading-relaxed font-sans">
+                Aprende POO siguiendo los 5 momentos (Observar → Describir → Construir → Experimentar → Aplicar).
+                Explora los 7 métodos canónicos, gobierna arreglos dinámicos en vivo, añade condicionales con <code className="text-amber-300">if</code> y programa eventos de <code className="text-amber-300">mousePressed()</code> y <code className="text-amber-300">keyPressed()</code>.
+              </p>
+
+              {/* Modules Highlights */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-xs">
+                  <span className="font-bold text-amber-300 block">Módulo 1: Pelota</span>
+                  <span className="text-[11px] text-zinc-300">7 métodos canónicos y estado</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-xs">
+                  <span className="font-bold text-sky-300 block">Módulo 2: Burbuja</span>
+                  <span className="text-[11px] text-zinc-300">Física ascendente y ciclos</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-xs">
+                  <span className="font-bold text-emerald-300 block">Constructor & Eventos</span>
+                  <span className="text-[11px] text-zinc-300">if, mousePress, keyPress</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 shrink-0 lg:w-64">
+              <button
+                onClick={() => onOpenOopLab()}
+                className="w-full min-h-[48px] px-6 py-3.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>Entrar al Laboratorio</span>
+                <ArrowRight className="w-4 h-4 text-zinc-950" />
+              </button>
+
+              <p className="text-[11px] text-zinc-400 text-center font-sans">
+                Lienzo interactivo 60 FPS · Processing Java
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* 3. Complete Curriculum Topics Section */}
@@ -253,9 +310,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       onClick={() => onOpenWorkshop()}
                       className="min-h-[40px] px-3 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <span>Taller</span>
+                      <span>Taller POO</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+                  ) : topic.id === 'object-arrays' ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => onOpenOopLab()}
+                        className="min-h-[40px] px-3 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Laboratorio</span>
+                      </button>
+                      <button
+                        onClick={() => onSelectTopic('object-arrays')}
+                        className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        Teoría
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={() => onSelectTopic(topic.id)}

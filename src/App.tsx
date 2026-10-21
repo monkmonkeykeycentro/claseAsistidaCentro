@@ -13,6 +13,7 @@ import { FocusedWorkshopView } from './components/FocusedWorkshopView';
 import { TopicsCatalogueModal } from './components/TopicsCatalogueModal';
 import { TopicViewer } from './components/TopicViewer';
 import { AuthModal } from './components/AuthModal';
+import { OopLabView } from './components/oopLab/OopLabView';
 import {
   AppUser,
   subscribeToAuth,
@@ -36,7 +37,7 @@ const DEFAULT_PROGRESS: UserProgress = {
   stage4BuilderCustomized: false,
 };
 
-type ViewMode = 'home' | 'workshop' | 'topic';
+type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>('home');
@@ -226,6 +227,7 @@ export default function App() {
         currentView={activeView}
         onNavigateHome={() => setActiveView('home')}
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
+        onNavigateOopLab={() => setActiveView('oop-lab')}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         isSyncing={isSyncing}
@@ -248,6 +250,7 @@ export default function App() {
                 setActiveView('topic');
               }
             }}
+            onOpenOopLab={() => setActiveView('oop-lab')}
             progress={progress}
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -283,6 +286,14 @@ export default function App() {
             }}
             onOpenCatalogue={() => setIsCatalogueOpen(true)}
             onBackToHome={() => setActiveView('home')}
+          />
+        )}
+
+        {/* VIEW 4: Laboratorio de Objetos (Pelota & Burbuja) */}
+        {activeView === 'oop-lab' && (
+          <OopLabView
+            onBackToHome={() => setActiveView('home')}
+            onOpenCatalogue={() => setIsCatalogueOpen(true)}
           />
         )}
       </main>
