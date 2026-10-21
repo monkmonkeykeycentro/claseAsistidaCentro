@@ -62,10 +62,14 @@ export interface LabInstanceObject {
   y: number;
   diametro: number;
   velocidad: number;
+  velocidadX?: number;
+  velocidadY?: number;
   colorHex: string;
   opacidad?: number;
   vx?: number;
   vy?: number;
+  isFloating?: boolean;
+  floatOffset?: number;
 }
 
 export interface HintLevels {

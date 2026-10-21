@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StageActivity, LearningMoment } from '../../types/oopLab';
 import {
   HelpCircle,
@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  RotateCcw,
 } from 'lucide-react';
 
 interface LearningPanelProps {
@@ -46,6 +47,13 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
   const [selectedOptId, setSelectedOptId] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [activeHintLevel, setActiveHintLevel] = useState<1 | 2 | 3 | null>(null);
+
+  // CRITICAL FIX: Reset question selection and feedback whenever moving between stages/activities
+  useEffect(() => {
+    setSelectedOptId(null);
+    setShowFeedback(false);
+    setActiveHintLevel(null);
+  }, [activity.id, currentStageIdx]);
 
   const momentInfo = MOMENT_LABELS[activity.moment];
   const challenge = activity.challenge;
@@ -157,6 +165,21 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                   )}
                 </div>
                 <p>{chosenOption.feedback}</p>
+                <div className="pt-2 mt-2 border-t border-current/15 flex items-center justify-between">
+                  <span className="text-[11px] opacity-80">
+                    {chosenOption.isCorrect ? '¡Comprendido! Puedes avanzar o explorar otra opción.' : 'Puedes cambiar tu selección o volver a intentar.'}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSelectedOptId(null);
+                      setShowFeedback(false);
+                    }}
+                    className="min-h-[28px] px-2.5 py-1 rounded bg-white/80 hover:bg-white text-zinc-900 border border-current/20 font-medium text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3 text-zinc-600" />
+                    <span>Reintentar pregunta</span>
+                  </button>
+                </div>
               </div>
             )}
 

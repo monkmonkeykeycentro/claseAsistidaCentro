@@ -70,18 +70,53 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
       if (isContinuousAnimation) {
         instances.forEach((inst) => {
           if (isPelota) {
-            inst.x += inst.velocidad;
+            // 2D Fluid Movement with X and Y velocities
+            const vx = inst.vx ?? inst.velocidadX ?? inst.velocidad;
+            const vy = inst.vy ?? inst.velocidadY ?? 2.0;
+            inst.x += vx;
+            inst.y += vy;
+
+            // Organic Sine Wave Floating Modulation
+            if (inst.isFloating) {
+              inst.floatOffset = (inst.floatOffset ?? 0) + 0.07;
+              inst.y += Math.sin(inst.floatOffset) * 2.2;
+            }
+
             const r = inst.diametro / 2;
+
+            // Horizontal bouncing (walls left & right)
             if (inst.x > width - r) {
               inst.x = width - r;
-              inst.velocidad *= -1;
+              inst.vx = -Math.abs(vx);
+              inst.velocidadX = inst.vx;
+              inst.velocidad = inst.vx;
             } else if (inst.x < r) {
               inst.x = r;
-              inst.velocidad *= -1;
+              inst.vx = Math.abs(vx);
+              inst.velocidadX = inst.vx;
+              inst.velocidad = inst.vx;
+            }
+
+            // Vertical bouncing (floor & ceiling)
+            if (inst.y > height - r) {
+              inst.y = height - r;
+              inst.vy = -Math.abs(vy);
+              inst.velocidadY = inst.vy;
+            } else if (inst.y < r) {
+              inst.y = r;
+              inst.vy = Math.abs(vy);
+              inst.velocidadY = inst.vy;
             }
           } else {
-            // Burbuja: asciende restando velocidad a Y
+            // Burbuja: asciende restando velocidad a Y y oscila armónicamente en X
             inst.y -= inst.velocidad;
+            inst.x += Math.sin(inst.y * 0.04) * 1.4;
+
+            if (inst.isFloating) {
+              inst.floatOffset = (inst.floatOffset ?? 0) + 0.06;
+              inst.y += Math.sin(inst.floatOffset) * 1.6;
+            }
+
             const r = inst.diametro / 2;
             // Respawn with if when leaves top
             if (inst.y < -r) {
@@ -148,6 +183,18 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
           ctx.fill();
         }
 
+        // Floating Aura if flotar() is active
+        if (inst.isFloating) {
+          ctx.save();
+          ctx.strokeStyle = isPelota ? 'rgba(226, 102, 26, 0.5)' : 'rgba(56, 189, 248, 0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.arc(inst.x, inst.y, radius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
         // Selection Ring & Coordinate Callout
         if (isSelected) {
           ctx.strokeStyle = isPelota ? '#18181B' : '#38BDF8';
@@ -164,11 +211,16 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
           ctx.arc(inst.x, inst.y, 2.5, 0, Math.PI * 2);
           ctx.fill();
 
-          // Measurement badge floating above
+          // Measurement badge floating above with 2D velocity
           ctx.fillStyle = isPelota ? '#18181B' : '#0369A1';
           ctx.font = 'bold 10px ui-monospace, SFMono-Regular, Menlo, monospace';
           ctx.textAlign = 'center';
-          const label = instances.length > 1 ? `[${idx}] ø ${Math.round(inst.diametro)}px` : `ø ${Math.round(inst.diametro)}px`;
+          const vxVal = (inst.vx ?? inst.velocidadX ?? inst.velocidad).toFixed(1);
+          const vyVal = (inst.vy ?? inst.velocidadY ?? 2.0).toFixed(1);
+          const velLabel = isPelota ? ` · v:(${vxVal}, ${vyVal})` : '';
+          const label = instances.length > 1 
+            ? `[${idx}] ø${Math.round(inst.diametro)}px${velLabel}` 
+            : `ø${Math.round(inst.diametro)}px${velLabel}`;
           ctx.fillText(label, inst.x, inst.y - radius - 10);
         } else if (instances.length > 1) {
           // Label for other instances

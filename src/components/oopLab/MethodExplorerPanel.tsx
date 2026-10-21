@@ -51,6 +51,9 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
     nuevoDiametro: 75,
     nuevoColor: '#006699',
     nuevaVelocidad: 4.5,
+    nuevaVX: 4.0,
+    nuevaVY: 2.5,
+    intensidad: 3.0,
     nuevaX: 180,
     nuevaY: 150,
     incremento: 8,
@@ -88,16 +91,26 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
     const callString = buildCallString(activeMethod);
     let effectText = `Ejecutado ${activeMethod.name}()`;
 
-    if (activeMethod.id === 'mover' || activeMethod.id === 'subir') {
-      effectText = isPelota ? `Avanzó ${selectedInstance.velocidad} px en el eje X` : `Ascendió ${selectedInstance.velocidad} px en el eje Y`;
+    if (activeMethod.id === 'mover') {
+      effectText = isPelota
+        ? `Desplazamiento 2D: x += ${selectedInstance.velocidadX?.toFixed(1) ?? selectedInstance.velocidad}, y += ${selectedInstance.velocidadY?.toFixed(1) ?? '0.0'}`
+        : `Desplazamiento horizontal`;
+    } else if (activeMethod.id === 'subir') {
+      effectText = `Ascendió ${selectedInstance.velocidad} px en el eje Y hacia la superficie`;
+    } else if (activeMethod.id === 'rebotar') {
+      effectText = `Evaluó límites del lienzo (0, width, height) e invirtió velocidades de choque`;
+    } else if (activeMethod.id === 'flotar') {
+      effectText = `Onda sinusoidal activada: y = yBase + sin(...) * ${paramInputs.intensidad ?? 3.0}`;
     } else if (activeMethod.id === 'cambiarTamano') {
       effectText = `Diámetro actualizado a ${paramInputs.nuevoDiametro} px`;
     } else if (activeMethod.id === 'cambiarColor') {
       effectText = `Color actualizado a ${paramInputs.nuevoColor}`;
     } else if (activeMethod.id === 'invertirDireccion') {
-      effectText = `Dirección invertida: velocidad multiplicada por -1`;
+      effectText = `Dirección invertida: velocidadX multiplicada por -1`;
     } else if (activeMethod.id === 'cambiarVelocidad') {
-      effectText = `Velocidad actualizada a ${paramInputs.nuevaVelocidad} px/frame`;
+      effectText = isPelota
+        ? `Velocidades 2D fijadas a: vx = ${paramInputs.nuevaVX}, vy = ${paramInputs.nuevaVY}`
+        : `Velocidad actualizada a ${paramInputs.nuevaVelocidad} px/frame`;
     } else if (activeMethod.id === 'reiniciar') {
       effectText = `Reubicado en coordenadas (${paramInputs.nuevaX}, ${paramInputs.nuevaY})`;
     } else if (activeMethod.id === 'crecer') {
@@ -181,14 +194,21 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
               </span>
             </div>
             <div className="bg-white p-2 rounded-lg border border-zinc-200">
-              <span className="text-[10px] text-zinc-400 block font-sans">velocidad</span>
-              <span className="font-bold text-zinc-900 tabular-nums">
-                {selectedInstance.velocidad > 0 ? `+${selectedInstance.velocidad}` : selectedInstance.velocidad}
+              <span className="text-[10px] text-zinc-400 block font-sans">
+                {isPelota ? 'vel (vx, vy)' : 'velocidad'}
+              </span>
+              <span className="font-bold text-zinc-900 tabular-nums truncate block">
+                {isPelota
+                  ? `${(selectedInstance.velocidadX ?? selectedInstance.velocidad).toFixed(1)}, ${(selectedInstance.velocidadY ?? 0).toFixed(1)}`
+                  : (selectedInstance.velocidad > 0 ? `+${selectedInstance.velocidad}` : selectedInstance.velocidad)}
               </span>
             </div>
             <div className="bg-white p-2 rounded-lg border border-zinc-200">
-              <span className="text-[10px] text-zinc-400 block font-sans">
-                {isPelota ? 'tono' : 'opacidad'}
+              <span className="text-[10px] text-zinc-400 block font-sans flex items-center justify-between">
+                <span>{isPelota ? 'tono' : 'opacidad'}</span>
+                {selectedInstance.isFloating && (
+                  <span className="text-[9px] bg-sky-100 text-sky-800 font-bold px-1 rounded">🌊 Flotando</span>
+                )}
               </span>
               <span className="font-bold text-zinc-900 truncate block">
                 {isPelota ? selectedInstance.colorHex : `${selectedInstance.opacidad ?? 160}/255`}

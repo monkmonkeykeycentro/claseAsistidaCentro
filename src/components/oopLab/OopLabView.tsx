@@ -78,27 +78,39 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       id: 0,
       name: 'Pelota Alfa',
       x: 100,
-      y: 160,
+      y: 140,
       diametro: 50,
-      velocidad: 3.0,
+      velocidad: 3.5,
+      velocidadX: 3.5,
+      velocidadY: 2.2,
+      vx: 3.5,
+      vy: 2.2,
       colorHex: '#E2661A',
     },
     {
       id: 1,
       name: 'Pelota Beta',
       x: 240,
-      y: 160,
+      y: 190,
       diametro: 65,
-      velocidad: 4.5,
+      velocidad: 4.2,
+      velocidadX: -3.0,
+      velocidadY: 3.4,
+      vx: -3.0,
+      vy: 3.4,
       colorHex: '#006699',
     },
     {
       id: 2,
       name: 'Pelota Gamma',
       x: 380,
-      y: 160,
-      diametro: 40,
-      velocidad: 2.2,
+      y: 130,
+      diametro: 42,
+      velocidad: 2.8,
+      velocidadX: 2.8,
+      velocidadY: -2.0,
+      vx: 2.8,
+      vy: -2.0,
       colorHex: '#059669',
     },
   ]);
@@ -198,17 +210,44 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
         const updated = { ...inst };
 
         if (method.id === 'mover') {
-          updated.x += updated.velocidad;
+          const vx = updated.vx ?? updated.velocidadX ?? updated.velocidad;
+          const vy = updated.vy ?? updated.velocidadY ?? 2.0;
+          updated.x += vx;
+          updated.y += vy;
         } else if (method.id === 'subir') {
           updated.y -= updated.velocidad;
+        } else if (method.id === 'rebotar') {
+          updated.vx = -(updated.vx ?? updated.velocidadX ?? 3.5);
+          updated.vy = -(updated.vy ?? updated.velocidadY ?? 2.2);
+          updated.velocidadX = updated.vx;
+          updated.velocidadY = updated.vy;
+          updated.velocidad = updated.vx;
+        } else if (method.id === 'flotar') {
+          updated.isFloating = true;
+          const amp = Number(paramValues.intensidad || 5.0);
+          updated.y += Math.sin(updated.x * 0.05) * amp;
         } else if (method.id === 'cambiarTamano') {
           updated.diametro = Number(paramValues.nuevoDiametro || 60);
         } else if (method.id === 'cambiarColor') {
           updated.colorHex = String(paramValues.nuevoColor || '#E2661A');
         } else if (method.id === 'cambiarVelocidad') {
-          updated.velocidad = Number(paramValues.nuevaVelocidad || 3);
+          if (paramValues.nuevaVX !== undefined) {
+            updated.velocidadX = Number(paramValues.nuevaVX);
+            updated.vx = updated.velocidadX;
+          }
+          if (paramValues.nuevaVY !== undefined) {
+            updated.velocidadY = Number(paramValues.nuevaVY);
+            updated.vy = updated.velocidadY;
+          }
+          if (paramValues.nuevaVelocidad !== undefined) {
+            updated.velocidad = Number(paramValues.nuevaVelocidad);
+          }
         } else if (method.id === 'invertirDireccion') {
           updated.velocidad *= -1;
+          if (updated.vx) updated.vx *= -1;
+          if (updated.vy) updated.vy *= -1;
+          if (updated.velocidadX) updated.velocidadX *= -1;
+          if (updated.velocidadY) updated.velocidadY *= -1;
         } else if (method.id === 'reiniciar') {
           updated.x = Number(paramValues.nuevaX || 150);
           updated.y = Number(paramValues.nuevaY || 150);

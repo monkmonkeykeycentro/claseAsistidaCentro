@@ -15,7 +15,7 @@ export const PELOTA_MODULE: ModuleProgression = {
     {
       name: 'y',
       type: 'float',
-      initialValue: 180,
+      initialValue: 160,
       description: 'Posición vertical en el lienzo cartesiano.',
       visualRole: 'Determina en qué fila de píxeles se ubica el centro de la pelota.',
     },
@@ -27,11 +27,18 @@ export const PELOTA_MODULE: ModuleProgression = {
       visualRole: 'Controla el tamaño físico del objeto dibujado con ellipse().',
     },
     {
-      name: 'velocidad',
+      name: 'velocidadX',
       type: 'float',
-      initialValue: 3.0,
-      description: 'Cantidad de píxeles que la pelota avanza en cada ciclo.',
-      visualRole: 'Define qué tan rápido y hacia dónde (positivo = derecha, negativo = izquierda) se desplaza.',
+      initialValue: 3.5,
+      description: 'Cantidad de píxeles que la pelota avanza en el eje horizontal X.',
+      visualRole: 'Define la rapidez horizontal (positivo = derecha, negativo = izquierda).',
+    },
+    {
+      name: 'velocidadY',
+      type: 'float',
+      initialValue: 2.2,
+      description: 'Cantidad de píxeles que la pelota avanza en el eje vertical Y.',
+      visualRole: 'Define la rapidez vertical para un movimiento 2D fluido y diagonal.',
     },
     {
       name: 'tono',
@@ -63,16 +70,66 @@ export const PELOTA_MODULE: ModuleProgression = {
       id: 'mover',
       name: 'mover',
       signature: 'void mover()',
-      description: 'Desplaza la pelota sumando el valor del campo velocidad a la posición x.',
-      fieldsUsed: ['x', 'velocidad'],
-      fieldsModified: ['x'],
+      description: 'Desplaza la pelota fluidamente en 2D sumando velocidadX a x y velocidadY a y.',
+      fieldsUsed: ['x', 'y', 'velocidadX', 'velocidadY'],
+      fieldsModified: ['x', 'y'],
       parameters: [],
       executionType: 'continuous',
       codeSnippet: `void mover() {
-  x = x + velocidad;
+  x = x + velocidadX;
+  y = y + velocidadY;
 }`,
       explanation:
-        'A diferencia de mostrar(), mover() altera el estado interno del objeto: toma el valor actual de x, le suma velocidad y vuelve a guardar el resultado en x.',
+        'Al mover en ambos ejes simultáneamente, la pelota adquiere una trayectoria diagonal natural en lugar de estar atada a un eje unidimensional.',
+    },
+    {
+      id: 'rebotar',
+      name: 'rebotar',
+      signature: 'void rebotar()',
+      description: 'Comprueba los 4 bordes de la ventana (izq, der, arriba, abajo) e invierte la velocidad correspondiente.',
+      fieldsUsed: ['x', 'y', 'diametro', 'velocidadX', 'velocidadY'],
+      fieldsModified: ['velocidadX', 'velocidadY'],
+      parameters: [],
+      executionType: 'continuous',
+      codeSnippet: `void rebotar() {
+  float r = diametro / 2;
+  // Rebote horizontal en X
+  if (x > width - r || x < r) {
+    velocidadX = velocidadX * -1;
+  }
+  // Rebote vertical en Y
+  if (y > height - r || y < r) {
+    velocidadY = velocidadY * -1;
+  }
+}`,
+      explanation:
+        'Evalúa condicionales if en ambas dimensiones. Si choca con las paredes laterales invierte velocidadX; si choca con piso o techo invierte velocidadY.',
+    },
+    {
+      id: 'flotar',
+      name: 'flotar',
+      signature: 'void flotar(float intensidad)',
+      description: 'Genera una oscilación armónica suave usando la función senoidal sin(), simulando flotación orgánica.',
+      fieldsUsed: ['x', 'y'],
+      fieldsModified: ['y'],
+      parameters: [
+        {
+          name: 'intensidad',
+          type: 'float',
+          defaultValue: 4.0,
+          min: 1.0,
+          max: 12.0,
+          step: 0.5,
+          description: 'Amplitud de la onda senoidal en píxeles.',
+        },
+      ],
+      executionType: 'continuous',
+      codeSnippet: `void flotar(float intensidad) {
+  // Ondulación senoidal periódica
+  y = y + sin(x * 0.05) * intensidad;
+}`,
+      explanation:
+        'Aprovecha la función matemática sin() de Processing para modular suavemente el valor del campo y en función de x, creando un efecto fluido y vivaz.',
     },
     {
       id: 'cambiarTamano',
@@ -124,42 +181,53 @@ export const PELOTA_MODULE: ModuleProgression = {
     {
       id: 'cambiarVelocidad',
       name: 'cambiarVelocidad',
-      signature: 'void cambiarVelocidad(float nuevaVelocidad)',
-      description: 'Ajusta la rapidez y sentido con la que la pelota se desplaza.',
+      signature: 'void cambiarVelocidad(float nuevaVX, float nuevaVY)',
+      description: 'Ajusta la rapidez en ambos ejes (X e Y) para variar el ángulo y velocidad.',
       fieldsUsed: [],
-      fieldsModified: ['velocidad'],
+      fieldsModified: ['velocidadX', 'velocidadY'],
       parameters: [
         {
-          name: 'nuevaVelocidad',
+          name: 'nuevaVX',
           type: 'float',
-          defaultValue: 5.0,
+          defaultValue: 4.5,
           min: -10,
           max: 10,
           step: 0.5,
-          description: 'Nueva velocidad en píxeles por fotograma.',
+          description: 'Velocidad horizontal X.',
+        },
+        {
+          name: 'nuevaVY',
+          type: 'float',
+          defaultValue: 3.0,
+          min: -10,
+          max: 10,
+          step: 0.5,
+          description: 'Velocidad vertical Y.',
         },
       ],
       executionType: 'instant',
-      codeSnippet: `void cambiarVelocidad(float nuevaVelocidad) {
-  velocidad = nuevaVelocidad;
+      codeSnippet: `void cambiarVelocidad(float nuevaVX, float nuevaVY) {
+  velocidadX = nuevaVX;
+  velocidadY = nuevaVY;
 }`,
       explanation:
-        'Modificar la velocidad permite experimentar cómo dos pelotas con la misma clase se mueven a ritmos completamente distintos según sus campos individuales.',
+        'Modificar simultáneamente velocidadX y velocidadY permite cambiar tanto la velocidad absoluta como el ángulo de vuelo de la pelota.',
     },
     {
       id: 'invertirDireccion',
       name: 'invertirDireccion',
       signature: 'void invertirDireccion()',
-      description: 'Invierte el sentido del movimiento multiplicando la velocidad por -1.',
-      fieldsUsed: ['velocidad'],
-      fieldsModified: ['velocidad'],
+      description: 'Invierte el sentido del movimiento multiplicando ambas velocidades por -1.',
+      fieldsUsed: ['velocidadX', 'velocidadY'],
+      fieldsModified: ['velocidadX', 'velocidadY'],
       parameters: [],
       executionType: 'instant',
       codeSnippet: `void invertirDireccion() {
-  velocidad = velocidad * -1;
+  velocidadX = velocidadX * -1;
+  velocidadY = velocidadY * -1;
 }`,
       explanation:
-        'Una operación matemática elemental sobre un campo interno produce un cambio drástico en el comportamiento visual del objeto.',
+        'Una operación matemática elemental sobre los campos de velocidad produce un giro completo de 180° en la trayectoria de la pelota.',
     },
     {
       id: 'reiniciar',
@@ -172,7 +240,7 @@ export const PELOTA_MODULE: ModuleProgression = {
         {
           name: 'nuevaX',
           type: 'float',
-          defaultValue: 100,
+          defaultValue: 150,
           min: 20,
           max: 480,
           description: 'Nueva coordenada horizontal X.',
@@ -180,7 +248,7 @@ export const PELOTA_MODULE: ModuleProgression = {
         {
           name: 'nuevaY',
           type: 'float',
-          defaultValue: 180,
+          defaultValue: 150,
           min: 20,
           max: 280,
           description: 'Nueva coordenada vertical Y.',
@@ -201,30 +269,36 @@ export const PELOTA_MODULE: ModuleProgression = {
       stageNumber: 1,
       title: 'Etapa 1. Observación y Descripción',
       moment: 'observe',
-      objective: 'Reconocer las características visuales de una pelota y distinguir entre propiedades y acciones.',
+      objective: 'Reconocer las características visuales de una pelota y distinguir con claridad entre propiedades estáticas y acciones dinámicas.',
       explanation:
-        'En la programación orientada a objetos (POO), antes de escribir una sola línea de código observamos la realidad o el diseño gráfico. ¿Qué información define a una pelota? ¿Qué acciones puede realizar?',
+        'En la programación orientada a objetos (POO), antes de escribir código observamos la entidad gráfica. ¿Qué información necesita la computadora para saber cómo es una pelota en reposo? ¿Y qué verbos describen lo que puede hacer cuando cobra vida? Las cualidades estáticas serán campos (variables), mientras que los verbos de acción se convertirán en métodos (funciones dentro de la clase).',
       challenge: {
         id: 'p-ch-1',
         question: 'De la siguiente lista de características observadas en la pelota, ¿cuál corresponde a una ACCIÓN (comportamiento) y no a una propiedad estática?',
         options: [
           {
-            id: 'opt-1',
-            text: 'Moverse horizontalmente hacia adelante.',
-            isCorrect: true,
-            feedback: '¡Exacto! "Moverse" es un verbo, una acción que altera el estado. En Java se convertirá en un método void mover().',
-          },
-          {
-            id: 'opt-2',
+            id: 'p1-opt-a',
             text: 'El diámetro del círculo en píxeles.',
             isCorrect: false,
-            feedback: 'El diámetro es un dato o medida que describe el objeto en reposo: es una propiedad (campo), no una acción.',
+            feedback: 'El diámetro es una dimensión geométrica en reposo: es una propiedad (campo float diametro), no una acción.',
           },
           {
-            id: 'opt-3',
-            text: 'El color naranja de relleno.',
+            id: 'p1-opt-b',
+            text: 'El color naranja (#E2661A) de relleno.',
             isCorrect: false,
-            feedback: 'El color describe una cualidad visual del objeto: es una propiedad (campo color tono).',
+            feedback: 'El color describe una cualidad estética estática: es una propiedad (campo color tono).',
+          },
+          {
+            id: 'p1-opt-c',
+            text: 'Moverse en el lienzo sumando desplazamientos continuos.',
+            isCorrect: true,
+            feedback: '¡Exacto! "Moverse" es un verbo de acción que muta el estado del objeto en cada fotograma. En Java se convertirá en el método void mover().',
+          },
+          {
+            id: 'p1-opt-d',
+            text: 'La coordenada vertical Y en un momento dado.',
+            isCorrect: false,
+            feedback: 'La posición instantánea es un valor numérico almacenado en memoria: es una propiedad (campo float y).',
           },
         ],
         hints: {
@@ -239,33 +313,39 @@ export const PELOTA_MODULE: ModuleProgression = {
       stageNumber: 2,
       title: 'Etapa 2. Construcción de la Clase',
       moment: 'build-class',
-      objective: 'Escribir la declaración de la clase Pelota con su palabra reservada y llaves de apertura y cierre.',
+      objective: 'Escribir la declaración canónica de la clase Pelota con su palabra reservada y llaves de apertura y cierre.',
       explanation:
-        'Una clase en Processing es el molde o plantilla a partir del cual nacerán las pelotas. Se declara con la palabra reservada class seguida del nombre en mayúscula inicial (convención PascalCase) y un bloque de llaves { }.',
+        'Una clase en Processing es el molde o plantilla arquitectónica a partir de la cual nacerán todas las pelotas. Se declara con la palabra reservada "class", seguida del nombre con mayúscula inicial (convención PascalCase) y un bloque de llaves { } que encapsulará todo su contenido interior.',
       codeAdditionHighlight: `class Pelota {
-  // Aquí vivirá la estructura interna
+  // Aquí vivirá la estructura interna (Campos, Constructor y Métodos)
 }`,
       challenge: {
         id: 'p-ch-2',
         question: '¿Cuál es la forma sintácticamente correcta de declarar la clase Pelota en Processing Java?',
         options: [
           {
-            id: 'opt-1',
-            text: 'class Pelota { }',
-            isCorrect: true,
-            feedback: '¡Correcto! En Processing Java usamos "class", el nombre con mayúscula inicial y llaves { } delimitando su contenido.',
-          },
-          {
-            id: 'opt-2',
+            id: 'p2-opt-a',
             text: 'function Pelota() { }',
             isCorrect: false,
-            feedback: 'Incorrecto. "function" se usa en JavaScript/p5.js. En Processing Java estricto se declara con la palabra "class".',
+            feedback: 'Incorrecto. "function" se usa en JavaScript/p5.js. En Processing Java estricto se declara con la palabra reservada "class".',
           },
           {
-            id: 'opt-3',
+            id: 'p2-opt-b',
+            text: 'class Pelota { }',
+            isCorrect: true,
+            feedback: '¡Correcto! En Processing Java usamos "class", el nombre con mayúscula inicial y llaves { } delimitando su cuerpo.',
+          },
+          {
+            id: 'p2-opt-c',
             text: 'Pelota class ( )',
             isCorrect: false,
-            feedback: 'Incorrecto. La palabra "class" debe ir antes del nombre y el cuerpo de una clase se delimita con llaves { }, no con paréntesis.',
+            feedback: 'Incorrecto. La palabra "class" debe anteceder al nombre y el cuerpo de una clase se delimita con llaves { }, no con paréntesis.',
+          },
+          {
+            id: 'p2-opt-d',
+            text: 'new Class(Pelota);',
+            isCorrect: false,
+            feedback: 'Incorrecto. "new" se usa posteriormente en el sketch para instanciar objetos, no para declarar la clase.',
           },
         ],
         hints: {
@@ -278,44 +358,53 @@ export const PELOTA_MODULE: ModuleProgression = {
     {
       id: 'p-stage-3',
       stageNumber: 3,
-      title: 'Etapa 3. Campos (Estado del Objeto)',
+      title: 'Etapa 3. Campos Progresivos (Memoria del Objeto)',
       moment: 'fields',
-      objective: 'Declarar las variables internas que almacenan la posición, tamaño, velocidad y color de la pelota.',
+      objective: 'Comprender por qué los campos se incorporan en dos fases: primero la geometría espacial y después la dinámica y estética.',
       explanation:
-        'Los campos (también llamados atributos o variables de instancia) son los datos que cada pelota recordará en su propia memoria. Comenzamos con posición y tamaño (x, y, diametro) y luego agregamos dinámica (velocidad) y estética (color tono).',
+        'Los campos no deben memorizarse de golpe; nacen de necesidades concretas de diseño:\n\n1. FASE GEOMÉTRICA BÁSICA: Para que Processing pueda dibujar un círculo con ellipse(x, y, d, d), necesita obligatoriamente saber DÓNDE (float x, float y) y DE QUÉ TAMAÑO (float diametro).\n\n2. FASE DINÁMICA Y ESTÉTICA: Para que la pelota cobre vida y viaje por la pantalla con física 2D autónoma, incorporamos cuánto avanza por cuadro (float velocidadX, float velocidadY) y cómo se viste visualmente (color tono).',
       codeAdditionHighlight: `class Pelota {
-  // CAMPOS (Atributos de estado)
+  // FASE 1: Geometría espacial básica (¿Dónde y de qué tamaño?)
   float x;
   float y;
   float diametro;
-  float velocidad;
+
+  // FASE 2: Dinámica 2D y estética (¿Hacia dónde avanza y qué color tiene?)
+  float velocidadX;
+  float velocidadY;
   color tono;
 }`,
       challenge: {
         id: 'p-ch-3',
-        question: '¿Por qué para la posición (x, y) y la velocidad usamos el tipo de dato "float" en lugar de "int"?',
+        question: '¿Por qué para la posición (x, y) y las velocidades (velocidadX, velocidadY) usamos el tipo de dato "float" en lugar de "int"?',
         options: [
           {
-            id: 'opt-1',
-            text: 'Porque float permite números decimales, lo que permite acumular velocidades fraccionarias (ej. 2.5 px/frame) y lograr movimientos suaves.',
+            id: 'p3-opt-a',
+            text: 'Porque las variables float consumen menos memoria RAM en la tarjeta gráfica que las de tipo int.',
+            isCorrect: false,
+            feedback: 'Incorrecto. En Java tanto int como float ocupan exactamente 32 bits (4 bytes) en memoria.',
+          },
+          {
+            id: 'p3-opt-b',
+            text: 'Porque Processing Java prohíbe terminantemente usar int dentro de las clases de objetos.',
+            isCorrect: false,
+            feedback: 'Falso. Puedes usar int en cualquier clase, pero truncaría los decimales en cálculos cinemáticos.',
+          },
+          {
+            id: 'p3-opt-c',
+            text: 'Porque la función ellipse() no acepta números enteros como argumentos.',
+            isCorrect: false,
+            feedback: 'ellipse() acepta enteros sin problema convirtiéndolos automáticamente a float.',
+          },
+          {
+            id: 'p3-opt-d',
+            text: 'Porque float permite números fraccionarios con decimales (ej. 3.5 px/frame), indispensables para calcular aceleraciones y lograr movimientos 2D suaves.',
             isCorrect: true,
-            feedback: '¡Exacto! Aunque los píxeles de la pantalla sean enteros, la física necesita decimales para animaciones fluidas.',
-          },
-          {
-            id: 'opt-2',
-            text: 'Porque Processing Java prohíbe el uso de int dentro de las clases.',
-            isCorrect: false,
-            feedback: 'Falso. Puedes usar int en cualquier clase, pero truncaría los decimales en cálculos de velocidad.',
-          },
-          {
-            id: 'opt-3',
-            text: 'Porque las variables float consumen menos memoria que las variables int.',
-            isCorrect: false,
-            feedback: 'Incorrecto. En Java tanto int como float ocupan exactamente 32 bits en memoria.',
+            feedback: '¡Exacto! Aunque la cuadrícula física de píxeles sea entera, la física matemática requiere acumular fracciones decimales para que el movimiento no sea tosco.',
           },
         ],
         hints: {
-          hint1: 'Piensa en qué ocurre si quieres que una pelota avance a 1.5 píxeles por fotograma.',
+          hint1: 'Piensa en qué ocurre si quieres que una pelota avance a 1.5 o 3.2 píxeles por fotograma.',
           hint2: 'El tipo "int" solo guarda enteros (1, 2, 3); "float" almacena valores con punto flotante (1.5, 3.14).',
           hint3: 'Las simulaciones de movimiento en código creativo casi siempre requieren precisión decimal con float.',
         },
@@ -324,40 +413,47 @@ export const PELOTA_MODULE: ModuleProgression = {
     {
       id: 'p-stage-4',
       stageNumber: 4,
-      title: 'Etapa 4. El Constructor',
+      title: 'Etapa 4. El Constructor (Inicialización)',
       moment: 'constructor',
-      objective: 'Construir el bloque de inicialización que asigna los valores iniciales a los campos de la pelota.',
+      objective: 'Distinguir entre campos de la clase, parámetros de entrada y argumentos del sketch principal.',
       explanation:
-        'El constructor es la función especial que se ejecuta cuando creamos una pelota con "new". Tiene el mismo nombre exacto de la clase, NO lleva tipo de retorno (ni siquiera void) y recibe parámetros temporales para inicializar los campos.',
-      codeAdditionHighlight: `  // CONSTRUCTOR
-  Pelota(float xTemp, float yTemp, float diamTemp, float velTemp, color tonoTemp) {
+        'El constructor es la función inaugural que se activa al escribir "new Pelota(...)". Tiene el mismo nombre exacto de la clase, NO lleva tipo de retorno (ni siquiera void) y recibe parámetros temporales (ej. xTemp, yTemp) que transfieren sus valores a los campos permanentes (x = xTemp). Usamos sufijos "Temp" deliberadamente para no confundir el dato que entra con la memoria que lo almacena.',
+      codeAdditionHighlight: `  // CONSTRUCTOR: Conecta los datos iniciales con la memoria del objeto
+  Pelota(float xTemp, float yTemp, float diamTemp, float velXTemp, float velYTemp, color tonoTemp) {
     x = xTemp;
     y = yTemp;
     diametro = diamTemp;
-    velocidad = velTemp;
+    velocidadX = velXTemp;
+    velocidadY = velYTemp;
     tono = tonoTemp;
   }`,
       challenge: {
         id: 'p-ch-4',
-        question: 'En la instrucción "x = xTemp;", ¿cuál es el campo del objeto y cuál es el parámetro recibido?',
+        question: 'En la instrucción de asignación "x = xTemp;", ¿cuál es el campo permanente y cuál es el parámetro recibido?',
         options: [
           {
-            id: 'opt-1',
-            text: '"x" es el campo permanente de la pelota; "xTemp" es el parámetro temporal que llegó con el valor inicial.',
+            id: 'p4-opt-a',
+            text: 'Ambas son variables globales accesibles desde cualquier lugar del sketch.',
+            isCorrect: false,
+            feedback: 'No son globales. Ambas pertenecen al ámbito estricto de la clase Pelota.',
+          },
+          {
+            id: 'p4-opt-b',
+            text: '"xTemp" es el campo permanente en memoria y "x" es el parámetro temporal de entrada.',
+            isCorrect: false,
+            feedback: 'Al revés: el campo definido arriba en la clase es x; xTemp es el parámetro que declaramos entre paréntesis.',
+          },
+          {
+            id: 'p4-opt-c',
+            text: '"x" es el campo permanente del objeto en memoria; "xTemp" es el parámetro temporal que entrega el valor inicial.',
             isCorrect: true,
-            feedback: '¡Brillante! El parámetro xTemp entrega el valor al nacer y se guarda en la variable x de la instancia.',
+            feedback: '¡Brillante! El parámetro xTemp entrega el dato al nacer la pelota y se guarda en el casillero permanente x de la instancia.',
           },
           {
-            id: 'opt-2',
-            text: '"xTemp" es el campo de la pelota y "x" es el parámetro.',
+            id: 'p4-opt-d',
+            text: '"x" es el nombre del sketch y "xTemp" es la velocidad del reloj de Processing.',
             isCorrect: false,
-            feedback: 'Al revés: el campo definido arriba en la clase es x; xTemp es el parámetro que declaramos entre los paréntesis del constructor.',
-          },
-          {
-            id: 'opt-3',
-            text: 'Ambos son variables globales del sketch de Processing.',
-            isCorrect: false,
-            feedback: 'No son globales. Viven dentro del ámbito de la clase Pelota.',
+            feedback: 'Ninguno tiene relación con el reloj ni con el nombre del archivo.',
           },
         ],
         hints: {
@@ -372,36 +468,60 @@ export const PELOTA_MODULE: ModuleProgression = {
       stageNumber: 5,
       title: 'Etapa 5. Construcción Progresiva de Métodos',
       moment: 'methods',
-      objective: 'Implementar los 7 métodos canónicos: mostrar(), mover(), cambiarTamano(), cambiarColor(), cambiarVelocidad(), invertirDireccion() y reiniciar().',
+      objective: 'Comprender los 3 grupos de métodos: visualización/física elemental, ondulación orgánica con flotar(), y mutación de estado con parámetros.',
       explanation:
-        'Los métodos definen qué puede hacer el objeto. Algunos no reciben parámetros y solo leen datos (mostrar()), otros alteran campos internos (mover(), invertirDireccion()), y otros reciben nuevos argumentos del exterior para modificar el estado (cambiarTamano(float nuevoDiametro)).',
+        'Los métodos se desarrollan en 3 olas progresivas:\n\n1. OLA BÁSICA (Hacerse visible y desplazarse): mostrar() proyecta con fill() y ellipse(); mover() acumula x += velocidadX e y += velocidadY; rebotar() evalúa con if si choca contra cualquiera de los 4 bordes del lienzo e invierte el signo.\n\n2. OLA ORGÁNICA (Trigonometría): flotar(float intensidad) aplica una onda senoidal sin(x * 0.05) * intensidad para lograr una oscilación armónica vivaz.\n\n3. OLA CON PARÁMETROS (Modificar estado): cambiarTamano(), cambiarColor(), cambiarVelocidad(), invertirDireccion() y reiniciar() permiten comunicarse con el objeto y alterar su memoria.',
+      codeAdditionHighlight: `  // GRUPO 1: RENDERIZADO Y CINEMÁTICA 2D
+  void mostrar() { fill(tono); noStroke(); ellipse(x, y, diametro, diametro); }
+  void mover() { x += velocidadX; y += velocidadY; }
+  void rebotar() {
+    float r = diametro/2;
+    if (x > width-r || x < r) velocidadX *= -1;
+    if (y > height-r || y < r) velocidadY *= -1;
+  }
+
+  // GRUPO 2: FÍSICA ORGÁNICA SENOIDAL
+  void flotar(float intensidad) { y += sin(x * 0.05) * intensidad; }
+
+  // GRUPO 3: MÉTODOS CON PARÁMETROS (MUTACIÓN)
+  void cambiarTamano(float nuevoDiametro) { diametro = nuevoDiametro; }
+  void cambiarColor(color nuevoColor) { tono = nuevoColor; }
+  void cambiarVelocidad(float nuevaVX, float nuevaVY) { velocidadX = nuevaVX; velocidadY = nuevaVY; }
+  void invertirDireccion() { velocidadX *= -1; velocidadY *= -1; }
+  void reiniciar(float nuevaX, float nuevaY) { x = nuevaX; y = nuevaY; }`,
       challenge: {
         id: 'p-ch-5',
-        question: '¿Qué método permite a una pelota invertir el sentido de su movimiento multiplicando la velocidad por -1?',
+        question: '¿Qué método permite a una pelota rebotar elásticamente en lugar de escapar por los límites de la ventana?',
         options: [
           {
-            id: 'opt-1',
-            text: 'void invertirDireccion() { velocidad = velocidad * -1; }',
+            id: 'p5-opt-a',
+            text: 'void mover() { x = 0; y = 0; }',
+            isCorrect: false,
+            feedback: 'mover() suma las velocidades, pero no comprueba los bordes de la ventana.',
+          },
+          {
+            id: 'p5-opt-b',
+            text: 'void rebotar() { float r = diametro/2; if (x > width-r || x < r) velocidadX *= -1; if (y > height-r || y < r) velocidadY *= -1; }',
             isCorrect: true,
-            feedback: '¡Exacto! Al multiplicar por -1, una velocidad positiva (+3) se vuelve negativa (-3) y viceversa, invirtiendo el sentido.',
+            feedback: '¡Exacto! Evalúa condiciones condicionales if en ambas dimensiones e invierte el signo de velocidad con *= -1 al impactar con cualquier muro.',
           },
           {
-            id: 'opt-2',
-            text: 'void mover(0) { velocidad = 0; }',
+            id: 'p5-opt-c',
+            text: 'void cambiarTamano(0);',
             isCorrect: false,
-            feedback: 'Poner la velocidad en 0 detiene la pelota por completo en lugar de invertir su dirección.',
+            feedback: 'Cambiar tamaño altera el diámetro geométrico pero no evalúa los bordes de la ventana.',
           },
           {
-            id: 'opt-3',
-            text: 'void cambiarTamano(-1) { diametro = -1; }',
+            id: 'p5-opt-d',
+            text: 'void mostrar() { ellipse(0, 0, 50, 50); }',
             isCorrect: false,
-            feedback: 'El diámetro no puede ser negativo y cambiar de tamaño no altera la dirección del movimiento.',
+            feedback: 'mostrar() dibuja la pelota en la pantalla pero no realiza cálculos de física ni colisiones.',
           },
         ],
         hints: {
-          hint1: 'Recuerda que en matemáticas un número multiplicado por -1 cambia de signo.',
-          hint2: 'Si la pelota va a la derecha (+3) y queremos que vaya a la izquierda (-3), multiplicamos el campo velocidad por -1.',
-          hint3: 'El método es: void invertirDireccion() { velocidad = velocidad * -1; }',
+          hint1: 'El rebote requiere estructuras condicionales con "if".',
+          hint2: 'Se deben evaluar los límites horizontalmente (width) y verticalmente (height).',
+          hint3: 'Al chocar, se multiplica la velocidad correspondiente por -1.',
         },
       },
     },
@@ -412,7 +532,42 @@ export const PELOTA_MODULE: ModuleProgression = {
       moment: 'method-explorer',
       objective: 'Experimentar interactivamente ejecutando cada método en modo paso a paso y en modo animación continua desde draw().',
       explanation:
-        'Has construido los métodos de la clase Pelota. Ahora puedes interactuar directamente con ellos: prueba cambiar su tamaño con el deslizador, alternar colores, pulsar "Paso a paso" para ver una ejecución aislada de mover(), o activar "Animación" para ver el efecto repetitivo de 60 llamadas por segundo.',
+        'Has construido los métodos de la clase Pelota. Ahora puedes interactuar directamente con ellos: prueba cambiar su tamaño con el deslizador, alternar colores, pulsar "Paso a paso" para ver una ejecución aislada de mover(), activar "Animación" para ver el efecto repetitivo de 60 llamadas por segundo o activar flotar() para ondulación senoidal.',
+      challenge: {
+        id: 'p-ch-6',
+        question: '¿Por qué llamar a "miPelota.mover()" una sola vez produce un salto discreto, mientras que llamarlo en draw() produce animación continua?',
+        options: [
+          {
+            id: 'p6-opt-a',
+            text: 'Porque dentro de draw() Processing multiplica automáticamente todas las velocidades por 60.',
+            isCorrect: false,
+            feedback: 'Incorrecto. La velocidad sigue valiendo lo mismo; lo que cambia es la frecuencia de ejecución.',
+          },
+          {
+            id: 'p6-opt-b',
+            text: 'Porque los métodos solo pueden funcionar si están declarados dentro de setup().',
+            isCorrect: false,
+            feedback: 'Falso. setup() se ejecuta una única vez para inicializar. Las animaciones viven en draw().',
+          },
+          {
+            id: 'p6-opt-c',
+            text: 'Porque el navegador web pausa el motor de Java cada vez que se presiona un botón.',
+            isCorrect: false,
+            feedback: 'Incorrecto. Es el bucle de renderizado el responsable de la continuidad.',
+          },
+          {
+            id: 'p6-opt-d',
+            text: 'Porque Processing ejecuta la función draw() en un bucle infinito a 60 cuadros por segundo, acumulando el desplazamiento en cada fotograma sucesivo.',
+            isCorrect: true,
+            feedback: '¡Exacto! El cine y la animación digital funcionan por persistencia retiniana a 60 fps gracias al bucle continuo de draw().',
+          },
+        ],
+        hints: {
+          hint1: 'Piensa en cuántas veces por segundo se repite la función draw() en Processing.',
+          hint2: 'Paso a paso ejecuta el método 1 sola vez; draw() lo llama continuamente a 60 cuadros por segundo.',
+          hint3: 'La animación es la suma de pequeños avances repetidos a alta velocidad.',
+        },
+      },
     },
     {
       id: 'p-stage-7',
@@ -427,22 +582,28 @@ export const PELOTA_MODULE: ModuleProgression = {
         question: 'Si ejecutamos "pelotas[0].cambiarTamano(90);", ¿qué pelotas cambiarán de tamaño?',
         options: [
           {
-            id: 'opt-1',
-            text: 'Únicamente la primera pelota del arreglo (índice 0). Las pelotas en los índices 1 y 2 conservan su propio diámetro.',
-            isCorrect: true,
-            feedback: '¡Correcto! Cada elemento del arreglo es una instancia con su propia memoria encapsulada.',
-          },
-          {
-            id: 'opt-2',
+            id: 'p7-opt-a',
             text: 'Todas las pelotas cambiarán a 90 px porque comparten la misma clase Pelota.',
             isCorrect: false,
             feedback: 'Error común: la clase es el molde, pero cada objeto instanciado almacena sus propios valores independientes en sus campos.',
           },
           {
-            id: 'opt-3',
-            text: 'Ninguna, porque los métodos no pueden invocarse sobre elementos de un arreglo.',
+            id: 'p7-opt-b',
+            text: 'Ninguna pelota cambiará, porque los arreglos en Processing son inmutables.',
             isCorrect: false,
-            feedback: 'Falso. Para invocar un método sobre un elemento de un arreglo usamos la notación de corchetes seguida de un punto: pelotas[i].metodo().',
+            feedback: 'Falso. Las instancias dentro de un arreglo pueden mutar sus campos mediante métodos en cualquier instante.',
+          },
+          {
+            id: 'p7-opt-c',
+            text: 'Únicamente la primera pelota del arreglo (índice 0). Las pelotas en los índices 1 y 2 conservan su propio diámetro intacto.',
+            isCorrect: true,
+            feedback: '¡Correcto! Cada elemento del arreglo es una instancia con su propia memoria encapsulada independiente.',
+          },
+          {
+            id: 'p7-opt-d',
+            text: 'Solo la última pelota del arreglo porque el índice 0 se descarta.',
+            isCorrect: false,
+            feedback: 'En Processing los arreglos son de base cero; el índice [0] apunta con exactitud al primer elemento.',
           },
         ],
         hints: {
@@ -685,28 +846,34 @@ export const BURBUJA_MODULE: ModuleProgression = {
       moment: 'observe',
       objective: 'Identificar qué propiedades visuales distinguen a una burbuja (ascenso, transparencia) frente a la pelota.',
       explanation:
-        'Ahora aplicaremos los conocimientos de POO para modelar un objeto más poético: una Burbuja. A diferencia de la pelota, una burbuja asciende hacia arriba en el eje Y y posee una cualidad translúcida gobernada por un canal alfa de opacidad.',
+        'Ahora aplicaremos los conocimientos de POO para modelar un objeto más poético: una Burbuja acuática. A diferencia de la pelota que rebota en 2D, una burbuja asciende hacia arriba en el eje Y contrarrestando la gravedad y posee una cualidad translúcida gobernada por un canal alfa de opacidad.',
       challenge: {
         id: 'b-ch-1',
-        question: 'Para lograr que una burbuja ascienda hacia arriba en Processing, ¿cómo debe modificarse su coordenada "y" en cada fotograma?',
+        question: 'Para lograr que una burbuja ascienda hacia arriba en la ventana gráfica de Processing, ¿cómo debe modificarse su coordenada "y" en cada fotograma?',
         options: [
           {
-            id: 'opt-1',
-            text: 'y = y - velocidad; (Restar velocidad porque Y = 0 está en el borde superior).',
+            id: 'b1-opt-a',
+            text: 'x = x + velocidad; (Sumar a la coordenada horizontal X).',
+            isCorrect: false,
+            feedback: 'X controla el plano horizontal (izquierda/derecha), no el ascenso vertical hacia la superficie.',
+          },
+          {
+            id: 'b1-opt-b',
+            text: 'y = y - velocidad; (Restar a Y porque el origen Y = 0 se ubica en el borde superior de la pantalla).',
             isCorrect: true,
-            feedback: '¡Correcto! En Processing el origen (0,0) está arriba a la izquierda. Restar a Y hace que el objeto suba hacia el cielo de la ventana.',
+            feedback: '¡Correcto! En Processing el origen (0,0) está arriba a la izquierda. Restar a Y desplaza el objeto hacia el cielo de la ventana.',
           },
           {
-            id: 'opt-2',
-            text: 'y = y + velocidad; (Sumar velocidad como en la física cartesiana escolar).',
+            id: 'b1-opt-c',
+            text: 'y = y + velocidad; (Sumar a Y como en el plano cartesiano matemático escolar).',
             isCorrect: false,
-            feedback: 'En las matemáticas tradicionales Y crece arriba, pero en pantallas digitales Y crece hacia abajo. Si sumas, la burbuja caerá hacia el fondo.',
+            feedback: 'En el sistema de coordenadas de pantallas digitales, el eje Y crece hacia abajo. Si sumas, la burbuja se hundirá hacia el fondo.',
           },
           {
-            id: 'opt-3',
-            text: 'x = x - velocidad; (Modificar la coordenada X).',
+            id: 'b1-opt-d',
+            text: 'diametro = diametro - velocidad;',
             isCorrect: false,
-            feedback: 'X controla el eje horizontal (izquierda/derecha), no el ascenso vertical.',
+            feedback: 'Modificar el diámetro cambiaría el tamaño físico, no la posición vertical en pantalla.',
           },
         ],
         hints: {
@@ -721,37 +888,43 @@ export const BURBUJA_MODULE: ModuleProgression = {
       stageNumber: 2,
       title: 'Etapa 2. Campos de la Burbuja',
       moment: 'fields',
-      objective: 'Declarar los 5 campos de la clase Burbuja incluyendo opacidad en el rango 0 a 255.',
+      objective: 'Declarar los 5 campos de la clase Burbuja comprendiendo el rango alfa de opacidad (0 a 255).',
       explanation:
-        'Una burbuja necesita: x, y, diametro, velocidad y opacidad. En Processing los valores de transparencia alfa se especifican en el rango de 0 (completamente transparente) a 255 (completamente sólida).',
+        'Una burbuja almacena 5 datos fundamentales en su memoria:\n1. Posición (float x, float y)\n2. Dimensión (float diametro)\n3. Cinemática vertical (float velocidad)\n4. Cualidad óptica (float opacidad en el rango 0 a 255).\n\nEn Processing, el canal alfa no va de 0.0 a 1.0 como en CSS web, sino de 0 (invisible) a 255 (sólido opaco).',
       codeAdditionHighlight: `class Burbuja {
   float x;
   float y;
   float diametro;
   float velocidad;
-  float opacidad; // 0 a 255
+  float opacidad; // 0 (invisible) a 255 (opaco)
 }`,
       challenge: {
         id: 'b-ch-2',
-        question: '¿Qué valor del campo "opacidad" producirá una burbuja semitransparente bien visible?',
+        question: '¿Qué valor numérico para el campo "opacidad" producirá una burbuja traslúcida que permita ver objetos a través de ella en Processing?',
         options: [
           {
-            id: 'opt-1',
-            text: '150 (en el rango 0 a 255 de Processing).',
+            id: 'b2-opt-a',
+            text: '0.6 (siguiendo el rango de 0.0 a 1.0 del lenguaje CSS).',
+            isCorrect: false,
+            feedback: 'Processing maneja canales de color de 8 bits (0 a 255). Un valor de 0.6 sería prácticamente 100% invisible en pantalla.',
+          },
+          {
+            id: 'b2-opt-b',
+            text: '500 (para garantizar máxima luminosidad).',
+            isCorrect: false,
+            feedback: 'Cualquier número superior a 255 se satura al 100% de opacidad completamente sólida sin transparencia.',
+          },
+          {
+            id: 'b2-opt-c',
+            text: '140 (en el rango de 0 a 255 de Processing, equivalente a un 55% de translucidez vítrea).',
             isCorrect: true,
-            feedback: '¡Exacto! 150 es aproximadamente un 60% de opacidad, ideal para ver objetos detrás de la burbuja.',
+            feedback: '¡Exacto! Un valor intermedio cercano a 140 permite apreciar tanto el brillo de la burbuja como los elementos marinos de fondo.',
           },
           {
-            id: 'opt-2',
-            text: '0.6 (en el rango de 0.0 a 1.0 de CSS).',
+            id: 'b2-opt-d',
+            text: '-50 (número negativo para invertir la luz).',
             isCorrect: false,
-            feedback: 'Processing por defecto usa enteros/floats de 0 a 255 para los canales de color. Un valor de 0.6 sería casi 100% invisible.',
-          },
-          {
-            id: 'opt-3',
-            text: '500.',
-            isCorrect: false,
-            feedback: 'Cualquier valor superior a 255 se satura al 100% de opacidad sólida.',
+            feedback: 'Los canales de color no admiten valores negativos en la función fill(r, g, b, alfa).',
           },
         ],
         hints: {
@@ -768,14 +941,50 @@ export const BURBUJA_MODULE: ModuleProgression = {
       moment: 'constructor',
       objective: 'Diseñar el constructor con parámetros para instanciar burbujas en el fondo del lienzo.',
       explanation:
-        'El constructor asigna los valores iniciales. Al crear una burbuja, le pasamos las coordenadas de origen, su tamaño, su velocidad de ascenso y su nivel de transparencia.',
-      codeAdditionHighlight: `  Burbuja(float xTemp, float yTemp, float diamTemp, float velTemp, float opacTemp) {
+        'El constructor asigna los valores iniciales. Al nacer una burbuja con "new Burbuja(...)", le enviamos 5 argumentos en estricto orden: posición inicial horizontal y vertical (xTemp, yTemp), tamaño (diamTemp), velocidad ascendente (velTemp) y opacidad (opacTemp).',
+      codeAdditionHighlight: `  // Constructor: Asigna valores iniciales a los 5 campos
+  Burbuja(float xTemp, float yTemp, float diamTemp, float velTemp, float opacTemp) {
     x = xTemp;
     y = yTemp;
     diametro = diamTemp;
     velocidad = velTemp;
     opacidad = opacTemp;
   }`,
+      challenge: {
+        id: 'b-ch-3',
+        question: 'Si escribimos en setup(): "miBurbuja = new Burbuja(200, 300, 40, 2.5, 140);", ¿en qué orden se asignan los valores en el constructor?',
+        options: [
+          {
+            id: 'b3-opt-a',
+            text: 'El orden es arbitrario porque Java detecta automáticamente cuál valor corresponde al diámetro por su tamaño.',
+            isCorrect: false,
+            feedback: 'Falso. Java asigna los valores estrictamente de izquierda a derecha según el orden de declaración en los paréntesis del constructor.',
+          },
+          {
+            id: 'b3-opt-b',
+            text: 'Coordenada X (200), Coordenada Y (300), Diámetro (40), Velocidad (2.5) y Opacidad (140), correspondiendo uno a uno con los parámetros.',
+            isCorrect: true,
+            feedback: '¡Excelente! Los argumentos reales coinciden posicionalmente con los parámetros declarados en la firma del constructor.',
+          },
+          {
+            id: 'b3-opt-c',
+            text: 'Todos los 5 valores se suman para calcular una velocidad global de la burbuja.',
+            isCorrect: false,
+            feedback: 'Incorrecto. Cada argumento inicializa su propio campo independiente.',
+          },
+          {
+            id: 'b3-opt-d',
+            text: 'Primero la opacidad, después la velocidad y al final las coordenadas cartesianas.',
+            isCorrect: false,
+            feedback: 'Incorrecto. La firma declarada empieza con xTemp e yTemp.',
+          },
+        ],
+        hints: {
+          hint1: 'Compara los 5 argumentos del "new" con la lista de parámetros en la firma del constructor.',
+          hint2: 'El orden posicional de izquierda a derecha es vinculante en Java.',
+          hint3: 'Primero xTemp, luego yTemp, diamTemp, velTemp y opacTemp.',
+        },
+      },
     },
     {
       id: 'b-stage-4',
@@ -784,28 +993,34 @@ export const BURBUJA_MODULE: ModuleProgression = {
       moment: 'methods',
       objective: 'Implementar los métodos de ascenso (subir), expansión (crecer) y recolocación (reiniciar).',
       explanation:
-        'La clase cuenta con 7 métodos adaptados a su naturaleza: mostrar(), subir(), crecer(float incremento), desplazar(float distancia), cambiarTransparencia(float valor), cambiarVelocidad(float nuevaVelocidad) y reiniciar(float nuevaX, float nuevaY).',
+        'La clase cuenta con 7 métodos adaptados a su física:\n1. mostrar(): dibuja cuerpo traslúcido y brillo especular\n2. subir(): resta velocidad a y\n3. crecer(float incremento): aumenta el diámetro a medida que sube por la menor presión\n4. desplazar(float distancia): añade deriva horizontal por corrientes de agua\n5. cambiarTransparencia(float valor): ajusta alfa con constrain()\n6. cambiarVelocidad(float nuevaVelocidad): modifica la rapidez\n7. reiniciar(float nuevaX, float nuevaY): recicla la burbuja al llegar a la superficie.',
       challenge: {
         id: 'b-ch-4',
-        question: '¿Qué método permite simular que una burbuja se hace más grande al subir?',
+        question: '¿Qué método permite simular que una burbuja se expande y se hace más grande a medida que asciende hacia la superficie marina?',
         options: [
           {
-            id: 'opt-1',
-            text: 'void crecer(float incremento) { diametro = diametro + incremento; }',
-            isCorrect: true,
-            feedback: '¡Exacto! Suma el incremento al campo diametro en cada llamado.',
-          },
-          {
-            id: 'opt-2',
+            id: 'b4-opt-a',
             text: 'void subir() { y = y - velocidad; }',
             isCorrect: false,
-            feedback: 'subir() cambia la posición vertical, pero el tamaño no se ve afectado.',
+            feedback: 'subir() modifica la posición vertical Y, pero el diámetro geométrico permanece idéntico.',
           },
           {
-            id: 'opt-3',
-            text: 'void reiniciar(0, 0)',
+            id: 'b4-opt-b',
+            text: 'void reiniciar(0, 0);',
             isCorrect: false,
-            feedback: 'reiniciar reubica la posición, no altera el diámetro.',
+            feedback: 'reiniciar() reubica las coordenadas cartesianas pero no altera el tamaño.',
+          },
+          {
+            id: 'b4-opt-c',
+            text: 'void cambiarTransparencia(255);',
+            isCorrect: false,
+            feedback: 'cambiarTransparencia() modifica el canal alfa, no el tamaño del círculo.',
+          },
+          {
+            id: 'b4-opt-d',
+            text: 'void crecer(float incremento) { diametro = diametro + incremento; }',
+            isCorrect: true,
+            feedback: '¡Exacto! Recibe un valor decimal en el parámetro incremento y lo suma al campo diametro.',
           },
         ],
         hints: {
@@ -822,7 +1037,7 @@ export const BURBUJA_MODULE: ModuleProgression = {
       moment: 'instances-arrays',
       objective: 'Construir y recorrer un arreglo de 5 burbujas independientes con un ciclo for en setup() y draw().',
       explanation:
-        'Para crear una columna de burbujas en el agua, declaramos "Burbuja[] burbujas = new Burbuja[5];". En setup() usamos un bucle for para crearlas con diámetros y velocidades escalonadas.',
+        'Para simular una columna de efervescencia acuática, declaramos "Burbuja[] burbujas = new Burbuja[5];". En setup() usamos un ciclo for para poblar el arreglo con diámetros y velocidades escalonadas usando random(). En draw(), otro bucle for invoca subir() y mostrar() sobre cada elemento.',
       codeAdditionHighlight: `Burbuja[] burbujas = new Burbuja[5];
 
 void setup() {
@@ -839,6 +1054,41 @@ void draw() {
     burbujas[i].mostrar();
   }
 }`,
+      challenge: {
+        id: 'b-ch-5',
+        question: 'En la estructura "for (int i = 0; i < burbujas.length; i++)", ¿cuál es la ventaja de escribir "burbujas.length" en vez de escribir un número fijo como 5?',
+        options: [
+          {
+            id: 'b5-opt-a',
+            text: 'Porque escribir números en la condición del for provoca un error de compilación en Java.',
+            isCorrect: false,
+            feedback: 'Falso. Escribir 5 compilaría, pero si luego cambias el tamaño a 10 tendrías que modificar el código manualmente.',
+          },
+          {
+            id: 'b5-opt-b',
+            text: 'Para que el sketch aumente automáticamente la velocidad de la tarjeta gráfica.',
+            isCorrect: false,
+            feedback: 'No tiene relación con la velocidad de hardware.',
+          },
+          {
+            id: 'b5-opt-c',
+            text: 'Porque si después decides cambiar el arreglo a 10 o 50 burbujas, el ciclo for se adaptará automáticamente sin necesidad de editar los límites a mano.',
+            isCorrect: true,
+            feedback: '¡Excelente principio de ingeniería de software! La propiedad .length hace que el código sea modular, elástico y a prueba de errores de índice fuera de rango.',
+          },
+          {
+            id: 'b5-opt-d',
+            text: 'Porque .length calcula el diámetro promedio de todas las burbujas.',
+            isCorrect: false,
+            feedback: '.length devuelve la cantidad de casilleros del arreglo, no una medida geométrica.',
+          },
+        ],
+        hints: {
+          hint1: 'Piensa qué sucedería si cambias new Burbuja[5] a new Burbuja[20].',
+          hint2: 'La propiedad .length lee dinámicamente la capacidad del arreglo.',
+          hint3: 'Evita tener números "mágicos" hardcodeados en el código.',
+        },
+      },
     },
     {
       id: 'b-stage-6',
@@ -854,25 +1104,31 @@ if (y < -diametro) {
 }`,
       challenge: {
         id: 'b-ch-6',
-        question: '¿Por qué la condición para saber si salió por completo es "y < -diametro" en lugar de "y < 0"?',
+        question: '¿Por qué la condición para saber si la burbuja salió por completo de la pantalla es "y < -diametro" en lugar de "y < 0"?',
         options: [
           {
-            id: 'opt-1',
-            text: 'Porque como el círculo se dibuja desde su centro (y), cuando y = 0 la mitad inferior de la burbuja aún es visible en la pantalla.',
+            id: 'b6-opt-a',
+            text: 'Porque Processing prohíbe terminantemente evaluar números negativos con cero en condiciones if.',
+            isCorrect: false,
+            feedback: 'Processing permite comparar cualquier número float con operadores relacionales (<, >, <=, etc.).',
+          },
+          {
+            id: 'b6-opt-b',
+            text: 'Porque como el círculo se dibuja desde su centro (y), cuando y = 0 la mitad inferior del círculo todavía es visible en la pantalla; restar el diámetro garantiza que haya salido al 100% antes de teletransportarse.',
             isCorrect: true,
-            feedback: '¡Excelente percepción visual! Al usar -diametro, garantizamos que la burbuja desaparezca por completo antes de reiniciarse abajo.',
+            feedback: '¡Excelente percepción visual! Al usar -diametro, evitamos el efecto visual tosco de ver desaparecer una esfera a medio camino.',
           },
           {
-            id: 'opt-2',
-            text: 'Porque Processing no permite números negativos menores a cero.',
+            id: 'b6-opt-c',
+            text: 'Porque el diámetro siempre debe ser estrictamente mayor a la posición cartesiana X.',
             isCorrect: false,
-            feedback: 'Processing permite cualquier número negativo en coordenadas float.',
+            feedback: 'El diámetro es una dimensión; no tiene restricción de ser mayor que la posición.',
           },
           {
-            id: 'opt-3',
-            text: 'Porque el diámetro siempre debe ser mayor a la posición.',
+            id: 'b6-opt-d',
+            text: 'Para que la gravedad de Processing invierta la dirección del agua hacia abajo.',
             isCorrect: false,
-            feedback: 'No tiene relación con la posición.',
+            feedback: 'No tiene relación con la gravedad.',
           },
         ],
         hints: {
