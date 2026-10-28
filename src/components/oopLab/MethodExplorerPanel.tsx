@@ -54,6 +54,7 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
     nuevaVX: 4.0,
     nuevaVY: 2.5,
     intensidad: 3.0,
+    balanceo: 1.8,
     nuevaX: 180,
     nuevaY: 150,
     incremento: 8,
@@ -100,7 +101,9 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
     } else if (activeMethod.id === 'rebotar') {
       effectText = `Evaluó límites del lienzo (0, width, height) e invirtió velocidades de choque`;
     } else if (activeMethod.id === 'flotar') {
-      effectText = `Onda sinusoidal activada: y = yBase + sin(...) * ${paramInputs.intensidad ?? 3.0}`;
+      effectText = isPelota
+        ? `Onda sinusoidal activada: y = yBase + sin(...) * ${paramInputs.intensidad ?? 3.0}`
+        : `Vaivén sutil en agua: x += sin(y * 0.05) * ${paramInputs.balanceo ?? 1.8} px`;
     } else if (activeMethod.id === 'cambiarTamano') {
       effectText = `Diámetro actualizado a ${paramInputs.nuevoDiametro} px`;
     } else if (activeMethod.id === 'cambiarColor') {

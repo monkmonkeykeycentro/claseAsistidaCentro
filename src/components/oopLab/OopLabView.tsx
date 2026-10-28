@@ -224,8 +224,12 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           updated.velocidad = updated.vx;
         } else if (method.id === 'flotar') {
           updated.isFloating = true;
-          const amp = Number(paramValues.intensidad || 5.0);
-          updated.y += Math.sin(updated.x * 0.05) * amp;
+          const amp = Number(paramValues.balanceo ?? paramValues.intensidad ?? 2.0);
+          if (isPelota) {
+            updated.y += Math.sin(updated.x * 0.05) * amp;
+          } else {
+            updated.x += Math.sin(updated.y * 0.05) * amp;
+          }
         } else if (method.id === 'cambiarTamano') {
           updated.diametro = Number(paramValues.nuevoDiametro || 60);
         } else if (method.id === 'cambiarColor') {

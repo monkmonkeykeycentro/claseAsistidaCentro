@@ -278,6 +278,7 @@ ${
   miPelota.flotar(2.0);        // Aplica modulación senoidal armónica con sin()
   miPelota.mostrar();          // Proyecta el círculo en pantalla con fill() y ellipse()`
     : `  miBurbuja.subir();           // Asciende restando velocidad al eje Y
+  miBurbuja.flotar(1.6);       // Oscilación sutil de vaivén en agua
   miBurbuja.mostrar();         // Dibuja el cuerpo traslúcido y su brillo vítreo`
 }
 }`;
@@ -309,6 +310,7 @@ ${
   miPelota.rebotar();
   miPelota.mostrar();`
     : `  miBurbuja.subir();
+  miBurbuja.flotar(1.6);
   miBurbuja.mostrar();`
 }
 }
@@ -381,6 +383,7 @@ ${
     pelotas[i].flotar(2.0);
     pelotas[i].mostrar();`
     : `    burbujas[i].subir();
+    burbujas[i].flotar(1.6); // Vaivén sutil de flotación
     burbujas[i].mostrar();
     
     // Condicional de reaparición continua:

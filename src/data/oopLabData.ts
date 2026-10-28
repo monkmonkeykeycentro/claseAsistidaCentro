@@ -705,6 +705,32 @@ export const BURBUJA_MODULE: ModuleProgression = {
         'En Processing, el eje Y = 0 se encuentra arriba. Para que un objeto suba flotando en contra de la gravedad, debemos RESTAR velocidad al campo y.',
     },
     {
+      id: 'flotar',
+      name: 'flotar',
+      signature: 'void flotar(float balanceo)',
+      description: 'Genera una oscilación horizontal suave y sutil simulando el vaivén orgánico de una burbuja en el agua.',
+      fieldsUsed: ['x', 'y'],
+      fieldsModified: ['x'],
+      parameters: [
+        {
+          name: 'balanceo',
+          type: 'float',
+          defaultValue: 1.8,
+          min: 0.5,
+          max: 6.0,
+          step: 0.2,
+          description: 'Amplitud del vaivén sutil en píxeles.',
+        },
+      ],
+      executionType: 'continuous',
+      codeSnippet: `void flotar(float balanceo) {
+  // Oscilación senoidal lateral sutil a medida que asciende en el agua
+  x = x + sin(y * 0.05) * balanceo;
+}`,
+      explanation:
+        'Las burbujas en el agua nunca ascienden en una línea recta rígida. Al aplicar sin(y * 0.05), la burbuja oscila sutilmente de un lado a otro mientras sube, produciendo un movimiento orgánico y vivo.',
+    },
+    {
       id: 'crecer',
       name: 'crecer',
       signature: 'void crecer(float incremento)',
@@ -991,9 +1017,9 @@ export const BURBUJA_MODULE: ModuleProgression = {
       stageNumber: 4,
       title: 'Etapa 4. Métodos de la Burbuja',
       moment: 'methods',
-      objective: 'Implementar los métodos de ascenso (subir), expansión (crecer) y recolocación (reiniciar).',
+      objective: 'Implementar los métodos de ascenso (subir), vaivén sutil en agua (flotar), expansión (crecer) y recolocación (reiniciar).',
       explanation:
-        'La clase cuenta con 7 métodos adaptados a su física:\n1. mostrar(): dibuja cuerpo traslúcido y brillo especular\n2. subir(): resta velocidad a y\n3. crecer(float incremento): aumenta el diámetro a medida que sube por la menor presión\n4. desplazar(float distancia): añade deriva horizontal por corrientes de agua\n5. cambiarTransparencia(float valor): ajusta alfa con constrain()\n6. cambiarVelocidad(float nuevaVelocidad): modifica la rapidez\n7. reiniciar(float nuevaX, float nuevaY): recicla la burbuja al llegar a la superficie.',
+        'La clase cuenta con 8 métodos adaptados a su física marina:\n1. mostrar(): dibuja cuerpo traslúcido y brillo especular\n2. subir(): resta velocidad a y para ascender\n3. flotar(float balanceo): oscilación senoidal sutil en el eje X para vaivén orgánico\n4. crecer(float incremento): aumenta el diámetro al subir\n5. desplazar(float distancia): añade deriva por corrientes\n6. cambiarTransparencia(float valor): ajusta alfa con constrain()\n7. cambiarVelocidad(float nuevaVelocidad): modifica la rapidez\n8. reiniciar(float nuevaX, float nuevaY): recicla la burbuja al llegar a la superficie.',
       challenge: {
         id: 'b-ch-4',
         question: '¿Qué método permite simular que una burbuja se expande y se hace más grande a medida que asciende hacia la superficie marina?',
@@ -1037,7 +1063,7 @@ export const BURBUJA_MODULE: ModuleProgression = {
       moment: 'instances-arrays',
       objective: 'Construir y recorrer un arreglo de 5 burbujas independientes con un ciclo for en setup() y draw().',
       explanation:
-        'Para simular una columna de efervescencia acuática, declaramos "Burbuja[] burbujas = new Burbuja[5];". En setup() usamos un ciclo for para poblar el arreglo con diámetros y velocidades escalonadas usando random(). En draw(), otro bucle for invoca subir() y mostrar() sobre cada elemento.',
+        'Para simular una columna de efervescencia acuática, declaramos "Burbuja[] burbujas = new Burbuja[5];". En setup() usamos un ciclo for para poblar el arreglo con diámetros y velocidades escalonadas usando random(). En draw(), otro bucle for invoca subir(), flotar(1.5) y mostrar() sobre cada elemento.',
       codeAdditionHighlight: `Burbuja[] burbujas = new Burbuja[5];
 
 void setup() {
@@ -1051,6 +1077,7 @@ void draw() {
   background(15, 30, 60); // Fondo azul marino profundo
   for (int i = 0; i < burbujas.length; i++) {
     burbujas[i].subir();
+    burbujas[i].flotar(1.5); // Movimiento sutil de vaivén en agua
     burbujas[i].mostrar();
   }
 }`,

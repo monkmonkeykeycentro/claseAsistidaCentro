@@ -108,13 +108,17 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
               inst.velocidadY = inst.vy;
             }
           } else {
-            // Burbuja: asciende restando velocidad a Y y oscila armónicamente en X
+            // Burbuja: asciende restando velocidad a Y
             inst.y -= inst.velocidad;
-            inst.x += Math.sin(inst.y * 0.04) * 1.4;
 
+            // Movimiento sutil y orgánico de flotación / vaivén lateral en agua
+            inst.floatOffset = (inst.floatOffset ?? 0) + 0.05;
+            const swayAmplitude = inst.isFloating ? 2.4 : 1.2;
+            inst.x += Math.sin((inst.y * 0.04) + inst.floatOffset) * (swayAmplitude * 0.7);
+
+            // Si el método flotar() está activado, añade una micro-ondulación sutil
             if (inst.isFloating) {
-              inst.floatOffset = (inst.floatOffset ?? 0) + 0.06;
-              inst.y += Math.sin(inst.floatOffset) * 1.6;
+              inst.y += Math.sin(inst.floatOffset * 1.5) * 0.6;
             }
 
             const r = inst.diametro / 2;

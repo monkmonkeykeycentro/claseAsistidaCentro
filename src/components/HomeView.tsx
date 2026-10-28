@@ -47,9 +47,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 font-mono">
           <span className="font-semibold text-zinc-900 tracking-wider uppercase">CENTRO</span>
           <span>·</span>
-          <span>Licenciatura en Diseño y Medios Digitales</span>
-          <span>·</span>
-          <span>Semestre Académico</span>
+          <span>Código Creativo</span>
         </div>
 
         <div className="space-y-3 max-w-3xl">
