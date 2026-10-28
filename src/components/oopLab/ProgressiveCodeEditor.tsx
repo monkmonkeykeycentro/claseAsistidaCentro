@@ -11,7 +11,7 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
   module,
   currentStageIdx,
 }) => {
-  const [activeTab, setActiveTab] = useState<'class' | 'sketch' | 'unified'>('class');
+  const [activeTab, setActiveTab] = useState<'sketch' | 'class'>('sketch');
   const [copiedType, setCopiedType] = useState<string | null>(null);
 
   const isPelota = module.moduleId === 'pelota';
@@ -275,10 +275,10 @@ ${
   isPelota
     ? `  miPelota.mover();            // Desplaza en 2D sumando velocidadX y velocidadY
   miPelota.rebotar();          // Comprueba colisiones con los 4 bordes del lienzo
-  miPelota.flotar(2.0);        // Aplica modulación senoidal armónica con sin()
+  miPelota.flotar(3.5);        // Deriva orgánica bidimensional en X e Y con noise()
   miPelota.mostrar();          // Proyecta el círculo en pantalla con fill() y ellipse()`
     : `  miBurbuja.subir();           // Asciende restando velocidad al eje Y
-  miBurbuja.flotar(1.6);       // Oscilación sutil de vaivén en agua
+  miBurbuja.flotar(2.0);       // Vaivén subacuático en X e Y con noise()
   miBurbuja.mostrar();         // Dibuja el cuerpo traslúcido y su brillo vítreo`
 }
 }`;
@@ -380,10 +380,10 @@ ${
   isPelota
     ? `    pelotas[i].mover();
     pelotas[i].rebotar();
-    pelotas[i].flotar(2.0);
+    pelotas[i].flotar(3.5); // Deriva orgánica 2D con noise()
     pelotas[i].mostrar();`
     : `    burbujas[i].subir();
-    burbujas[i].flotar(1.6); // Vaivén sutil de flotación
+    burbujas[i].flotar(2.0); // Vaivén subacuático en X e Y con noise()
     burbujas[i].mostrar();
     
     // Condicional de reaparición continua:
@@ -407,28 +407,8 @@ ${
 }`;
   };
 
-  // Build the complete unified file combining Sketch + Class
-  const buildUnifiedCode = (): string => {
-    return `// ==========================================
-// PROYECTO COMPLETO PARA PROCESSING JAVA 4
-// Módulo: ${module.moduleName}
-// ==========================================
-
-${buildSketchCode()}
-
-// ==========================================
-// DEFINICIÓN DE LA CLASE: ${className}
-// (En Processing IDE puede colocarse en una pestaña separada llamada ${className})
-// ==========================================
-
-${buildClassCode()}
-`;
-  };
-
   const getActiveCode = (): string => {
-    if (activeTab === 'class') return buildClassCode();
-    if (activeTab === 'sketch') return buildSketchCode();
-    return buildUnifiedCode();
+    return activeTab === 'sketch' ? buildSketchCode() : buildClassCode();
   };
 
   const currentCode = getActiveCode();
@@ -439,17 +419,32 @@ ${buildClassCode()}
     setTimeout(() => setCopiedType(null), 2000);
   };
 
-  const handleDownloadPde = () => {
-    const fullPdeContent = buildUnifiedCode();
-    const blob = new Blob([fullPdeContent], { type: 'text/plain;charset=utf-8' });
+  const downloadFile = (fileName: string, content: string) => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${className}_Proyecto.pde`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadActive = () => {
+    if (activeTab === 'sketch') {
+      downloadFile('Sketch.pde', buildSketchCode());
+    } else {
+      downloadFile(`${className}.pde`, buildClassCode());
+    }
+  };
+
+  const handleDownloadBoth = () => {
+    // Descarga ambos archivos por separado para abrir como dos pestañas en Processing
+    downloadFile('Sketch.pde', buildSketchCode());
+    setTimeout(() => {
+      downloadFile(`${className}.pde`, buildClassCode());
+    }, 250);
   };
 
   const lines = currentCode.split('\n');
@@ -502,92 +497,110 @@ ${buildClassCode()}
 
   return (
     <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs flex flex-col">
-      {/* 1. Header with 3 Tabs & Quick Action Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 bg-zinc-50 border-b border-zinc-200">
-        {/* 3 Tabs */}
+      {/* 1. Header with 2 Distinct Tabs & File Action Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 bg-[#EEEDE8] border-b border-[#DCDDD8] font-mono text-xs">
+        {/* 2 Tabs: Main Sketch vs Class */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
-            onClick={() => setActiveTab('class')}
-            className={`min-h-[34px] px-3 py-1 rounded-lg text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'class'
-                ? 'bg-white text-zinc-950 font-bold border border-zinc-200 shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
-            }`}
-          >
-            <FileCode className="w-3.5 h-3.5 text-zinc-700" />
-            <span>{className}.pde (Clase)</span>
-            {hasClassDeclared && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-          </button>
-
-          <button
             onClick={() => setActiveTab('sketch')}
-            className={`min-h-[34px] px-3 py-1 rounded-lg text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+            className={`min-h-[34px] px-3 py-1 text-xs border transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'sketch'
-                ? 'bg-white text-zinc-950 font-bold border border-zinc-200 shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
+                : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] border-[#DCDDD8]'
             }`}
           >
-            <Code2 className="w-3.5 h-3.5 text-zinc-700" />
+            <Code2 className="w-3.5 h-3.5 text-[#4263CF]" />
             <span>Sketch.pde (Principal)</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+            <span className="w-1.5 h-1.5 bg-[#4263CF] inline-block" />
           </button>
 
           <button
-            onClick={() => setActiveTab('unified')}
-            className={`min-h-[34px] px-3 py-1 rounded-lg text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'unified'
-                ? 'bg-white text-zinc-950 font-bold border border-zinc-200 shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+            onClick={() => setActiveTab('class')}
+            className={`min-h-[34px] px-3 py-1 text-xs border transition-colors flex items-center gap-2 cursor-pointer ${
+              activeTab === 'class'
+                ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
+                : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] border-[#DCDDD8]'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-zinc-700" />
-            <span>Todo el .pde</span>
+            <FileCode className="w-3.5 h-3.5 text-[#D5E35F]" />
+            <span>{className}.pde (Clase)</span>
+            {hasClassDeclared && <span className="w-1.5 h-1.5 bg-[#D5E35F] inline-block" />}
           </button>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        {/* Action Controls for Independent Files */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => handleCopy('active', currentCode)}
-            className="min-h-[34px] px-2.5 py-1 rounded-lg bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
-            title="Copiar pestaña activa al portapapeles"
+            className="min-h-[34px] px-2.5 py-1 bg-[#FFFFFF] hover:bg-[#EEEDE8] border border-[#DCDDD8] text-[#181818] text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+            title={`Copiar ${activeTab === 'sketch' ? 'Sketch.pde' : className + '.pde'} al portapapeles`}
           >
             {copiedType === 'active' ? (
               <>
-                <Check className="w-3.5 h-3.5 text-zinc-950" />
-                <span className="font-semibold text-zinc-950">¡Copiado!</span>
+                <Check className="w-3.5 h-3.5 text-[#4263CF]" />
+                <span className="font-bold text-[#181818]">¡Copiado!</span>
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5" />
-                <span>Copiar</span>
+                <span>Copiar {activeTab === 'sketch' ? 'Sketch' : className}</span>
               </>
             )}
           </button>
 
           <button
-            onClick={handleDownloadPde}
-            className="min-h-[34px] px-3 py-1 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
-            title="Descargar archivo ejecutable .pde para abrir en Processing"
+            onClick={handleDownloadActive}
+            className="min-h-[34px] px-3 py-1 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+            title={`Descargar archivo individual ${activeTab === 'sketch' ? 'Sketch.pde' : className + '.pde'}`}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Descargar .pde</span>
+            <span>Descargar {activeTab === 'sketch' ? 'Sketch.pde' : className + '.pde'}</span>
+          </button>
+
+          <button
+            onClick={handleDownloadBoth}
+            className="min-h-[34px] px-2.5 py-1 bg-[#FFFFFF] hover:bg-[#EEEDE8] border border-[#DCDDD8] text-[#181818] text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="Descargar ambos archivos separados (Sketch.pde y clase .pde) para Processing IDE"
+          >
+            <Layers className="w-3.5 h-3.5 text-[#767773]" />
+            <span className="hidden sm:inline">Descargar Ambos</span>
+            <span className="sm:hidden">Ambos</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Progressive Sketch & Class Evolution Guide Banner */}
-      <div className="px-4 py-2.5 bg-zinc-50/80 border-b border-zinc-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-zinc-700 font-sans">
-          <span className="bg-zinc-200/90 text-zinc-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
-            Etapa {currentStageIdx + 1}
+      {/* Processing Multi-Tab Architecture Explanatory Banner */}
+      <div className="px-4 py-2 bg-[#F6F5F0] border-b border-[#DCDDD8] text-xs font-mono flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[#555652]">
+          <span className="bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8] text-[10px] font-bold px-1.5 py-0.5 shrink-0">
+            ARQUITECTURA
           </span>
-          <span className="font-semibold text-zinc-900">{currentGuide.title}:</span>
-          <span className="text-zinc-600 truncate">{currentGuide.addition}</span>
+          <span className="text-[11px] leading-tight">
+            {activeTab === 'sketch' ? (
+              <>
+                <strong>Sketch.pde:</strong> Ciclo general <code>setup()</code> y <code>draw()</code>. La clase vive en su propia pestaña <code>{className}.pde</code>.
+              </>
+            ) : (
+              <>
+                <strong>{className}.pde:</strong> Archivo independiente de la clase. En Processing crea esta pestaña con <kbd className="bg-[#FFFFFF] px-1 py-0.5 border border-[#DCDDD8] font-mono text-[10px]">Ctrl+Mayús+N</kbd>.
+              </>
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. Progressive Sketch & Class Evolution Guide Banner */}
+      <div className="px-4 py-2 bg-[#EEEDE8] border-b border-[#DCDDD8] text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[#181818]">
+          <span className="bg-[#181818] text-[#F6F5F0] text-[10px] font-bold px-1.5 py-0.5">
+            ETAPA 0{currentStageIdx + 1}
+          </span>
+          <span className="font-semibold">{currentGuide.title}:</span>
+          <span className="text-[#767773] truncate">{currentGuide.addition}</span>
         </div>
 
-        <div className="text-[11px] text-zinc-500 font-sans flex items-center gap-1 shrink-0">
-          <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+        <div className="text-[11px] text-[#767773] flex items-center gap-1 shrink-0">
+          <Info className="w-3.5 h-3.5 text-[#767773] shrink-0" />
           <span>{currentGuide.rationale}</span>
         </div>
       </div>
@@ -607,12 +620,12 @@ ${buildClassCode()}
                 key={idx}
                 className={`table-row transition-colors ${
                   isClassDecl || isNewInst
-                    ? 'bg-amber-50/70 font-semibold'
-                    : 'hover:bg-zinc-50'
+                    ? 'bg-[#D5E35F]/20 font-semibold'
+                    : 'hover:bg-[#F6F5F0]'
                 }`}
               >
                 {/* Line number */}
-                <span className="table-cell select-none pr-4 text-right text-zinc-300 font-mono text-[11px] w-9 tabular-nums">
+                <span className="table-cell select-none pr-4 text-right text-[#A5A6A0] font-mono text-[11px] w-9 tabular-nums">
                   {lineNum}
                 </span>
 
@@ -620,8 +633,8 @@ ${buildClassCode()}
                 <span
                   className={`table-cell whitespace-pre ${
                     isComment || isHeader
-                      ? 'text-zinc-400 font-sans text-[11px] italic'
-                      : 'text-zinc-800'
+                      ? 'text-[#767773] font-mono text-[11px] italic'
+                      : 'text-[#181818]'
                   }`}
                 >
                   {highlightProcessingSyntax(line)}
@@ -633,52 +646,49 @@ ${buildClassCode()}
       </div>
 
       {/* 4. Footer Status Bar with Processing Architecture Note */}
-      <div className="px-4 py-2 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
+      <div className="px-4 py-2 bg-[#EEEDE8] border-t border-[#DCDDD8] text-[11px] text-[#767773] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>Processing Java 4 (Estricto)</span>
-          <span className="text-zinc-300">|</span>
-          <span className="text-zinc-600 font-sans">
+          <span className="text-[#181818] font-semibold">Processing Java 4.3</span>
+          <span className="text-[#DCDDD8]">|</span>
+          <span>
             {activeTab === 'class'
-              ? `Pestaña ${className}.pde (Definición del molde)`
-              : activeTab === 'sketch'
-              ? 'Pestaña Sketch.pde (setup() y draw() principales)'
-              : 'Sketch completo unificado'}
+              ? `Pestaña ${className}.pde (Definición independiente de la clase)`
+              : 'Pestaña Sketch.pde (Sketch principal con setup() y draw())'}
           </span>
         </div>
 
-        <div className="text-zinc-400 font-sans text-[11px]">
-          {activeTab === 'sketch' && 'setup() corre 1 vez · draw() corre a 60 fps'}
-          {activeTab === 'class' && `${module.methods.length} métodos construidos en la clase`}
-          {activeTab === 'unified' && 'Listo para copiar o abrir en el IDE oficial'}
+        <div className="text-[#767773]">
+          {activeTab === 'sketch' && 'setup() se ejecuta 1 vez · draw() se ejecuta a 60 fps'}
+          {activeTab === 'class' && `${module.methods.length} métodos encapsulados en ${className}`}
         </div>
       </div>
     </div>
   );
 };
 
-// Lightweight token highlighter for Processing Java
+// Lightweight editorial token highlighter for Processing Java
 function highlightProcessingSyntax(line: string): React.ReactNode {
   if (line.trim().startsWith('//')) {
-    return <span className="text-zinc-400 italic">{line}</span>;
+    return <span className="text-[#767773] italic">{line}</span>;
   }
 
-  // Tokens regex
+  // Tokens regex including noise, frameCount, width, height
   const parts = line.split(
-    /(\b(?:class|void|float|color|int|boolean|String|new|for|if|else|return|random|size|background|ellipse|fill|stroke|noStroke|strokeWeight|constrain|dist|sin|cos|tan)\b|[{}();=+\-*\/,])/g
+    /(\b(?:class|void|float|color|int|boolean|String|new|for|if|else|return|random|size|background|ellipse|fill|stroke|noStroke|strokeWeight|constrain|dist|sin|cos|tan|noise|frameCount|width|height)\b|[{}();=+\-*\/,])/g
   );
 
   return parts.map((part, pIdx) => {
     if (['class', 'new', 'for', 'if', 'else', 'return'].includes(part)) {
       return (
-        <span key={pIdx} className="text-purple-700 font-bold">
+        <span key={pIdx} className="text-[#4263CF] font-bold">
           {part}
         </span>
       );
     }
     if (['float', 'color', 'int', 'boolean', 'String', 'void'].includes(part)) {
       return (
-        <span key={pIdx} className="text-emerald-700 font-semibold">
+        <span key={pIdx} className="text-[#181818] font-semibold">
           {part}
         </span>
       );
@@ -698,17 +708,21 @@ function highlightProcessingSyntax(line: string): React.ReactNode {
         'sin',
         'cos',
         'tan',
+        'noise',
+        'frameCount',
+        'width',
+        'height',
       ].includes(part)
     ) {
       return (
-        <span key={pIdx} className="text-sky-700 font-medium">
+        <span key={pIdx} className="text-[#181818] font-medium underline decoration-[#DCDDD8] decoration-1">
           {part}
         </span>
       );
     }
     if (['{', '}', '(', ')', ';', '=', '+', '-', '*', '/'].includes(part)) {
       return (
-        <span key={pIdx} className="text-zinc-500 font-bold">
+        <span key={pIdx} className="text-[#767773] font-bold">
           {part}
         </span>
       );

@@ -224,12 +224,12 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           updated.velocidad = updated.vx;
         } else if (method.id === 'flotar') {
           updated.isFloating = true;
-          const amp = Number(paramValues.balanceo ?? paramValues.intensidad ?? 2.0);
-          if (isPelota) {
-            updated.y += Math.sin(updated.x * 0.05) * amp;
-          } else {
-            updated.x += Math.sin(updated.y * 0.05) * amp;
-          }
+          const amp = Number(paramValues.intensidad ?? paramValues.balanceo ?? 2.5);
+          // Perturbación instantánea en ambos ejes X e Y simulando ruido
+          const fx = (Math.sin((updated.x + 37) * 0.05) - 0.2) * amp;
+          const fy = (Math.cos((updated.y + 71) * 0.05) - 0.2) * (amp * 0.8);
+          updated.x += fx;
+          updated.y += fy;
         } else if (method.id === 'cambiarTamano') {
           updated.diametro = Number(paramValues.nuevoDiametro || 60);
         } else if (method.id === 'cambiarColor') {
@@ -294,44 +294,42 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Top Breadcrumb & Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DCDDD8]">
+        <div className="flex items-center gap-2 text-xs font-mono text-[#767773]">
           <button
             onClick={onBackToHome}
-            className="hover:text-zinc-900 transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-900 cursor-pointer"
+            className="hover:text-[#181818] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2 py-1 bg-[#EEEDE8] border border-[#DCDDD8] text-[#181818] cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Inicio</span>
           </button>
-          <span>/</span>
+          <span className="text-[#DCDDD8]">/</span>
           <button
             onClick={onOpenCatalogue}
-            className="hover:text-zinc-900 transition-colors font-medium flex items-center gap-1 cursor-pointer"
+            className="hover:text-[#181818] transition-colors flex items-center gap-1 cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Temario</span>
           </button>
-          <span>/</span>
-          <span className="text-zinc-400">POO en Processing Java</span>
-          <span>/</span>
-          <span className="text-zinc-950 font-semibold font-mono">Laboratorio de Objetos</span>
+          <span className="text-[#DCDDD8]">/</span>
+          <span className="text-[#181818] font-bold">Laboratorio POO</span>
         </div>
 
         {/* Module Switcher (Módulo 1: Pelota, Módulo 2: Burbuja, Constructor Creativo) */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+          <div className="flex items-center gap-1 p-1 bg-[#EEEDE8] border border-[#DCDDD8] font-mono text-xs">
             <button
               onClick={() => {
                 setActiveModuleId('pelota');
                 setSelectedInstanceIndex(0);
               }}
-              className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'pelota'
-                  ? 'bg-zinc-950 text-white shadow-xs'
-                  : 'text-zinc-600 hover:text-zinc-950'
+                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
+                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
               }`}
             >
-              <Circle className="w-3.5 h-3.5" />
+              <Circle className="w-3.5 h-3.5 text-[#E2661A]" />
               <span>Módulo 1: Pelota</span>
             </button>
 
@@ -340,13 +338,13 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
                 setActiveModuleId('burbuja');
                 setSelectedInstanceIndex(0);
               }}
-              className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'burbuja'
-                  ? 'bg-zinc-950 text-white shadow-xs'
-                  : 'text-zinc-600 hover:text-zinc-950'
+                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
+                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
               }`}
             >
-              <Droplets className="w-3.5 h-3.5" />
+              <Droplets className="w-3.5 h-3.5 text-[#38BDF8]" />
               <span>Módulo 2: Burbuja</span>
             </button>
 
@@ -354,13 +352,13 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
               onClick={() => {
                 setActiveModuleId('builder');
               }}
-              className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'builder'
-                  ? 'bg-zinc-950 text-white shadow-xs'
-                  : 'text-zinc-600 hover:text-zinc-950'
+                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
+                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <Sparkles className="w-3.5 h-3.5 text-[#D5E35F]" />
               <span>Constructor & Eventos</span>
             </button>
           </div>
@@ -368,7 +366,7 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           {activeModuleId !== 'builder' && (
             <button
               onClick={handleResetModule}
-              className="min-h-[36px] p-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
+              className="min-h-[36px] p-2 border border-[#DCDDD8] bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#767773] hover:text-[#181818] transition-colors cursor-pointer"
               title="Reiniciar módulo a etapa 1"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -384,27 +382,27 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
         <>
           {/* Hero Header */}
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 font-mono">
-              <span className="font-bold text-zinc-900 bg-zinc-100 px-2 py-0.5 rounded">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#767773] font-mono">
+              <span className="font-bold text-[#181818] bg-[#EEEDE8] border border-[#DCDDD8] px-2 py-0.5">
                 {currentModule.moduleName}
               </span>
-              <span>·</span>
-              <span>Modelo de 5 momentos: Observar → Describir → Construir → Experimentar → Aplicar</span>
+              <span className="text-[#DCDDD8]">/</span>
+              <span>Progresión: Observar → Describir → Construir → Experimentar → Aplicar</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950">
-              Laboratorio de Objetos: Construcción Progresiva de Clases
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#181818] font-sans">
+              Laboratorio de Objetos: Construcción Progresiva en Processing Java
             </h1>
 
-            <p className="text-xs sm:text-sm text-zinc-600 max-w-4xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#555652] max-w-4xl leading-relaxed font-sans">
               {isPelota
-                ? 'Aprende cómo nace una clase en Processing Java: desde observar un círculo en reposo, definir sus campos y constructor, hasta programar sus 7 métodos canónicos y gobernar un arreglo de pelotas independientes.'
-                : 'Aplica de forma autónoma los conceptos adquiridos modelando la clase Burbuja: física ascendente en el eje Y, transparencia alfa (0-255), expansión dinámica y arreglos de burbujas en el agua.'}
+                ? 'Comprende la relación entre memoria y comportamiento visual: desde declarar campos cartesianos (x, y, diametro) y su constructor, hasta programar 7 métodos con física 2D, flotación armónica con ruido Perlin (noise) y gobierno de arreglos Pelota[].'
+                : 'Aplica los fundamentos aprendidos modelando la clase Burbuja: cinemática ascendente, canal alfa de opacidad, expansión elástica de diámetro y dispersión colectiva en un arreglo Burbuja[].'}
             </p>
           </div>
 
           {/* 4 Synchronized Areas Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* ROW 1 / LEFT: Panel de Aprendizaje (6 cols) */}
         <div className="lg:col-span-6 space-y-6">
           <LearningPanel

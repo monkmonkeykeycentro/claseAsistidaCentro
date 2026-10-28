@@ -222,7 +222,7 @@ export default function App() {
     TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5];
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F6F5F0] text-[#181818] flex flex-col font-sans selection:bg-[#D5E35F] selection:text-[#181818]">
       <Header
         currentView={activeView}
         onNavigateHome={() => setActiveView('home')}
@@ -233,7 +233,7 @@ export default function App() {
         isSyncing={isSyncing}
       />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* VIEW 1: Home View */}
         {activeView === 'home' && (
           <HomeView
@@ -316,40 +316,37 @@ export default function App() {
         currentUser={currentUser}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 py-6 text-xs text-zinc-500 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Editorial Footer inspired by Generative Design */}
+      <footer className="border-t border-[#DCDDD8] py-8 text-xs text-[#767773] bg-[#EEEDE8]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-zinc-900">Código Creativo</span>
-            <span className="text-zinc-300">·</span>
+            <span className="font-semibold text-[#181818]">Código Creativo</span>
+            <span className="text-[#DCDDD8]">/</span>
             <span>CENTRO</span>
-            <span className="text-zinc-300">·</span>
-            <span className="text-zinc-500">Processing Java</span>
+            <span className="text-[#DCDDD8]">/</span>
+            <span className="text-[#767773]">Processing Java 4.3</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] text-zinc-400">
+          <div className="flex items-center gap-4 text-[11px] text-[#767773]">
             <button
               onClick={() => setActiveView('home')}
-              className="text-zinc-600 hover:text-zinc-900 cursor-pointer"
+              className="text-[#767773] hover:text-[#181818] cursor-pointer"
             >
               Inicio
             </button>
-            <span>·</span>
+            <span className="text-[#DCDDD8]">·</span>
             <button
               onClick={() => setIsCatalogueOpen(true)}
-              className="text-zinc-600 hover:text-zinc-900 cursor-pointer"
+              className="text-[#767773] hover:text-[#181818] cursor-pointer"
             >
-              Temario ({TOPICS_DATA.length} módulos)
+              Temario ({TOPICS_DATA.length})
             </button>
-            <span>·</span>
+            <span className="text-[#DCDDD8]">·</span>
             <button
-              onClick={() => {
-                setCurrentTopicId('classes');
-                setActiveView('workshop');
-              }}
-              className="text-zinc-600 hover:text-zinc-900 cursor-pointer"
+              onClick={() => setActiveView('oop-lab')}
+              className="text-[#767773] hover:text-[#4263CF] font-medium cursor-pointer"
             >
-              Taller de Clases
+              Laboratorio POO
             </button>
           </div>
         </div>

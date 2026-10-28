@@ -23,16 +23,16 @@ interface LearningPanelProps {
   isChallengeCompleted?: boolean;
 }
 
-const MOMENT_LABELS: Record<LearningMoment, { title: string; subtitle: string }> = {
-  observe: { title: '1. Observar', subtitle: 'Reconocer el objeto y sus rasgos' },
-  describe: { title: '2. Describir', subtitle: 'Propiedades vs Comportamientos' },
-  'build-class': { title: '3. Construir Clase', subtitle: 'Sintaxis canónica de Processing' },
-  fields: { title: '3. Construir Campos', subtitle: 'Tipos de datos y memoria' },
-  constructor: { title: '3. Construir Constructor', subtitle: 'Inicialización de variables' },
-  methods: { title: '3. Construir Métodos', subtitle: 'Acciones y parámetros' },
-  'method-explorer': { title: '4. Experimentar', subtitle: 'Llamadas a métodos y efectos' },
-  'instances-arrays': { title: '5. Aplicar Arreglos', subtitle: 'Gestión de múltiples objetos' },
-  'free-lab': { title: 'Laboratorio Libre', subtitle: 'Exploración y exportación' },
+const MOMENT_LABELS: Record<LearningMoment, { step: string; title: string; subtitle: string }> = {
+  observe: { step: '01', title: 'Observar', subtitle: 'Reconocer el objeto y sus cualidades visuales' },
+  describe: { step: '02', title: 'Describir', subtitle: 'Propiedades espaciales vs Acciones' },
+  'build-class': { step: '03', title: 'Construir Clase', subtitle: 'Sintaxis canónica en Processing' },
+  fields: { step: '03', title: 'Construir Campos', subtitle: 'Tipos de datos y memoria' },
+  constructor: { step: '03', title: 'Construir Constructor', subtitle: 'Inicialización de variables' },
+  methods: { step: '03', title: 'Construir Métodos', subtitle: 'Acciones y parámetros' },
+  'method-explorer': { step: '04', title: 'Experimentar', subtitle: 'Llamadas a métodos y mutación de estado' },
+  'instances-arrays': { step: '05', title: 'Aplicar Arreglos', subtitle: 'Gestión colectiva de múltiples objetos' },
+  'free-lab': { step: '05', title: 'Laboratorio Libre', subtitle: 'Exploración y exportación .pde' },
 };
 
 export const LearningPanel: React.FC<LearningPanelProps> = ({
@@ -48,7 +48,6 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [activeHintLevel, setActiveHintLevel] = useState<1 | 2 | 3 | null>(null);
 
-  // CRITICAL FIX: Reset question selection and feedback whenever moving between stages/activities
   useEffect(() => {
     setSelectedOptId(null);
     setShowFeedback(false);
@@ -70,169 +69,164 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
   const chosenOption = challenge?.options.find((o) => o.id === selectedOptId);
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 space-y-5 shadow-xs flex flex-col justify-between">
-      {/* 1. Moment Indicator & Step Counter */}
+    <div className="bg-[#FFFFFF] border border-[#DCDDD8] p-5 sm:p-6 space-y-5 flex flex-col justify-between">
+      {/* 1. Moment Indicator & Step Index */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+        <div className="flex items-center justify-between gap-2 border-b border-[#DCDDD8] pb-3 text-xs font-mono">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-zinc-900 bg-zinc-100 px-2.5 py-1 rounded-md">
+            <span className="font-bold text-[#181818] bg-[#EEEDE8] px-2 py-0.5 border border-[#DCDDD8]">
+              MOMENTO {momentInfo.step}
+            </span>
+            <span className="text-[#181818] font-semibold">
               {momentInfo.title}
             </span>
-            <span className="text-xs text-zinc-500 font-sans hidden sm:inline">
+            <span className="text-[#DCDDD8] hidden sm:inline">/</span>
+            <span className="text-[#767773] hidden sm:inline text-[11px]">
               {momentInfo.subtitle}
             </span>
           </div>
 
-          <div className="flex items-center gap-1 font-mono text-xs text-zinc-500">
-            <span className="font-bold text-zinc-950 tabular-nums">{currentStageIdx + 1}</span>
-            <span>/</span>
-            <span className="tabular-nums">{totalStages}</span>
+          <div className="flex items-center gap-1 text-[#767773]">
+            <span>ETAPA</span>
+            <span className="font-bold text-[#181818] tabular-nums">0{currentStageIdx + 1}</span>
+            <span className="text-[#DCDDD8]">/</span>
+            <span className="tabular-nums">0{totalStages}</span>
           </div>
         </div>
 
         {/* Stage Title & Learning Objective */}
-        <div className="space-y-1.5">
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-950">
+        <div className="space-y-1.5 pt-1">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#181818] font-sans">
             {activity.title}
           </h2>
-          <div className="text-xs text-zinc-500 font-medium">
-            <strong>Objetivo:</strong> {activity.objective}
+          <div className="text-xs text-[#767773] font-mono leading-relaxed">
+            <span className="text-[#181818] font-semibold uppercase">Objetivo:</span> {activity.objective}
           </div>
         </div>
 
         {/* Pedagogical Explanation */}
-        <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed font-sans">
+        <p className="text-xs sm:text-sm text-[#555652] leading-relaxed font-sans pt-1">
           {activity.explanation}
         </p>
 
-        {/* 2. Challenge / Question if available */}
+        {/* 2. Challenge / Question Section */}
         {challenge && (
-          <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl space-y-3 pt-3.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
-              <HelpCircle className="w-4 h-4 text-zinc-800 shrink-0" />
-              <span>Pregunta de comprensión</span>
+          <div className="p-4 bg-[#EEEDE8] border border-[#DCDDD8] space-y-3 mt-3">
+            <div className="flex items-center justify-between text-xs font-mono text-[#767773] border-b border-[#DCDDD8] pb-2">
+              <div className="flex items-center gap-1.5 font-bold text-[#181818]">
+                <HelpCircle className="w-3.5 h-3.5 text-[#4263CF]" />
+                <span>PREGUNTA DE COMPRENSIÓN</span>
+              </div>
+              <span>Selecciona una opción</span>
             </div>
 
-            <p className="text-xs sm:text-sm font-medium text-zinc-900 leading-relaxed">
+            <p className="text-xs sm:text-sm font-medium text-[#181818] leading-relaxed font-sans">
               {challenge.question}
             </p>
 
             {/* Multiple Choice Options */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2 pt-1 font-sans">
               {challenge.options.map((opt, idx) => {
                 const isSelected = selectedOptId === opt.id;
                 return (
                   <button
                     key={opt.id}
                     onClick={() => handleSelectOption(opt.id)}
-                    className={`w-full p-3 rounded-lg border text-left text-xs transition-colors flex items-start gap-2.5 cursor-pointer ${
+                    className={`w-full p-3 border text-left text-xs transition-colors flex items-start gap-3 cursor-pointer ${
                       isSelected
                         ? opt.isCorrect
-                          ? 'bg-zinc-950 text-white border-zinc-950 shadow-xs'
-                          : 'bg-amber-50 text-amber-950 border-amber-300'
-                        : 'bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-700'
+                          ? 'bg-[#181818] text-[#F6F5F0] border-[#181818]'
+                          : 'bg-[#FFFFFF] text-[#181818] border-[#4263CF] ring-1 ring-[#4263CF]'
+                        : 'bg-[#FFFFFF] hover:border-[#181818] border-[#DCDDD8] text-[#181818]'
                     }`}
                   >
-                    <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center shrink-0 mt-0.5 font-mono text-[10px] font-bold">
+                    <span
+                      className={`w-5 h-5 border flex items-center justify-center shrink-0 mt-0.5 font-mono text-[10px] font-bold ${
+                        isSelected && opt.isCorrect
+                          ? 'bg-[#D5E35F] text-[#181818] border-[#D5E35F]'
+                          : isSelected
+                          ? 'bg-[#4263CF] text-white border-[#4263CF]'
+                          : 'bg-[#EEEDE8] border-[#DCDDD8] text-[#181818]'
+                      }`}
+                    >
                       {String.fromCharCode(65 + idx)}
                     </span>
-                    <span className="leading-relaxed">{opt.text}</span>
+                    <span className="leading-relaxed flex-1">{opt.text}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Explanation Feedback */}
+            {/* Explanation Feedback Block */}
             {showFeedback && chosenOption && (
               <div
-                className={`p-3.5 rounded-lg border text-xs leading-relaxed animate-in fade-in duration-150 ${
+                className={`p-3.5 border-l-4 text-xs leading-relaxed font-sans ${
                   chosenOption.isCorrect
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
-                    : 'bg-amber-50 border-amber-200 text-amber-950'
+                    ? 'bg-[#FFFFFF] border-l-[#4263CF] border border-[#DCDDD8] text-[#181818]'
+                    : 'bg-[#FFFFFF] border-l-amber-500 border border-[#DCDDD8] text-[#181818]'
                 }`}
               >
-                <div className="font-semibold mb-1 flex items-center gap-1.5">
+                <div className="font-semibold mb-1 flex items-center gap-1.5 font-mono text-xs">
                   {chosenOption.isCorrect ? (
                     <>
-                      <Check className="w-4 h-4 text-emerald-600" />
-                      <span>Respuesta Correcta</span>
+                      <Check className="w-4 h-4 text-[#4263CF]" />
+                      <span className="text-[#4263CF] font-bold">RESPUESTA CORRECTA</span>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="w-4 h-4 text-amber-600" />
-                      <span>Revisemos este concepto:</span>
+                      <span className="text-amber-800 font-bold">REVISEMOS ESTE CONCEPTO:</span>
                     </>
                   )}
                 </div>
-                <p>{chosenOption.feedback}</p>
-                <div className="pt-2 mt-2 border-t border-current/15 flex items-center justify-between">
-                  <span className="text-[11px] opacity-80">
-                    {chosenOption.isCorrect ? '¡Comprendido! Puedes avanzar o explorar otra opción.' : 'Puedes cambiar tu selección o volver a intentar.'}
+                <p className="text-[#555652]">{chosenOption.feedback}</p>
+                <div className="pt-2 mt-2 border-t border-[#DCDDD8] flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-[#767773]">
+                    {chosenOption.isCorrect ? 'Concepto asimilado' : 'Puedes probar otra respuesta'}
                   </span>
                   <button
                     onClick={() => {
                       setSelectedOptId(null);
                       setShowFeedback(false);
                     }}
-                    className="min-h-[28px] px-2.5 py-1 rounded bg-white/80 hover:bg-white text-zinc-900 border border-current/20 font-medium text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                    className="min-h-[28px] px-2.5 py-1 bg-[#EEEDE8] hover:bg-[#DCDDD8] text-[#181818] border border-[#DCDDD8] font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
                   >
-                    <RotateCcw className="w-3 h-3 text-zinc-600" />
-                    <span>Reintentar pregunta</span>
+                    <RotateCcw className="w-3 h-3 text-[#767773]" />
+                    <span>Reintentar</span>
                   </button>
                 </div>
               </div>
             )}
 
             {/* 3-Level Progressive Hints */}
-            <div className="pt-2 border-t border-zinc-200/80 space-y-2">
-              <div className="flex items-center justify-between text-xs text-zinc-500">
-                <span className="flex items-center gap-1 font-medium text-zinc-700">
-                  <Lightbulb className="w-3.5 h-3.5 text-zinc-600" />
-                  <span>Pistas de apoyo (3 niveles):</span>
+            <div className="pt-2 border-t border-[#DCDDD8] space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
+                <span className="flex items-center gap-1 font-semibold text-[#181818]">
+                  <Lightbulb className="w-3.5 h-3.5 text-[#4263CF]" />
+                  <span>Pistas analíticas (3 niveles):</span>
                 </span>
-                <span className="text-[11px] text-zinc-400">Consulta solo si lo necesitas</span>
+                <span className="text-[11px]">Consultar si es necesario</span>
               </div>
 
               <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  onClick={() => setActiveHintLevel(activeHintLevel === 1 ? null : 1)}
-                  className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-                    activeHintLevel === 1
-                      ? 'bg-zinc-900 text-white border-zinc-900'
-                      : 'bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-700'
-                  }`}
-                >
-                  <span>Pista 1: Concepto</span>
-                  {activeHintLevel === 1 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
-
-                <button
-                  onClick={() => setActiveHintLevel(activeHintLevel === 2 ? null : 2)}
-                  className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-                    activeHintLevel === 2
-                      ? 'bg-zinc-900 text-white border-zinc-900'
-                      : 'bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-700'
-                  }`}
-                >
-                  <span>Pista 2: Elementos</span>
-                  {activeHintLevel === 2 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
-
-                <button
-                  onClick={() => setActiveHintLevel(activeHintLevel === 3 ? null : 3)}
-                  className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-                    activeHintLevel === 3
-                      ? 'bg-zinc-900 text-white border-zinc-900'
-                      : 'bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-700'
-                  }`}
-                >
-                  <span>Pista 3: Ejemplo</span>
-                  {activeHintLevel === 3 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
+                {[1, 2, 3].map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => setActiveHintLevel(activeHintLevel === lvl ? null : (lvl as 1 | 2 | 3))}
+                    className={`px-2 py-1 text-[11px] font-mono border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+                      activeHintLevel === lvl
+                        ? 'bg-[#181818] text-[#F6F5F0] border-[#181818]'
+                        : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] border-[#DCDDD8] text-[#181818]'
+                    }`}
+                  >
+                    <span>Pista 0{lvl}</span>
+                    {activeHintLevel === lvl ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                ))}
               </div>
 
               {activeHintLevel && (
-                <div className="p-3 bg-white rounded-lg border border-zinc-200 text-xs text-zinc-700 leading-relaxed font-sans animate-in fade-in duration-150">
+                <div className="p-3 bg-[#FFFFFF] border border-[#DCDDD8] text-xs text-[#555652] leading-relaxed font-sans">
                   {activeHintLevel === 1 && challenge.hints.hint1}
                   {activeHintLevel === 2 && challenge.hints.hint2}
                   {activeHintLevel === 3 && challenge.hints.hint3}
@@ -244,24 +238,26 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
       </div>
 
       {/* 3. Stage Stepper & Bottom Navigation */}
-      <div className="pt-4 border-t border-zinc-100 flex items-center justify-between gap-3">
+      <div className="pt-4 border-t border-[#DCDDD8] flex items-center justify-between gap-3 font-mono text-xs">
         <button
           onClick={onPrevStage}
           disabled={currentStageIdx === 0}
-          className="min-h-[40px] px-3 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-700 disabled:opacity-40 transition-colors flex items-center gap-1.5 cursor-pointer"
+          className="min-h-[40px] px-3.5 py-1.5 border border-[#DCDDD8] bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] disabled:opacity-30 transition-colors flex items-center gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Etapa anterior</span>
         </button>
 
-        {/* Step dots */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-[200px] py-1">
+        {/* Step Ticks */}
+        <div className="flex items-center gap-1 overflow-x-auto max-w-[180px] py-1">
           {Array.from({ length: totalStages }).map((_, i) => (
             <button
               key={i}
               onClick={() => onSelectStageIdx(i)}
-              className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                i === currentStageIdx ? 'bg-zinc-950 w-5' : 'bg-zinc-300 hover:bg-zinc-500'
+              className={`h-2 transition-all cursor-pointer ${
+                i === currentStageIdx
+                  ? 'bg-[#4263CF] w-5'
+                  : 'bg-[#DCDDD8] hover:bg-[#767773] w-2'
               }`}
               title={`Ir a etapa ${i + 1}`}
             />
@@ -271,9 +267,9 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
         <button
           onClick={onNextStage}
           disabled={currentStageIdx === totalStages - 1}
-          className="min-h-[40px] px-4 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold disabled:opacity-40 transition-colors flex items-center gap-1.5 cursor-pointer"
+          className="min-h-[40px] px-4 py-1.5 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] font-medium disabled:opacity-30 transition-colors flex items-center gap-1.5 cursor-pointer"
         >
-          <span>Siguiente etapa</span>
+          <span>Siguiente</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

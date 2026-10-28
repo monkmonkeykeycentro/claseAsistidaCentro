@@ -717,33 +717,29 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Top Banner & Mode Description */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900 text-white border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8] flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded text-zinc-300">
-              Estudio Creativo Avanzado
+          <div className="flex items-center gap-2 text-xs text-[#767773]">
+            <span className="font-bold uppercase tracking-wider bg-[#181818] text-[#F6F5F0] px-1.5 py-0.5 text-[10px]">
+              ESTUDIO CREATIVO
             </span>
-            <span className="text-zinc-400 text-xs">·</span>
-            <span className="text-xs text-zinc-300">
-              Clases, Constructor, Arreglos y Eventos (if / mousePress / keyPress)
-            </span>
+            <span className="text-[#DCDDD8]">/</span>
+            <span>Clases, Constructor, Arreglos y Eventos (if, mouse, keys)</span>
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-white">
+          <h2 className="text-xl font-semibold tracking-tight text-[#181818] font-sans">
             Constructor & Alimentador de Arreglos de Objetos
           </h2>
-          <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
-            Aquí tú defines la estructura de la clase y su constructor, eliges qué métodos incluir,
-            incorporas condicionales (`if`) y activas eventos de teclado y mouse para alimentar
-            y controlar la colección en tiempo real.
+          <p className="text-xs text-[#555652] max-w-2xl leading-relaxed font-sans">
+            Define la arquitectura de tu propia clase, configura los parámetros de su constructor, incorpora condicionales <code>if</code> y activa eventos para poblar dinámicamente tu colección.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onBackToGuided}
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors cursor-pointer"
+            className="min-h-[38px] px-3.5 py-1.5 bg-[#181818] hover:bg-[#4263CF] text-xs font-mono text-[#F6F5F0] transition-colors cursor-pointer"
           >
-            Regresar a Módulos Guiados
+            ← Volver a Módulos Guiados
           </button>
         </div>
       </div>
@@ -753,7 +749,7 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
         {/* LEFT COLUMN: Controls & Configurations (6 cols) */}
         <div className="lg:col-span-6 space-y-6">
           {/* Builder Navigation Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-zinc-100 rounded-xl border border-zinc-200 overflow-x-auto">
+          <div className="flex items-center gap-1 p-1 bg-[#EEEDE8] border border-[#DCDDD8] overflow-x-auto font-mono text-xs">
             {[
               { id: 'structure', label: '1. Clase & Constructor', icon: Layers },
               { id: 'feed', label: '2. Alimentar Arreglo', icon: Plus },
@@ -767,10 +763,10 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
                 <button
                   key={tab.id}
                   onClick={() => setActiveBuilderTab(tab.id as typeof activeBuilderTab)}
-                  className={`min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  className={`min-h-[36px] px-3 py-1 text-xs border transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     isActive
-                      ? 'bg-zinc-950 text-white shadow-xs'
-                      : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-200/60'
+                      ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
+                      : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] border-[#DCDDD8]'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />

@@ -180,23 +180,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       aria-label="Acceso a la plataforma"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
     >
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-zinc-200 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+      <div className="bg-[#F6F5F0] rounded-none max-w-lg w-full border border-[#DCDDD8] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col font-sans">
         {/* Header */}
-        <div className="p-5 border-b border-zinc-100 flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-5 border-b border-[#DCDDD8] bg-[#EEEDE8] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
+            <div className="w-8 h-8 bg-[#181818] text-[#F6F5F0] flex items-center justify-center font-mono text-xs font-bold">
+              [CC]
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-zinc-950">Acceso Seguro</h2>
-              <p className="text-[11px] text-zinc-500 font-sans">
-                Autenticación institucional de Google y Firebase
+              <h2 className="text-sm font-bold text-[#181818] font-mono uppercase tracking-wide">Acceso al Laboratorio</h2>
+              <p className="text-[11px] text-[#767773] font-mono">
+                Autenticación y sincronización en la nube
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center border border-[#DCDDD8] bg-white text-[#767773] hover:text-[#181818] hover:bg-[#EEEDE8] transition-colors cursor-pointer"
             aria-label="Cerrar modal"
           >
             <X className="w-4 h-4" />
@@ -208,30 +208,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {currentUser ? (
             /* Logged in state */
             <div className="space-y-4">
-              <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200 flex items-center gap-3.5">
+              <div className="p-4 bg-[#EEEDE8] border border-[#DCDDD8] flex items-center gap-3.5">
                 {currentUser.photoURL ? (
                   <img
                     src={currentUser.photoURL}
                     alt={currentUser.displayName || 'Usuario'}
-                    className="w-12 h-12 rounded-full border border-zinc-300 object-cover"
+                    className="w-12 h-12 border border-[#DCDDD8] object-cover"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm">
+                  <div className="w-12 h-12 bg-[#181818] text-white flex items-center justify-center font-bold font-mono text-sm">
                     {currentUser.displayName?.charAt(0).toUpperCase() || 'U'}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm text-zinc-900 truncate">
+                    <p className="font-bold text-sm text-[#181818] truncate">
                       {currentUser.displayName}
                     </p>
                     {currentUser.isCentroStudent && (
-                      <span className="text-[10px] font-mono uppercase bg-zinc-900 text-white px-1.5 py-0.5 rounded font-medium">
+                      <span className="text-[10px] font-mono uppercase bg-[#181818] text-white px-1.5 py-0.5 font-bold">
                         CENTRO
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-zinc-500 font-mono truncate">{currentUser.email}</p>
+                  <p className="text-xs text-[#767773] font-mono truncate">{currentUser.email}</p>
                 </div>
               </div>
 

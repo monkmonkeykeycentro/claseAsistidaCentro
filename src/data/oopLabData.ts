@@ -109,27 +109,31 @@ export const PELOTA_MODULE: ModuleProgression = {
       id: 'flotar',
       name: 'flotar',
       signature: 'void flotar(float intensidad)',
-      description: 'Genera una oscilación armónica suave usando la función senoidal sin(), simulando flotación orgánica.',
+      description: 'Genera una deriva orgánica bidimensional en X e Y usando la función noise() de Perlin, simulando suspensión aerodinámica o corrientes de aire.',
       fieldsUsed: ['x', 'y'],
-      fieldsModified: ['y'],
+      fieldsModified: ['x', 'y'],
       parameters: [
         {
           name: 'intensidad',
           type: 'float',
-          defaultValue: 4.0,
-          min: 1.0,
-          max: 12.0,
+          defaultValue: 3.5,
+          min: 0.5,
+          max: 10.0,
           step: 0.5,
-          description: 'Amplitud de la onda senoidal en píxeles.',
+          description: 'Amplitud de la perturbación orgánica producida por el ruido Perlin.',
         },
       ],
       executionType: 'continuous',
       codeSnippet: `void flotar(float intensidad) {
-  // Ondulación senoidal periódica
-  y = y + sin(x * 0.05) * intensidad;
+  // Desplazamiento orgánico en X e Y mediante ruido Perlin (noise)
+  // noise() devuelve valores armónicos suaves entre 0.0 y 1.0; restamos 0.5 para variar en ambas direcciones
+  float fx = (noise(x * 0.01, frameCount * 0.02) - 0.5) * intensidad;
+  float fy = (noise(y * 0.01 + 100, frameCount * 0.02) - 0.5) * (intensidad * 0.8);
+  x = x + fx;
+  y = y + fy;
 }`,
       explanation:
-        'Aprovecha la función matemática sin() de Processing para modular suavemente el valor del campo y en función de x, creando un efecto fluido y vivaz.',
+        'La función noise() de Processing genera ruido Perlin continuo y orgánico. Al modular tanto x como y de manera desfasada, la pelota adquiere una flotación viva y fluida en dos dimensiones, sin la rigidez de una simple onda senoidal.',
     },
     {
       id: 'cambiarTamano',
@@ -532,7 +536,7 @@ export const PELOTA_MODULE: ModuleProgression = {
       moment: 'method-explorer',
       objective: 'Experimentar interactivamente ejecutando cada método en modo paso a paso y en modo animación continua desde draw().',
       explanation:
-        'Has construido los métodos de la clase Pelota. Ahora puedes interactuar directamente con ellos: prueba cambiar su tamaño con el deslizador, alternar colores, pulsar "Paso a paso" para ver una ejecución aislada de mover(), activar "Animación" para ver el efecto repetitivo de 60 llamadas por segundo o activar flotar() para ondulación senoidal.',
+        'Has construido los métodos de la clase Pelota. Ahora puedes interactuar directamente con ellos: prueba cambiar su tamaño con el deslizador, alternar colores, pulsar "Paso a paso" para ver una ejecución aislada de mover(), activar "Animación" para ver el efecto repetitivo de 60 llamadas por segundo o activar flotar() para deriva orgánica 2D con ruido Perlin (noise).',
       challenge: {
         id: 'p-ch-6',
         question: '¿Por qué llamar a "miPelota.mover()" una sola vez produce un salto discreto, mientras que llamarlo en draw() produce animación continua?',
@@ -707,28 +711,32 @@ export const BURBUJA_MODULE: ModuleProgression = {
     {
       id: 'flotar',
       name: 'flotar',
-      signature: 'void flotar(float balanceo)',
-      description: 'Genera una oscilación horizontal suave y sutil simulando el vaivén orgánico de una burbuja en el agua.',
+      signature: 'void flotar(float intensidad)',
+      description: 'Aplica una deriva subacuática orgánica en X e Y usando la función noise() de Perlin, simulando corrientes y vórtices sutiles del agua.',
       fieldsUsed: ['x', 'y'],
-      fieldsModified: ['x'],
+      fieldsModified: ['x', 'y'],
       parameters: [
         {
-          name: 'balanceo',
+          name: 'intensidad',
           type: 'float',
-          defaultValue: 1.8,
+          defaultValue: 2.0,
           min: 0.5,
           max: 6.0,
           step: 0.2,
-          description: 'Amplitud del vaivén sutil en píxeles.',
+          description: 'Intensidad de la turbulencia subacuática en píxeles.',
         },
       ],
       executionType: 'continuous',
-      codeSnippet: `void flotar(float balanceo) {
-  // Oscilación senoidal lateral sutil a medida que asciende en el agua
-  x = x + sin(y * 0.05) * balanceo;
+      codeSnippet: `void flotar(float intensidad) {
+  // Vaivén orgánico subacuático usando ruido Perlin (noise) en X e Y
+  // Modifica sutilmente ambas coordenadas con variaciones fluidas
+  float pasoX = (noise(x * 0.015, frameCount * 0.02) - 0.5) * intensidad;
+  float pasoY = (noise(y * 0.015 + 200, frameCount * 0.02) - 0.5) * (intensidad * 0.7);
+  x = x + pasoX;
+  y = y + pasoY;
 }`,
       explanation:
-        'Las burbujas en el agua nunca ascienden en una línea recta rígida. Al aplicar sin(y * 0.05), la burbuja oscila sutilmente de un lado a otro mientras sube, produciendo un movimiento orgánico y vivo.',
+        'En fluidos reales las burbujas no ascienden de forma perfectamente vertical ni siguen una onda matemática repetitiva. Al usar noise() en Processing, se evalúa una textura de ruido continuo que desplaza armónicamente la posición en X e Y al mismo tiempo.',
     },
     {
       id: 'crecer',

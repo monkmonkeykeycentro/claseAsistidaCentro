@@ -1,18 +1,16 @@
 import React from 'react';
-import { TOPICS_DATA, TopicItem } from '../data/topicsData';
+import { TOPICS_DATA } from '../data/topicsData';
 import { UserProgress, StageId } from '../types/classStructure';
 import { AppUser } from '../services/firebase';
 import {
   ArrowRight,
   BookOpen,
   Code2,
-  CheckCircle2,
-  Layers,
-  Sparkles,
   Terminal,
   User,
   Check,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 
 interface HomeViewProps {
@@ -37,221 +35,234 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const completedStagesCount = Object.values(progress.stageCompleted).filter(Boolean).length;
   const workshopPercentage = Math.round((completedStagesCount / 4) * 100);
 
-  // Group topics by category
-  const categories = Array.from(new Set(TOPICS_DATA.map((t) => t.category)));
-
   return (
     <div className="space-y-12 sm:space-y-16 animate-in fade-in duration-200">
-      {/* 1. Hero Editorial Section */}
-      <section className="space-y-5 pt-2 sm:pt-4">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 font-mono">
-          <span className="font-semibold text-zinc-900 tracking-wider uppercase">CENTRO</span>
-          <span>·</span>
-          <span>Código Creativo</span>
+      {/* 1. Hero Editorial Section — Inspired by Generative Design & Coding Art */}
+      <section className="space-y-6 pt-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DCDDD8] pb-4">
+          <div className="flex items-center gap-2 text-xs font-mono text-[#767773]">
+            <span className="font-semibold text-[#181818] tracking-wider uppercase">CENTRO</span>
+            <span className="text-[#DCDDD8]">/</span>
+            <span>Laboratorio de Código Creativo</span>
+            <span className="text-[#DCDDD8]">/</span>
+            <span className="text-[#4263CF]">Processing Java</span>
+          </div>
+
+          <div className="text-[11px] font-mono text-[#767773] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-[#D5E35F] border border-[#181818] inline-block" />
+            <span>Sistema 2D Canvas · 60 FPS</span>
+          </div>
         </div>
 
-        <div className="space-y-3 max-w-3xl">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-zinc-950 font-sans leading-tight">
-            Código Creativo
-          </h1>
-          <p className="text-base sm:text-lg text-zinc-600 leading-relaxed font-sans">
-            Plataforma estructurada de aprendizaje en <strong className="text-zinc-900 font-semibold">Processing Java</strong>. Explora los fundamentos conceptuales y practica la arquitectura de software aplicada a las artes visuales y el diseño computacional.
-          </p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-8 space-y-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[#181818] font-sans leading-[1.12]">
+              Código Creativo
+            </h1>
+            <p className="text-base sm:text-lg text-[#555652] leading-relaxed font-sans max-w-2xl">
+              Plataforma de exploración y arquitectura de software para diseño computacional y artes visuales. Aprende <strong className="text-[#181818] font-medium">Processing Java</strong> conectando directamente la lógica de objetos, variables y métodos con su manifestación gráfica en pantalla.
+            </p>
 
-        {/* Student Session / Progress Bar */}
-        <div className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-zinc-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            {currentUser ? (
-              currentUser.photoURL ? (
-                <img
-                  src={currentUser.photoURL}
-                  alt={currentUser.displayName || ''}
-                  className="w-10 h-10 rounded-full border border-zinc-300 object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                  {currentUser.displayName?.charAt(0).toUpperCase() || 'U'}
-                </div>
-              )
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-zinc-200 text-zinc-600 flex items-center justify-center shrink-0">
-                <User className="w-5 h-5" />
-              </div>
-            )}
-
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-zinc-900">
-                  {currentUser ? `Estudiante: ${currentUser.displayName}` : 'Sesión de invitado'}
-                </p>
-                {currentUser?.isCentroStudent && (
-                  <span className="text-[10px] font-mono uppercase bg-zinc-900 text-white px-1.5 py-0.5 rounded font-medium">
-                    CENTRO
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-zinc-500 font-sans">
-                {currentUser
-                  ? `${currentUser.email} · Sincronizado en la nube`
-                  : 'Inicia sesión con tu cuenta @centro.edu.mx para guardar tu progreso'}
-              </p>
+            {/* Methodological Sequence Ribbon: Observa → Modifica → Explora → Reflexiona */}
+            <div className="pt-2 flex items-center gap-2 sm:gap-4 flex-wrap text-xs font-mono text-[#767773]">
+              <span className="text-[#181818] font-medium">Secuencia:</span>
+              <span className="px-2 py-0.5 bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8]">01. Observa</span>
+              <span className="text-[#DCDDD8]">→</span>
+              <span className="px-2 py-0.5 bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8]">02. Modifica</span>
+              <span className="text-[#DCDDD8]">→</span>
+              <span className="px-2 py-0.5 bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8]">03. Explora</span>
+              <span className="text-[#DCDDD8]">→</span>
+              <span className="px-2 py-0.5 bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8]">04. Reflexiona</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            {!currentUser && (
-              <button
-                onClick={onOpenAuth}
-                className="min-h-[44px] px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-900 transition-colors cursor-pointer"
-              >
-                Conectar cuenta
-              </button>
-            )}
-
-            <div className="text-right">
-              <span className="text-[11px] text-zinc-500 block font-sans">Taller de Clases (POO)</span>
-              <span className="text-xs font-mono font-semibold text-zinc-900">
-                {completedStagesCount} de 4 etapas ({workshopPercentage}%)
+          {/* Student Session Card in Warm Generative Surface */}
+          <div className="lg:col-span-4 p-5 bg-[#EEEDE8] border border-[#DCDDD8] space-y-4">
+            <div className="flex items-center justify-between border-b border-[#DCDDD8] pb-3">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#767773]">
+                Estado de la sesión
               </span>
+              {currentUser?.isCentroStudent && (
+                <span className="text-[9px] font-mono uppercase bg-[#181818] text-[#D5E35F] px-1.5 py-0.5 font-bold">
+                  CENTRO
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {currentUser ? (
+                currentUser.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt={currentUser.displayName || ''}
+                    className="w-9 h-9 border border-[#DCDDD8] object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-9 h-9 bg-[#181818] text-[#F6F5F0] flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                    {currentUser.displayName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )
+              ) : (
+                <div className="w-9 h-9 border border-[#DCDDD8] bg-[#F6F5F0] text-[#767773] flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4" />
+                </div>
+              )}
+
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-[#181818] truncate">
+                  {currentUser ? currentUser.displayName : 'Modo Invitado'}
+                </p>
+                <p className="text-[11px] text-[#767773] font-mono truncate">
+                  {currentUser ? currentUser.email : 'Sin sincronización en la nube'}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#DCDDD8] flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-mono text-[#767773] uppercase block">
+                  Taller POO
+                </span>
+                <span className="text-xs font-mono font-bold text-[#181818]">
+                  {completedStagesCount}/4 etapas ({workshopPercentage}%)
+                </span>
+              </div>
+
+              {!currentUser && (
+                <button
+                  onClick={onOpenAuth}
+                  className="min-h-[36px] px-3 py-1 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] text-xs font-mono transition-colors cursor-pointer"
+                >
+                  Conectar cuenta
+                </button>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. Featured Interactive Workshop Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-zinc-500">
-            <span>Módulo Destacado</span>
-            <span>·</span>
-            <span>Taller Práctico</span>
+      {/* 2. Interactive Experimentation Modules */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between border-b border-[#DCDDD8] pb-2">
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#767773]">
+            <span className="text-[#181818] font-bold">[01]</span>
+            <span>Módulos de Experimentación Interactiva</span>
           </div>
 
           {completedStagesCount > 0 && (
             <button
               onClick={onResetProgress}
-              className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1 transition-colors min-h-[44px]"
+              className="text-xs font-mono text-[#767773] hover:text-[#181818] flex items-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3 h-3" />
               <span>Reiniciar taller</span>
             </button>
           )}
         </div>
 
-        <div className="relative rounded-2xl border-2 border-zinc-900 bg-white p-6 sm:p-8 shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
-                <span className="bg-zinc-900 text-white px-2 py-0.5 rounded text-[11px] font-semibold">
-                  TEMA 06
-                </span>
-                <span>Programación Orientada a Objetos</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Card A: Laboratorio de Objetos (Pelota & Burbuja) */}
+          <div className="bg-[#FFFFFF] border border-[#DCDDD8] hover:border-[#181818] transition-colors p-6 sm:p-7 flex flex-col justify-between space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-[#D5E35F] border border-[#181818] inline-block" />
+                  <span className="font-bold text-[#181818]">LABORATORIO POO</span>
+                </div>
+                <span>Módulo 1 & 2</span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-semibold text-zinc-950 tracking-tight">
+              <h2 className="text-2xl font-semibold text-[#181818] tracking-tight font-sans">
+                Laboratorio de Objetos: Pelota, Burbuja y Arreglos
+              </h2>
+
+              <p className="text-sm text-[#555652] leading-relaxed font-sans">
+                Aprende Programación Orientada a Objetos en Processing Java mediante la construcción progresiva: campos cartesianos, constructor con argumentos, 7 métodos de estado, oscilación orgánica bidimensional con ruido Perlin (<code className="font-mono text-xs text-[#4263CF]">noise()</code>) y control colectivo sobre arreglos dinámicos.
+              </p>
+
+              <div className="grid grid-cols-3 gap-2 pt-2 text-xs font-mono text-[#181818]">
+                <div className="p-2.5 bg-[#F6F5F0] border border-[#DCDDD8]">
+                  <span className="text-[10px] text-[#767773] block">MÓDULO 1</span>
+                  <span className="font-bold">Pelota</span>
+                </div>
+                <div className="p-2.5 bg-[#F6F5F0] border border-[#DCDDD8]">
+                  <span className="text-[10px] text-[#767773] block">MÓDULO 2</span>
+                  <span className="font-bold">Burbuja</span>
+                </div>
+                <div className="p-2.5 bg-[#F6F5F0] border border-[#DCDDD8]">
+                  <span className="text-[10px] text-[#767773] block">COLECCIÓN</span>
+                  <span className="font-bold">Arreglos[]</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#DCDDD8] flex items-center justify-between">
+              <span className="text-xs font-mono text-[#767773]">
+                Lienzo interactivo 60 FPS
+              </span>
+              <button
+                onClick={() => onOpenOopLab()}
+                className="min-h-[44px] px-5 py-2.5 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] text-xs font-mono font-medium flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <span>Entrar al Laboratorio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card B: Taller Guiado de Estructura de Clases */}
+          <div className="bg-[#FFFFFF] border border-[#DCDDD8] hover:border-[#181818] transition-colors p-6 sm:p-7 flex flex-col justify-between space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-[#4263CF] inline-block" />
+                  <span className="font-bold text-[#181818]">TALLER CONCEPTUAL</span>
+                </div>
+                <span>Tema 06 · POO</span>
+              </div>
+
+              <h2 className="text-2xl font-semibold text-[#181818] tracking-tight font-sans">
                 Anatomía y Estructura de una Clase en Processing
               </h2>
 
-              <p className="text-sm sm:text-base text-zinc-600 leading-relaxed font-sans">
-                Un taller interactivo paso a paso diseñado para entender las cuatro partes
-                esenciales de una clase en Java: declaración, atributos, constructor con parámetros
-                y métodos de comportamiento.
+              <p className="text-sm text-[#555652] leading-relaxed font-sans">
+                Recorrido analítico en 4 etapas para comprender las partes anatómicas de una clase: declaración del molde, asignación de campos en memoria, inicialización del constructor y firma de métodos.
               </p>
 
-              {/* 4 Steps Pills */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+              {/* 4 Steps Checklist */}
+              <div className="grid grid-cols-2 gap-2 pt-2">
                 {[
-                  { step: '1', title: 'Estructura', done: progress.stageCompleted[1] },
-                  { step: '2', title: 'Ubicar partes', done: progress.stageCompleted[2] },
-                  { step: '3', title: 'Sintaxis', done: progress.stageCompleted[3] },
-                  { step: '4', title: 'Construir', done: progress.stageCompleted[4] },
+                  { step: '01', title: 'Estructura', done: progress.stageCompleted[1] },
+                  { step: '02', title: 'Ubicar partes', done: progress.stageCompleted[2] },
+                  { step: '03', title: 'Sintaxis', done: progress.stageCompleted[3] },
+                  { step: '04', title: 'Construir', done: progress.stageCompleted[4] },
                 ].map((s) => (
                   <div
                     key={s.step}
-                    className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between ${
+                    className={`p-2 border text-xs font-mono flex items-center justify-between ${
                       s.done
-                        ? 'border-zinc-900 bg-zinc-50 text-zinc-950 font-semibold'
-                        : 'border-zinc-200 bg-white text-zinc-600'
+                        ? 'border-[#181818] bg-[#EEEDE8] text-[#181818]'
+                        : 'border-[#DCDDD8] bg-[#F6F5F0] text-[#767773]'
                     }`}
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="font-mono text-[11px] text-zinc-400 font-bold">{s.step}.</span>
-                      <span className="truncate">{s.title}</span>
-                    </div>
-                    {s.done && <Check className="w-3.5 h-3.5 text-zinc-900 shrink-0" strokeWidth={2.5} />}
+                    <span className="font-bold">{s.step}. {s.title}</span>
+                    {s.done && <Check className="w-3.5 h-3.5 text-[#181818]" strokeWidth={2.5} />}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 shrink-0 lg:w-64">
+            <div className="pt-4 border-t border-[#DCDDD8] flex items-center justify-between">
+              <span className="text-xs font-mono text-[#767773]">
+                4 etapas interactivas
+              </span>
               <button
                 onClick={() => onOpenWorkshop()}
-                className="w-full min-h-[48px] px-6 py-3.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-medium text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+                className="min-h-[44px] px-5 py-2.5 border border-[#181818] hover:bg-[#181818] hover:text-[#F6F5F0] text-[#181818] text-xs font-mono font-medium flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <span>{completedStagesCount > 0 ? 'Continuar Taller' : 'Iniciar Taller'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
-
-              <p className="text-[11px] text-zinc-400 text-center font-sans">
-                Estimado: 25 min · 4 etapas guiadas
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Laboratorio de Objetos & Arreglos Dinámicos */}
-        <div className="relative rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-900 to-zinc-950 text-white p-6 sm:p-8 shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
-                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  <span>LABORATORIO POO</span>
-                </span>
-                <span>Módulo 1: Pelota · Módulo 2: Burbuja · Constructor & Eventos</span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
-                Laboratorio de Objetos: Construcción Progresiva y Arreglos
-              </h2>
-
-              <p className="text-sm sm:text-base text-zinc-300 leading-relaxed font-sans">
-                Aprende POO siguiendo los 5 momentos (Observar → Describir → Construir → Experimentar → Aplicar).
-                Explora los 7 métodos canónicos, gobierna arreglos dinámicos en vivo, añade condicionales con <code className="text-amber-300">if</code> y programa eventos de <code className="text-amber-300">mousePressed()</code> y <code className="text-amber-300">keyPressed()</code>.
-              </p>
-
-              {/* Modules Highlights */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
-                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-xs">
-                  <span className="font-bold text-amber-300 block">Módulo 1: Pelota</span>
-                  <span className="text-[11px] text-zinc-300">7 métodos canónicos y estado</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-xs">
-                  <span className="font-bold text-sky-300 block">Módulo 2: Burbuja</span>
-                  <span className="text-[11px] text-zinc-300">Física ascendente y ciclos</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-xs">
-                  <span className="font-bold text-emerald-300 block">Constructor & Eventos</span>
-                  <span className="text-[11px] text-zinc-300">if, mousePress, keyPress</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 shrink-0 lg:w-64">
-              <button
-                onClick={() => onOpenOopLab()}
-                className="w-full min-h-[48px] px-6 py-3.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>Entrar al Laboratorio</span>
-                <ArrowRight className="w-4 h-4 text-zinc-950" />
-              </button>
-
-              <p className="text-[11px] text-zinc-400 text-center font-sans">
-                Lienzo interactivo 60 FPS · Processing Java
-              </p>
             </div>
           </div>
         </div>
@@ -259,70 +270,65 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* 3. Complete Curriculum Topics Section */}
       <section className="space-y-6">
-        <div className="space-y-1">
-          <h2 className="text-xl sm:text-2xl font-semibold text-zinc-950 tracking-tight">
-            Temario del Curso
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-500 font-sans">
-            Guía curricular completa para programar gráficos interactivos y sistemas generativos en Processing.
-          </p>
+        <div className="flex items-center justify-between border-b border-[#DCDDD8] pb-2">
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#767773]">
+            <span className="text-[#181818] font-bold">[02]</span>
+            <span>Temario Curricular del Curso</span>
+          </div>
+          <span className="text-xs font-mono text-[#767773]">7 temas disponibles</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {TOPICS_DATA.map((topic) => {
             const isClasses = topic.id === 'classes';
 
             return (
               <div
                 key={topic.id}
-                className={`p-5 rounded-xl border flex flex-col justify-between transition-all duration-150 ${
-                  isClasses
-                    ? 'border-zinc-900 bg-white shadow-xs'
-                    : 'border-zinc-200 bg-white hover:border-zinc-300'
-                }`}
+                className="bg-[#FFFFFF] border border-[#DCDDD8] hover:border-[#181818] transition-colors p-5 flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-2.5">
-                  <div className="flex items-center justify-between text-xs text-zinc-500 font-mono">
-                    <span className="font-semibold text-zinc-900">
+                  <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
+                    <span className="font-bold text-[#181818]">
                       TEMA 0{topic.number}
                     </span>
                     <span>{topic.estimatedTime}</span>
                   </div>
 
-                  <h3 className="text-base font-semibold text-zinc-950 line-clamp-1">
+                  <h3 className="text-base font-semibold text-[#181818] line-clamp-1 font-sans">
                     {topic.title}
                   </h3>
 
-                  <p className="text-xs text-zinc-600 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[#555652] line-clamp-2 leading-relaxed font-sans">
                     {topic.summary}
                   </p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-zinc-100 flex items-center justify-between">
-                  <span className="text-[11px] text-zinc-500 font-mono">
+                <div className="pt-3 border-t border-[#DCDDD8] flex items-center justify-between">
+                  <span className="text-[11px] text-[#767773] font-mono">
                     {topic.category}
                   </span>
 
                   {isClasses ? (
                     <button
                       onClick={() => onOpenWorkshop()}
-                      className="min-h-[40px] px-3 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="min-h-[36px] px-3 py-1 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <span>Taller POO</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                   ) : topic.id === 'object-arrays' ? (
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => onOpenOopLab()}
-                        className="min-h-[40px] px-3 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                        className="min-h-[36px] px-2.5 py-1 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] text-xs font-mono font-medium flex items-center gap-1 transition-colors cursor-pointer"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <Sparkles className="w-3 h-3 text-[#D5E35F]" />
                         <span>Laboratorio</span>
                       </button>
                       <button
                         onClick={() => onSelectTopic('object-arrays')}
-                        className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium transition-colors cursor-pointer"
+                        className="min-h-[36px] px-2 py-1 border border-[#DCDDD8] hover:bg-[#EEEDE8] text-[#181818] text-xs font-mono transition-colors cursor-pointer"
                       >
                         Teoría
                       </button>
@@ -330,10 +336,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   ) : (
                     <button
                       onClick={() => onSelectTopic(topic.id)}
-                      className="min-h-[40px] px-3 py-1.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 text-zinc-800 text-xs font-medium border border-zinc-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="min-h-[36px] px-3 py-1 border border-[#DCDDD8] hover:border-[#181818] hover:bg-[#EEEDE8] text-[#181818] text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <span>Ver tema</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
+                      <ArrowRight className="w-3 h-3 text-[#767773]" />
                     </button>
                   )}
                 </div>
@@ -343,13 +349,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 4. Pedagogical Philosophy Footer */}
-      <section className="p-6 rounded-2xl border border-zinc-200 bg-zinc-50 space-y-2">
-        <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-          Metodología Pedagógica CENTRO
-        </h4>
-        <p className="text-xs text-zinc-600 leading-relaxed font-sans max-w-3xl">
-          El curso de Código Creativo aborda la programación como un medio de expresión formal y espacial. Cada concepto se vincula con su representación visual directa en el lienzo de Processing, fomentando la comprensión algorítmica a través de la experimentación estética.
+      {/* 4. Editorial Creative Coding Philosophy Note */}
+      <section className="p-6 bg-[#EEEDE8] border border-[#DCDDD8] space-y-2">
+        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#181818] font-bold">
+          <span>[03]</span>
+          <span>Filosofía de Código Creativo</span>
+        </div>
+        <p className="text-xs text-[#555652] leading-relaxed font-sans max-w-3xl">
+          Inspirado en los principios de <em>Generative Design</em> y <em>Coding Art</em>, este espacio aborda la programación como un lenguaje constructivo y plástico. Cada instrucción algorítmica genera un eco geométrico inmediato en el lienzo cartesiano, promoviendo el rigor técnico a través de la experimentación visual abierta.
         </p>
       </section>
     </div>
