@@ -70,6 +70,10 @@ export interface LabInstanceObject {
   vy?: number;
   isFloating?: boolean;
   floatOffset?: number;
+  tX?: number;
+  tY?: number;
+  floatPaso?: number;
+  floatAmp?: number;
 }
 
 export interface HintLevels {
@@ -91,6 +95,13 @@ export interface ChallengeItem {
   hints: HintLevels;
 }
 
+export interface ApplicationTask {
+  title: string;
+  instruction: string;
+  targetMethodId?: string;
+  expectedOutcome: string;
+}
+
 export interface StageActivity {
   id: string;
   stageNumber: number;
@@ -101,6 +112,7 @@ export interface StageActivity {
   challenge?: ChallengeItem;
   activeMethodId?: string;
   codeAdditionHighlight?: string;
+  applicationTask?: ApplicationTask;
 }
 
 export interface ModuleProgression {

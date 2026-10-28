@@ -69,10 +69,35 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
   const currentStageIdx = isPelota ? pelotaStageIdx : burbujaStageIdx;
   const setStageIdx = isPelota ? setPelotaStageIdx : setBurbujaStageIdx;
 
-  // Track if current stage unlocks arrays
-  const hasArrayUnlocked = isPelota ? currentStageIdx >= 6 : currentStageIdx >= 4;
+  // Track verified challenges per stage
+  const [completedChallenges, setCompletedChallenges] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY}_challenges`);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignore
+    }
+    return {};
+  });
 
-  // Instances State (Single vs Array)
+  const handleChallengeAnswered = (challengeId: string, isCorrect: boolean) => {
+    if (isCorrect) {
+      setCompletedChallenges((prev) => {
+        const next = { ...prev, [challengeId]: true };
+        try {
+          localStorage.setItem(`${STORAGE_KEY}_challenges`, JSON.stringify(next));
+        } catch {
+          // Ignore
+        }
+        return next;
+      });
+    }
+  };
+
+  // Track if current stage unlocks arrays
+  const hasArrayUnlocked = isPelota ? currentStageIdx >= 6 : currentStageIdx >= 5;
+
+  // Instances State with independent tX and tY noise offsets (Single vs Array)
   const [pelotaInstances, setPelotaInstances] = useState<LabInstanceObject[]>([
     {
       id: 0,
@@ -86,6 +111,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       vx: 3.5,
       vy: 2.2,
       colorHex: '#E2661A',
+      tX: 0.0,
+      tY: 500.0,
+      floatPaso: 0.015,
+      floatAmp: 3.5,
     },
     {
       id: 1,
@@ -99,6 +128,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       vx: -3.0,
       vy: 3.4,
       colorHex: '#006699',
+      tX: 137.5,
+      tY: 793.1,
+      floatPaso: 0.015,
+      floatAmp: 3.5,
     },
     {
       id: 2,
@@ -112,6 +145,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       vx: 2.8,
       vy: -2.0,
       colorHex: '#059669',
+      tX: 275.0,
+      tY: 1086.2,
+      floatPaso: 0.015,
+      floatAmp: 3.5,
     },
   ]);
 
@@ -125,6 +162,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       velocidad: 2.0,
       colorHex: '#38BDF8',
       opacidad: 140,
+      tX: 0.0,
+      tY: 1000.0,
+      floatPaso: 0.012,
+      floatAmp: 2.2,
     },
     {
       id: 1,
@@ -135,6 +176,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       velocidad: 3.2,
       colorHex: '#38BDF8',
       opacidad: 180,
+      tX: 97.3,
+      tY: 1314.1,
+      floatPaso: 0.012,
+      floatAmp: 2.2,
     },
     {
       id: 2,
@@ -145,6 +190,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       velocidad: 2.5,
       colorHex: '#38BDF8',
       opacidad: 120,
+      tX: 194.6,
+      tY: 1628.2,
+      floatPaso: 0.012,
+      floatAmp: 2.2,
     },
     {
       id: 3,
@@ -155,6 +204,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       velocidad: 1.8,
       colorHex: '#38BDF8',
       opacidad: 160,
+      tX: 291.9,
+      tY: 1942.3,
+      floatPaso: 0.012,
+      floatAmp: 2.2,
     },
     {
       id: 4,
@@ -165,6 +218,10 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
       velocidad: 2.8,
       colorHex: '#38BDF8',
       opacidad: 150,
+      tX: 389.2,
+      tY: 2256.4,
+      floatPaso: 0.012,
+      floatAmp: 2.2,
     },
   ]);
 
@@ -224,10 +281,15 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           updated.velocidad = updated.vx;
         } else if (method.id === 'flotar') {
           updated.isFloating = true;
-          const amp = Number(paramValues.intensidad ?? paramValues.balanceo ?? 2.5);
-          // Perturbación instantánea en ambos ejes X e Y simulando ruido
-          const fx = (Math.sin((updated.x + 37) * 0.05) - 0.2) * amp;
-          const fy = (Math.cos((updated.y + 71) * 0.05) - 0.2) * (amp * 0.8);
+          const paso = Number(paramValues.pasoRuido ?? (isPelota ? 0.015 : 0.012));
+          const amp = Number(paramValues.intensidad ?? paramValues.balanceo ?? (isPelota ? 3.5 : 2.2));
+          updated.floatPaso = paso;
+          updated.floatAmp = amp;
+          updated.tX = (updated.tX ?? (updated.id * 137.5)) + paso;
+          updated.tY = (updated.tY ?? (updated.id * 293.1 + (isPelota ? 500 : 1000))) + paso;
+          // Perturbación instantánea en ambos ejes X e Y usando coordenadas desacopladas
+          const fx = (Math.sin(updated.tX) - 0.2) * amp;
+          const fy = (Math.cos(updated.tY) - 0.2) * (amp * 0.7);
           updated.x += fx;
           updated.y += fy;
         } else if (method.id === 'cambiarTamano') {
@@ -402,43 +464,49 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           </div>
 
           {/* 4 Synchronized Areas Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ROW 1 / LEFT: Panel de Aprendizaje (6 cols) */}
-        <div className="lg:col-span-6 space-y-6">
-          <LearningPanel
-            activity={currentModule.stages[currentStageIdx]}
-            totalStages={currentModule.stages.length}
-            currentStageIdx={currentStageIdx}
-            onSelectStageIdx={(idx) => {
-              setStageIdx(idx);
-              setSelectedInstanceIndex(0);
-            }}
-            onNextStage={() => {
-              if (currentStageIdx < currentModule.stages.length - 1) {
-                setStageIdx(currentStageIdx + 1);
-                setSelectedInstanceIndex(0);
-              }
-            }}
-            onPrevStage={() => {
-              if (currentStageIdx > 0) {
-                setStageIdx(currentStageIdx - 1);
-                setSelectedInstanceIndex(0);
-              }
-            }}
-            onChallengeAnswered={(chId, isCorrect) => {
-              // Can optionally record completion
-            }}
-          />
+          {(() => {
+            const currentStageActivity = currentModule.stages[currentStageIdx];
+            const currentChallenge = currentStageActivity?.challenge;
+            const isCurrentStageVerified = !currentChallenge || Boolean(completedChallenges[currentChallenge.id]);
 
-          {/* Panel B: Progressive Code Editor with tabs and .pde export */}
-          <ProgressiveCodeEditor
-            module={currentModule}
-            currentStageIdx={currentStageIdx}
-          />
-        </div>
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* ROW 1 / LEFT: Panel de Aprendizaje (6 cols) */}
+                <div className="lg:col-span-6 space-y-6">
+                  <LearningPanel
+                    activity={currentStageActivity}
+                    totalStages={currentModule.stages.length}
+                    currentStageIdx={currentStageIdx}
+                    onSelectStageIdx={(idx) => {
+                      setStageIdx(idx);
+                      setSelectedInstanceIndex(0);
+                    }}
+                    onNextStage={() => {
+                      if (currentStageIdx < currentModule.stages.length - 1) {
+                        setStageIdx(currentStageIdx + 1);
+                        setSelectedInstanceIndex(0);
+                      }
+                    }}
+                    onPrevStage={() => {
+                      if (currentStageIdx > 0) {
+                        setStageIdx(currentStageIdx - 1);
+                        setSelectedInstanceIndex(0);
+                      }
+                    }}
+                    onChallengeAnswered={handleChallengeAnswered}
+                    isChallengeCompleted={Boolean(currentChallenge && completedChallenges[currentChallenge.id])}
+                  />
 
-        {/* ROW 1 / RIGHT: Visualización Interactiva & Explorador de Métodos (6 cols) */}
-        <div className="lg:col-span-6 space-y-6">
+                  {/* Panel B: Progressive Code Editor with tabs and .pde export */}
+                  <ProgressiveCodeEditor
+                    module={currentModule}
+                    currentStageIdx={currentStageIdx}
+                    isStageVerified={isCurrentStageVerified}
+                  />
+                </div>
+
+                {/* ROW 1 / RIGHT: Visualización Interactiva & Explorador de Métodos (6 cols) */}
+                <div className="lg:col-span-6 space-y-6">
           {/* Panel C: Visualización Interactiva Canvas */}
           <InteractiveStageCanvas
             moduleId={activeModuleId}
@@ -472,6 +540,8 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           />
         </div>
       </div>
+    );
+  })()}
       </>
       )}
     </div>

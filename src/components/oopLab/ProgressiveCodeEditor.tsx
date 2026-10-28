@@ -5,11 +5,13 @@ import { ModuleProgression } from '../../types/oopLab';
 interface ProgressiveCodeEditorProps {
   module: ModuleProgression;
   currentStageIdx: number;
+  isStageVerified?: boolean;
 }
 
 export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
   module,
   currentStageIdx,
+  isStageVerified = true,
 }) => {
   const [activeTab, setActiveTab] = useState<'sketch' | 'class'>('sketch');
   const [copiedType, setCopiedType] = useState<string | null>(null);
@@ -17,13 +19,13 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
   const isPelota = module.moduleId === 'pelota';
   const className = module.objectName;
 
-  // Progressive milestone flags
-  const hasClassDeclared = currentStageIdx >= 1;
-  const hasFields = currentStageIdx >= 2;
-  const hasConstructor = currentStageIdx >= 3;
-  const hasMethods = currentStageIdx >= 4;
-  const hasMethodExplorer = currentStageIdx >= 5;
-  const hasArray = currentStageIdx >= 6;
+  // Progressive milestone flags gated by comprehension verification
+  const hasClassDeclared = currentStageIdx >= 1 && (currentStageIdx > 1 || isStageVerified);
+  const hasFields = currentStageIdx >= 2 && (currentStageIdx > 2 || isStageVerified);
+  const hasConstructor = currentStageIdx >= 3 && (currentStageIdx > 3 || isStageVerified);
+  const hasMethods = currentStageIdx >= 4 && (currentStageIdx > 4 || isStageVerified);
+  const hasPerlinNoise = currentStageIdx >= 5 && (currentStageIdx > 5 || isStageVerified);
+  const hasArray = currentStageIdx >= 6 && (currentStageIdx > 6 || isStageVerified);
 
   // Build the Class Tab Code with rich contextual explanations
   const buildClassCode = (): string => {
@@ -32,7 +34,7 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
 // 1. OBSERVACIÓN PREVIA (Antes de escribir código)
 // ==========================================
 // Aún no hemos declarado la clase.
-// En la siguiente etapa escribiremos:
+// [BLOQUE EN ANÁLISIS: Resuelve el reto en el Panel de Aprendizaje para integrar la clase]
 // class ${className} {
 //   // Molde que encapsulará campos, constructor y métodos
 // }`;
@@ -47,7 +49,7 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
 
     if (hasFields) {
       code += `  // ==========================================\n`;
-      code += `  // 1. CAMPOS (Variables internas de estado)\n`;
+      code += `  // 1. CAMPOS (Variables internas de estado en Heap)\n`;
       code += `  // ==========================================\n`;
 
       if (isPelota) {
@@ -62,6 +64,10 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
 
         code += `  // Fase C: Estética cromática (¿Cómo se distingue visualmente?)\n`;
         code += `  color tono;       // Color empaquetado RGBA para fill()\n\n`;
+
+        code += `  // Fase D: Ruido Perlin 2D Desacoplado (Variables temporales independientes)\n`;
+        code += `  float tX;         // Semilla temporal para deriva horizontal X\n`;
+        code += `  float tY;         // Semilla temporal para deriva vertical Y (desfasada)\n\n`;
       } else {
         code += `  // Coordenadas cartesianas y dimensiones:\n`;
         code += `  float x;          // Posición horizontal en el agua\n`;
@@ -71,9 +77,13 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
         code += `  // Cinemática ascendente y cualidad óptica translúcida:\n`;
         code += `  float velocidad;  // Rapidez de ascenso hacia la superficie\n`;
         code += `  float opacidad;   // Transparencia alfa en rango Processing (0 a 255)\n\n`;
+
+        code += `  // Semillas para corrientes subacuáticas desacopladas:\n`;
+        code += `  float tX;         // Deriva horizontal en agua\n`;
+        code += `  float tY;         // Deriva vertical\n\n`;
       }
     } else {
-      code += `  // (Aquí declararemos los campos en la Etapa 3)\n\n`;
+      code += `  // [CAMPOS EN ANÁLISIS: Valida la Etapa 3 en el Panel de Aprendizaje para integrar las variables]\n\n`;
     }
 
     if (hasConstructor) {
@@ -90,7 +100,10 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
         code += `    diametro = diamTemp;\n`;
         code += `    velocidadX = velXTemp;\n`;
         code += `    velocidadY = velYTemp;\n`;
-        code += `    tono = tonoTemp;\n`;
+        code += `    tono = tonoTemp;\n\n`;
+        code += `    // Semillas desfasadas para ruido Perlin 2D desacoplado:\n`;
+        code += `    tX = random(0, 1000);\n`;
+        code += `    tY = random(5000, 10000); // Semilla asimétrica para evitar la diagonal a 45°\n`;
         code += `  }\n\n`;
       } else {
         code += `  ${className}(float xTemp, float yTemp, float diamTemp, float velTemp, float opacTemp) {\n`;
@@ -98,11 +111,14 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
         code += `    y = yTemp;\n`;
         code += `    diametro = diamTemp;\n`;
         code += `    velocidad = velTemp;\n`;
-        code += `    opacidad = opacTemp;\n`;
+        code += `    opacidad = opacTemp;\n\n`;
+        code += `    // Semillas desfasadas para deriva subacuática con noise():\n`;
+        code += `    tX = random(0, 1000);\n`;
+        code += `    tY = random(8000, 15000);\n`;
         code += `  }\n\n`;
       }
     } else if (hasClassDeclared && !hasConstructor) {
-      code += `  // (El constructor se construirá en la Etapa 4)\n\n`;
+      code += `  // [CONSTRUCTOR EN ANÁLISIS: Valida la Etapa 4 para conectar la inicialización con new]\n\n`;
     }
 
     if (hasMethods) {
@@ -118,12 +134,14 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
             code += `  ${m.codeSnippet.split('\n').join('\n  ')}\n\n`;
           });
 
-        code += `  // --- GRUPO 2: Expresión Orgánica & Trigonometría ---\n`;
-        module.methods
-          .filter((m) => m.id === 'flotar')
-          .forEach((m) => {
-            code += `  ${m.codeSnippet.split('\n').join('\n  ')}\n\n`;
-          });
+        if (hasPerlinNoise) {
+          code += `  // --- GRUPO 2: Expresión Orgánica: Ruido Perlin Desacoplado ---\n`;
+          module.methods
+            .filter((m) => m.id === 'flotar')
+            .forEach((m) => {
+              code += `  ${m.codeSnippet.split('\n').join('\n  ')}\n\n`;
+            });
+        }
 
         code += `  // --- GRUPO 3: Mutación de Estado con Parámetros ---\n`;
         module.methods
@@ -137,7 +155,7 @@ export const ProgressiveCodeEditor: React.FC<ProgressiveCodeEditorProps> = ({
         });
       }
     } else if (hasConstructor && !hasMethods) {
-      code += `  // (Los métodos de comportamiento se incorporarán en la Etapa 5)\n`;
+      code += `  // [MÉTODOS EN ANÁLISIS: Valida las etapas de comportamiento para incorporar los métodos]\n`;
     }
 
     code += `}`;
@@ -273,13 +291,13 @@ void draw() {
   // TIEMPO 2: Los métodos se invocan continuamente a 60 fps
 ${
   isPelota
-    ? `  miPelota.mover();            // Desplaza en 2D sumando velocidadX y velocidadY
-  miPelota.rebotar();          // Comprueba colisiones con los 4 bordes del lienzo
-  miPelota.flotar(3.5);        // Deriva orgánica bidimensional en X e Y con noise()
-  miPelota.mostrar();          // Proyecta el círculo en pantalla con fill() y ellipse()`
-    : `  miBurbuja.subir();           // Asciende restando velocidad al eje Y
-  miBurbuja.flotar(2.0);       // Vaivén subacuático en X e Y con noise()
-  miBurbuja.mostrar();         // Dibuja el cuerpo traslúcido y su brillo vítreo`
+    ? `  miPelota.mover();                   // Desplaza en 2D sumando velocidadX y velocidadY
+  miPelota.rebotar();                 // Comprueba colisiones con los 4 bordes del lienzo
+  miPelota.flotar(0.015, 3.5);        // Deriva orgánica 2D con ruido Perlin desacoplado (tX, tY)
+  miPelota.mostrar();                 // Proyecta el círculo en pantalla con fill() y ellipse()`
+    : `  miBurbuja.subir();                  // Asciende restando velocidad al eje Y
+  miBurbuja.flotar(0.012, 2.2);       // Vaivén subacuático desacoplado en X e Y
+  miBurbuja.mostrar();                // Dibuja el cuerpo traslúcido y su brillo vítreo`
 }
 }`;
     }

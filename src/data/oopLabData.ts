@@ -47,6 +47,20 @@ export const PELOTA_MODULE: ModuleProgression = {
       description: 'Color de relleno en formato RGBA de Processing.',
       visualRole: 'Define el color con el que la función fill() pinta la pelota.',
     },
+    {
+      name: 'tX',
+      type: 'float',
+      initialValue: 0.0,
+      description: 'Coordenada temporal en el espacio de ruido Perlin para el eje horizontal X.',
+      visualRole: 'Permite muestrear noise() de forma continua e independiente del eje Y.',
+    },
+    {
+      name: 'tY',
+      type: 'float',
+      initialValue: 500.0,
+      description: 'Coordenada temporal en el espacio de ruido Perlin para el eje vertical Y (desfasada).',
+      visualRole: 'Semilla asimétrica desacoplada de tX para asegurar una trayectoria 2D libre y no diagonal.',
+    },
   ],
   methods: [
     {
@@ -108,11 +122,20 @@ export const PELOTA_MODULE: ModuleProgression = {
     {
       id: 'flotar',
       name: 'flotar',
-      signature: 'void flotar(float intensidad)',
-      description: 'Genera una deriva orgánica bidimensional en X e Y usando la función noise() de Perlin, simulando suspensión aerodinámica o corrientes de aire.',
-      fieldsUsed: ['x', 'y'],
-      fieldsModified: ['x', 'y'],
+      signature: 'void flotar(float pasoRuido, float intensidad)',
+      description: 'Aplica deriva orgánica bidimensional evaluando noise() en coordenadas desacopladas (tX y tY).',
+      fieldsUsed: ['x', 'y', 'tX', 'tY'],
+      fieldsModified: ['x', 'y', 'tX', 'tY'],
       parameters: [
+        {
+          name: 'pasoRuido',
+          type: 'float',
+          defaultValue: 0.015,
+          min: 0.002,
+          max: 0.05,
+          step: 0.002,
+          description: 'Incremento de tiempo en el espacio de ruido (velocidad de cambio).',
+        },
         {
           name: 'intensidad',
           type: 'float',
@@ -120,20 +143,26 @@ export const PELOTA_MODULE: ModuleProgression = {
           min: 0.5,
           max: 10.0,
           step: 0.5,
-          description: 'Amplitud de la perturbación orgánica producida por el ruido Perlin.',
+          description: 'Fuerza o amplitud de perturbación en píxeles.',
         },
       ],
       executionType: 'continuous',
-      codeSnippet: `void flotar(float intensidad) {
-  // Desplazamiento orgánico en X e Y mediante ruido Perlin (noise)
-  // noise() devuelve valores armónicos suaves entre 0.0 y 1.0; restamos 0.5 para variar en ambas direcciones
-  float fx = (noise(x * 0.01, frameCount * 0.02) - 0.5) * intensidad;
-  float fy = (noise(y * 0.01 + 100, frameCount * 0.02) - 0.5) * (intensidad * 0.8);
-  x = x + fx;
-  y = y + fy;
+      codeSnippet: `void flotar(float pasoRuido, float intensidad) {
+  // Muestreo desacoplado de ruido Perlin en 2 dimensiones
+  // IMPORTANTE: tX y tY deben tener desfases diferentes. Si tX == tY,
+  // noise(tX) sería idéntico a noise(tY), forzando una trayectoria diagonal a 45°.
+  float fuerzaX = map(noise(tX), 0, 1, -intensidad, intensidad);
+  float fuerzaY = map(noise(tY), 0, 1, -intensidad, intensidad);
+  
+  x = x + fuerzaX;
+  y = y + fuerzaY;
+  
+  // Avanzamos en el paisaje de ruido 1D desacoplado
+  tX = tX + pasoRuido;
+  tY = tY + pasoRuido;
 }`,
       explanation:
-        'La función noise() de Processing genera ruido Perlin continuo y orgánico. Al modular tanto x como y de manera desfasada, la pelota adquiere una flotación viva y fluida en dos dimensiones, sin la rigidez de una simple onda senoidal.',
+        'En Processing, noise() produce ruido Perlin continuo y armónico entre 0.0 y 1.0. Para lograr un movimiento bidimensional orgánico en artes visuales y diseño generativo, es indispensable desacoplar los ejes cartesianos muestreando el ruido en coordenadas independientes (tX != tY).',
     },
     {
       id: 'cambiarTamano',
@@ -470,107 +499,138 @@ export const PELOTA_MODULE: ModuleProgression = {
     {
       id: 'p-stage-5',
       stageNumber: 5,
-      title: 'Etapa 5. Construcción Progresiva de Métodos',
+      title: 'Etapa 5. Métodos Cinemáticos y Condicionales (mover y rebotar)',
       moment: 'methods',
-      objective: 'Comprender los 3 grupos de métodos: visualización/física elemental, ondulación orgánica con flotar(), y mutación de estado con parámetros.',
+      objective: 'Comprender cómo los métodos alteran el estado interno y cómo los condicionales if controlan la física cartesiana en los límites.',
       explanation:
-        'Los métodos se desarrollan en 3 olas progresivas:\n\n1. OLA BÁSICA (Hacerse visible y desplazarse): mostrar() proyecta con fill() y ellipse(); mover() acumula x += velocidadX e y += velocidadY; rebotar() evalúa con if si choca contra cualquiera de los 4 bordes del lienzo e invierte el signo.\n\n2. OLA ORGÁNICA (Trigonometría): flotar(float intensidad) aplica una onda senoidal sin(x * 0.05) * intensidad para lograr una oscilación armónica vivaz.\n\n3. OLA CON PARÁMETROS (Modificar estado): cambiarTamano(), cambiarColor(), cambiarVelocidad(), invertirDireccion() y reiniciar() permiten comunicarse con el objeto y alterar su memoria.',
-      codeAdditionHighlight: `  // GRUPO 1: RENDERIZADO Y CINEMÁTICA 2D
-  void mostrar() { fill(tono); noStroke(); ellipse(x, y, diametro, diametro); }
-  void mover() { x += velocidadX; y += velocidadY; }
-  void rebotar() {
-    float r = diametro/2;
-    if (x > width-r || x < r) velocidadX *= -1;
-    if (y > height-r || y < r) velocidadY *= -1;
+        'Los métodos representan el comportamiento activo de la clase. Se dividen en dos funciones esenciales:\n\n1. RENDERIZADO Y TRASLACIÓN:\n- void mostrar(): consulta los campos x, y, diametro y tono para dibujar la elipse mediante fill() y noStroke(). No muta el estado.\n- void mover(): acumula los vectores cinemáticos (x += velocidadX; y += velocidadY;) modificando la posición en cada fotograma.\n\n2. FÍSICA Y REFLEXIÓN:\n- void rebotar(): evalúa si el perímetro del círculo colisiona con los muros de la ventana mediante condicionales if e invierte el sentido multiplicando la velocidad por -1.',
+      codeAdditionHighlight: `  // RENDERIZADO Y CINEMÁTICA BÁSICA
+  void mostrar() {
+    fill(tono);
+    noStroke();
+    ellipse(x, y, diametro, diametro);
   }
 
-  // GRUPO 2: FÍSICA ORGÁNICA SENOIDAL
-  void flotar(float intensidad) { y += sin(x * 0.05) * intensidad; }
+  void mover() {
+    x += velocidadX;
+    y += velocidadY;
+  }
 
-  // GRUPO 3: MÉTODOS CON PARÁMETROS (MUTACIÓN)
-  void cambiarTamano(float nuevoDiametro) { diametro = nuevoDiametro; }
-  void cambiarColor(color nuevoColor) { tono = nuevoColor; }
-  void cambiarVelocidad(float nuevaVX, float nuevaVY) { velocidadX = nuevaVX; velocidadY = nuevaVY; }
-  void invertirDireccion() { velocidadX *= -1; velocidadY *= -1; }
-  void reiniciar(float nuevaX, float nuevaY) { x = nuevaX; y = nuevaY; }`,
+  void rebotar() {
+    float r = diametro / 2;
+    // Colisión horizontal con bordes izquierdo y derecho
+    if (x > width - r || x < r) {
+      velocidadX *= -1;
+    }
+    // Colisión vertical con bordes superior e inferior
+    if (y > height - r || y < r) {
+      velocidadY *= -1;
+    }
+  }`,
       challenge: {
         id: 'p-ch-5',
-        question: '¿Qué método permite a una pelota rebotar elásticamente en lugar de escapar por los límites de la ventana?',
+        question: 'En el método rebotar(), ¿por qué la condición evalúa "x > width - r || x < r" considerando el radio "r" en lugar de evaluar únicamente "x > width || x < 0"?',
         options: [
           {
             id: 'p5-opt-a',
-            text: 'void mover() { x = 0; y = 0; }',
+            text: 'Porque evaluar solo x provocaría un error de ejecución NullPointerException en Java.',
             isCorrect: false,
-            feedback: 'mover() suma las velocidades, pero no comprueba los bordes de la ventana.',
+            feedback: 'Incorrecto. No hay referencias nulas aquí; x y width son números primitivos float.',
           },
           {
             id: 'p5-opt-b',
-            text: 'void rebotar() { float r = diametro/2; if (x > width-r || x < r) velocidadX *= -1; if (y > height-r || y < r) velocidadY *= -1; }',
+            text: 'Porque como ellipse() se dibuja centrada en (x, y), si solo evalúas el centro x, la mitad de la pelota penetrará y quedará encajada visualmente dentro del muro antes de rebotar.',
             isCorrect: true,
-            feedback: '¡Exacto! Evalúa condiciones condicionales if en ambas dimensiones e invierte el signo de velocidad con *= -1 al impactar con cualquier muro.',
+            feedback: '¡Exacto! El rebote físico verosímil debe considerar el radio geométrico para que la colisión ocurra en el punto de contacto tangencial con la pared.',
           },
           {
             id: 'p5-opt-c',
-            text: 'void cambiarTamano(0);',
+            text: 'Para que la gravedad de Processing duplique la velocidad tras cada impacto.',
             isCorrect: false,
-            feedback: 'Cambiar tamaño altera el diámetro geométrico pero no evalúa los bordes de la ventana.',
+            feedback: 'Falso. No hay fórmulas de aceleración gravitatoria en esa condición de rebote.',
           },
           {
             id: 'p5-opt-d',
-            text: 'void mostrar() { ellipse(0, 0, 50, 50); }',
+            text: 'Porque en Processing Java está prohibido evaluar condicionales sin restar variables.',
             isCorrect: false,
-            feedback: 'mostrar() dibuja la pelota en la pantalla pero no realiza cálculos de física ni colisiones.',
+            feedback: 'Incorrecto. Es un criterio de geometría visual y detección de colisiones, no una restricción del compilador.',
           },
         ],
         hints: {
-          hint1: 'El rebote requiere estructuras condicionales con "if".',
-          hint2: 'Se deben evaluar los límites horizontalmente (width) y verticalmente (height).',
-          hint3: 'Al chocar, se multiplica la velocidad correspondiente por -1.',
+          hint1: 'Recuerda que por defecto Processing ubica las elipses desde su centro (x, y).',
+          hint2: 'La distancia desde el centro de la pelota hasta su borde exterior es exactamente su radio (diametro / 2).',
+          hint3: 'Para que el perímetro de la esfera toque el borde exactamente en x = 0, el centro x debe estar a una distancia r del borde.',
         },
+      },
+      applicationTask: {
+        title: 'Verificación de Rebote Tangencial',
+        instruction: 'Ejecuta el método mover() o activa la animación continua y comprueba en el lienzo cómo el rebote ocurre exactamente cuando el borde tangencial toca la pared cartesiana.',
+        targetMethodId: 'rebotar',
+        expectedOutcome: 'Reflexión cinemática limpia en los 4 bordes sin atravesar el límite.',
       },
     },
     {
       id: 'p-stage-6',
       stageNumber: 6,
-      title: 'Etapa 6. Explorador de Métodos',
-      moment: 'method-explorer',
-      objective: 'Experimentar interactivamente ejecutando cada método en modo paso a paso y en modo animación continua desde draw().',
+      title: 'Etapa 6. Deriva Orgánica 2D: Ruido de Perlin Desacoplado (tX, tY)',
+      moment: 'methods',
+      objective: 'Comprender la función noise() y por qué un movimiento bidimensional orgánico requiere variables de tiempo independientes en X e Y.',
       explanation:
-        'Has construido los métodos de la clase Pelota. Ahora puedes interactuar directamente con ellos: prueba cambiar su tamaño con el deslizador, alternar colores, pulsar "Paso a paso" para ver una ejecución aislada de mover(), activar "Animación" para ver el efecto repetitivo de 60 llamadas por segundo o activar flotar() para deriva orgánica 2D con ruido Perlin (noise).',
+        'La función noise() de Processing calcula ruido Perlin unidimensional continuo, devolviendo valores armónicos entre 0.0 y 1.0.\n\nPara trasladar este concepto a un plano bidimensional (X e Y), es fundamental DESACOPLAR los dos ejes. Si evaluáramos noise(t) con una sola variable para ambos ejes, las variaciones en X e Y serían idénticas en todo momento, obligando a la pelota a moverse en una línea diagonal rígida a 45°.\n\nAl declarar campos independientes float tX y float tY con valores iniciales desfasados (ej. tX = 0, tY = 500), garantizamos que cada eje explore regiones independientes del espacio de ruido.',
+      codeAdditionHighlight: `  // DERIVA ORGÁNICA 2D MEDIANTE RUIDO PERLIN DESACOPLADO
+  void flotar(float pasoRuido, float intensidad) {
+    // Muestreo independiente de ruido Perlin para X e Y
+    // tX y tY recorren regiones no correlacionadas
+    float fuerzaX = map(noise(tX), 0, 1, -intensidad, intensidad);
+    float fuerzaY = map(noise(tY), 0, 1, -intensidad, intensidad);
+
+    x += fuerzaX;
+    y += fuerzaY;
+
+    // Avance temporal en el paisaje de ruido 1D
+    tX += pasoRuido;
+    tY += pasoRuido;
+  }`,
       challenge: {
         id: 'p-ch-6',
-        question: '¿Por qué llamar a "miPelota.mover()" una sola vez produce un salto discreto, mientras que llamarlo en draw() produce animación continua?',
+        question: '¿Qué consecuencia cinemática ocurriría en pantalla si en el método flotar() calculáramos la fuerza de X e Y usando la misma variable temporal "t" (ej. float fx = map(noise(t), 0, 1, -f, f); float fy = map(noise(t), 0, 1, -f, f);)?',
         options: [
           {
             id: 'p6-opt-a',
-            text: 'Porque dentro de draw() Processing multiplica automáticamente todas las velocidades por 60.',
+            text: 'Processing arrojaría un error de compilación por evaluar dos veces la función noise() en un mismo bloque de código.',
             isCorrect: false,
-            feedback: 'Incorrecto. La velocidad sigue valiendo lo mismo; lo que cambia es la frecuencia de ejecución.',
+            feedback: 'Falso. noise() es una función pura; puedes llamarla tantas veces como desees sin errores de compilación.',
           },
           {
             id: 'p6-opt-b',
-            text: 'Porque los métodos solo pueden funcionar si están declarados dentro de setup().',
-            isCorrect: false,
-            feedback: 'Falso. setup() se ejecuta una única vez para inicializar. Las animaciones viven en draw().',
+            text: 'La pelota quedaría bloqueada en una trayectoria diagonal rígida a 45°, porque en todo fotograma el desplazamiento horizontal fx sería exactamente idéntico al vertical fy.',
+            isCorrect: true,
+            feedback: '¡Exacto! Al ser una función determinista, noise(t) == noise(t). Si ambas fuerzas son iguales en todo instante, la relación deltaX / deltaY es 1, confinando el movimiento a una diagonal sin riqueza espacial.',
           },
           {
             id: 'p6-opt-c',
-            text: 'Porque el navegador web pausa el motor de Java cada vez que se presiona un botón.',
+            text: 'La pelota saltaría instantáneamente a coordenadas aleatorias inconexas como si fuera la función random().',
             isCorrect: false,
-            feedback: 'Incorrecto. Es el bucle de renderizado el responsable de la continuidad.',
+            feedback: 'Incorrecto. noise() sigue siendo continua; lo que se pierde es la independencia dimensional 2D.',
           },
           {
             id: 'p6-opt-d',
-            text: 'Porque Processing ejecuta la función draw() en un bucle infinito a 60 cuadros por segundo, acumulando el desplazamiento en cada fotograma sucesivo.',
-            isCorrect: true,
-            feedback: '¡Exacto! El cine y la animación digital funcionan por persistencia retiniana a 60 fps gracias al bucle continuo de draw().',
+            text: 'La velocidad de refresco del sketch caería a 0 FPS porque Processing no puede resolver raíces cuadradas en ruido.',
+            isCorrect: false,
+            feedback: 'No tiene relación con el rendimiento de cálculo.',
           },
         ],
         hints: {
-          hint1: 'Piensa en cuántas veces por segundo se repite la función draw() en Processing.',
-          hint2: 'Paso a paso ejecuta el método 1 sola vez; draw() lo llama continuamente a 60 cuadros por segundo.',
-          hint3: 'La animación es la suma de pequeños avances repetidos a alta velocidad.',
+          hint1: 'noise(t) es una función matemática determinista: para una misma entrada t, siempre devuelve exactamente el mismo valor de salida.',
+          hint2: 'Si fuerzaX == fuerzaY en todo fotograma, ¿hacia qué ángulo se desplaza un vector con componentes idénticas (1, 1)?',
+          hint3: 'Un vector donde X e Y crecen y decrecen al unísono traza una línea recta con inclinación de 45°.',
         },
+      },
+      applicationTask: {
+        title: 'Experimentación de Ruido Desacoplado',
+        instruction: 'Ejecuta el método flotar() en el Explorador de Métodos y verifica en el Inspector de Estado cómo tX y tY avanzan con valores asimétricos, liberando la pelota en un vaivén auténticamente 2D.',
+        targetMethodId: 'flotar',
+        expectedOutcome: 'Deriva bidimensional orgánica sin restricción diagonal.',
       },
     },
     {
@@ -669,6 +729,20 @@ export const BURBUJA_MODULE: ModuleProgression = {
       description: 'Nivel de transparencia alfa (0 a 255).',
       visualRole: 'Define qué tan traslúcida es la burbuja; 255 es sólida y 50 es casi transparente.',
     },
+    {
+      name: 'tX',
+      type: 'float',
+      initialValue: 0.0,
+      description: 'Semilla temporal en el espacio de ruido Perlin para la deriva horizontal X.',
+      visualRole: 'Controla el vaivén subacuático lateral de forma desacoplada.',
+    },
+    {
+      name: 'tY',
+      type: 'float',
+      initialValue: 1000.0,
+      description: 'Semilla temporal en el espacio de ruido Perlin para la perturbación vertical Y.',
+      visualRole: 'Desfase asimétrico para simular microvórtices sin forzar trayectorias diagonales.',
+    },
   ],
   methods: [
     {
@@ -711,32 +785,45 @@ export const BURBUJA_MODULE: ModuleProgression = {
     {
       id: 'flotar',
       name: 'flotar',
-      signature: 'void flotar(float intensidad)',
-      description: 'Aplica una deriva subacuática orgánica en X e Y usando la función noise() de Perlin, simulando corrientes y vórtices sutiles del agua.',
-      fieldsUsed: ['x', 'y'],
-      fieldsModified: ['x', 'y'],
+      signature: 'void flotar(float pasoRuido, float balanceo)',
+      description: 'Aplica una deriva subacuática orgánica evaluando noise() con semillas temporales independientes (tX y tY).',
+      fieldsUsed: ['x', 'y', 'tX', 'tY'],
+      fieldsModified: ['x', 'y', 'tX', 'tY'],
       parameters: [
         {
-          name: 'intensidad',
+          name: 'pasoRuido',
           type: 'float',
-          defaultValue: 2.0,
+          defaultValue: 0.012,
+          min: 0.002,
+          max: 0.04,
+          step: 0.002,
+          description: 'Frecuencia de avance temporal en la curva continua de ruido.',
+        },
+        {
+          name: 'balanceo',
+          type: 'float',
+          defaultValue: 2.2,
           min: 0.5,
-          max: 6.0,
+          max: 8.0,
           step: 0.2,
-          description: 'Intensidad de la turbulencia subacuática en píxeles.',
+          description: 'Amplitud de la oscilación de corrientes en píxeles.',
         },
       ],
       executionType: 'continuous',
-      codeSnippet: `void flotar(float intensidad) {
-  // Vaivén orgánico subacuático usando ruido Perlin (noise) en X e Y
-  // Modifica sutilmente ambas coordenadas con variaciones fluidas
-  float pasoX = (noise(x * 0.015, frameCount * 0.02) - 0.5) * intensidad;
-  float pasoY = (noise(y * 0.015 + 200, frameCount * 0.02) - 0.5) * (intensidad * 0.7);
-  x = x + pasoX;
-  y = y + pasoY;
+      codeSnippet: `void flotar(float pasoRuido, float balanceo) {
+  // Deriva subacuática por ruido Perlin independiente en X e Y
+  // tX y tY recorren regiones no correlacionadas del espacio de ruido
+  float corrienteX = map(noise(tX), 0, 1, -balanceo, balanceo);
+  float corrienteY = map(noise(tY), 0, 1, -balanceo * 0.6, balanceo * 0.6);
+  
+  x = x + corrienteX;
+  y = y + corrienteY;
+  
+  tX = tX + pasoRuido;
+  tY = tY + pasoRuido;
 }`,
       explanation:
-        'En fluidos reales las burbujas no ascienden de forma perfectamente vertical ni siguen una onda matemática repetitiva. Al usar noise() en Processing, se evalúa una textura de ruido continuo que desplaza armónicamente la posición en X e Y al mismo tiempo.',
+        'En fluidos reales las burbujas no ascienden de forma perfectamente vertical ni siguen una onda matemática repetitiva. Al desacoplar tX y tY, la componente de deriva horizontal y vertical responden a corrientes turbulentas independientes, logrando una estética natural propia del diseño generativo.',
     },
     {
       id: 'crecer',
@@ -1067,11 +1154,72 @@ export const BURBUJA_MODULE: ModuleProgression = {
     {
       id: 'b-stage-5',
       stageNumber: 5,
-      title: 'Etapa 5. Arreglo de 5 Burbujas (Burbuja[])',
+      title: 'Etapa 5. Deriva Subacuática: Ruido Perlin 2D Desacoplado (tX, tY)',
+      moment: 'methods',
+      objective: 'Comprender por qué en simulación acuática continua se emplea ruido Perlin multidimensional en vez de funciones aleatorias discretas.',
+      explanation:
+        'En corrientes reales, las burbujas experimentan microturbulencias fluidas. Si usáramos random(-2, 2), la burbuja vibraría de forma espástica (ruido blanco). Para lograr un vaivén hidrodinámico suave, evaluamos la función armónica noise(tX) y noise(tY) con semillas temporales separadas.\n\nAl igual que en la pelota, desacoplar tX y tY permite que la oscilación horizontal y vertical respondan a dinámicas independientes del fluido marino.',
+      codeAdditionHighlight: `  // DERIVA Y VÓRTICE SUBACUÁTICO CON RUIDO PERLIN 2D
+  void flotar(float pasoRuido, float balanceo) {
+    float corrienteX = map(noise(tX), 0, 1, -balanceo, balanceo);
+    float corrienteY = map(noise(tY), 0, 1, -balanceo * 0.6, balanceo * 0.6);
+
+    x += corrienteX;
+    y += corrienteY;
+
+    tX += pasoRuido;
+    tY += pasoRuido;
+  }`,
+      challenge: {
+        id: 'b-ch-5',
+        question: '¿Por qué en simulación hidrodinámica de código creativo se prefiere evaluar noise(tX) y noise(tY) en lugar de utilizar random(-2, 2) para el vaivén de las burbujas?',
+        options: [
+          {
+            id: 'b5-opt-a',
+            text: 'Porque random() solo produce números enteros impares en Processing Java.',
+            isCorrect: false,
+            feedback: 'Falso. random() devuelve valores de coma flotante (float).',
+          },
+          {
+            id: 'b5-opt-b',
+            text: 'Porque random() genera saltos bruscos e inconexos entre fotogramas sucesivos (ruido blanco), mientras que noise() genera una curva suave y continua donde cada valor está armónicamente conectado con el anterior.',
+            isCorrect: true,
+            feedback: '¡Exacto! El ruido de Perlin provee coherencia temporal (las muestras contiguas varían gradualmente), simulando a la perfección la inercia viscosa del agua.',
+          },
+          {
+            id: 'b5-opt-c',
+            text: 'Porque la función random() colapsaría la memoria Heap de los objetos en pantalla.',
+            isCorrect: false,
+            feedback: 'Incorrecto. No tiene que ver con consumo de memoria.',
+          },
+          {
+            id: 'b5-opt-d',
+            text: 'Porque noise() obliga a la burbuja a ascender a velocidad constante sin importar la fricción.',
+            isCorrect: false,
+            feedback: 'Falso. noise() modula la deriva espacial, no la gravedad.',
+          },
+        ],
+        hints: {
+          hint1: 'Compara la gráfica de una señal aleatoria pura (ruido blanco) frente a la curva armónica de Ken Perlin.',
+          hint2: 'random() no tiene memoria del fotograma anterior; noise() evalúa una función continua en el espacio.',
+          hint3: 'La física del agua requiere suavidad en la aceleración para que el movimiento sea creíble.',
+        },
+      },
+      applicationTask: {
+        title: 'Verificación de Vaivén Subacuático',
+        instruction: 'Ejecuta flotar() con pasoRuido = 0.012 y observa cómo las burbujas derivan orgánicamente en el entorno marino con corrientes suaves.',
+        targetMethodId: 'flotar',
+        expectedOutcome: 'Fluctuación continua en 2D sin saltos bruscos de píxeles.',
+      },
+    },
+    {
+      id: 'b-stage-6',
+      stageNumber: 6,
+      title: 'Etapa 6. Arreglo de 5 Burbujas (Burbuja[]) y Ciclo for',
       moment: 'instances-arrays',
       objective: 'Construir y recorrer un arreglo de 5 burbujas independientes con un ciclo for en setup() y draw().',
       explanation:
-        'Para simular una columna de efervescencia acuática, declaramos "Burbuja[] burbujas = new Burbuja[5];". En setup() usamos un ciclo for para poblar el arreglo con diámetros y velocidades escalonadas usando random(). En draw(), otro bucle for invoca subir(), flotar(1.5) y mostrar() sobre cada elemento.',
+        'Para simular una columna de efervescencia acuática, declaramos "Burbuja[] burbujas = new Burbuja[5];". En setup() usamos un ciclo for para poblar el arreglo con diámetros y velocidades escalonadas usando random(). En draw(), otro bucle for invoca subir(), flotar(0.012, 2.2) y mostrar() sobre cada elemento.',
       codeAdditionHighlight: `Burbuja[] burbujas = new Burbuja[5];
 
 void setup() {
@@ -1082,37 +1230,37 @@ void setup() {
 }
 
 void draw() {
-  background(15, 30, 60); // Fondo azul marino profundo
+  background(14, 21, 36); // Fondo azul marino profundo
   for (int i = 0; i < burbujas.length; i++) {
     burbujas[i].subir();
-    burbujas[i].flotar(1.5); // Movimiento sutil de vaivén en agua
+    burbujas[i].flotar(0.012, 2.2); // Ruido Perlin 2D desacoplado
     burbujas[i].mostrar();
   }
 }`,
       challenge: {
-        id: 'b-ch-5',
+        id: 'b-ch-6',
         question: 'En la estructura "for (int i = 0; i < burbujas.length; i++)", ¿cuál es la ventaja de escribir "burbujas.length" en vez de escribir un número fijo como 5?',
         options: [
           {
-            id: 'b5-opt-a',
+            id: 'b6-opt-a',
             text: 'Porque escribir números en la condición del for provoca un error de compilación en Java.',
             isCorrect: false,
             feedback: 'Falso. Escribir 5 compilaría, pero si luego cambias el tamaño a 10 tendrías que modificar el código manualmente.',
           },
           {
-            id: 'b5-opt-b',
+            id: 'b6-opt-b',
             text: 'Para que el sketch aumente automáticamente la velocidad de la tarjeta gráfica.',
             isCorrect: false,
             feedback: 'No tiene relación con la velocidad de hardware.',
           },
           {
-            id: 'b5-opt-c',
+            id: 'b6-opt-c',
             text: 'Porque si después decides cambiar el arreglo a 10 o 50 burbujas, el ciclo for se adaptará automáticamente sin necesidad de editar los límites a mano.',
             isCorrect: true,
             feedback: '¡Excelente principio de ingeniería de software! La propiedad .length hace que el código sea modular, elástico y a prueba de errores de índice fuera de rango.',
           },
           {
-            id: 'b5-opt-d',
+            id: 'b6-opt-d',
             text: 'Porque .length calcula el diámetro promedio de todas las burbujas.',
             isCorrect: false,
             feedback: '.length devuelve la cantidad de casilleros del arreglo, no una medida geométrica.',
@@ -1126,9 +1274,9 @@ void draw() {
       },
     },
     {
-      id: 'b-stage-6',
-      stageNumber: 6,
-      title: 'Etapa 6. Reto de Ampliación: Reaparición con if',
+      id: 'b-stage-7',
+      stageNumber: 7,
+      title: 'Etapa 7. Reto de Ampliación: Reaparición con if',
       moment: 'free-lab',
       objective: 'Integrar una estructura condicional que detecte cuándo una burbuja sale por arriba y la reinicie abajo.',
       explanation:
@@ -1138,29 +1286,29 @@ if (y < -diametro) {
   reiniciar(random(50, width - 50), height + diametro);
 }`,
       challenge: {
-        id: 'b-ch-6',
+        id: 'b-ch-7',
         question: '¿Por qué la condición para saber si la burbuja salió por completo de la pantalla es "y < -diametro" en lugar de "y < 0"?',
         options: [
           {
-            id: 'b6-opt-a',
+            id: 'b7-opt-a',
             text: 'Porque Processing prohíbe terminantemente evaluar números negativos con cero en condiciones if.',
             isCorrect: false,
             feedback: 'Processing permite comparar cualquier número float con operadores relacionales (<, >, <=, etc.).',
           },
           {
-            id: 'b6-opt-b',
+            id: 'b7-opt-b',
             text: 'Porque como el círculo se dibuja desde su centro (y), cuando y = 0 la mitad inferior del círculo todavía es visible en la pantalla; restar el diámetro garantiza que haya salido al 100% antes de teletransportarse.',
             isCorrect: true,
             feedback: '¡Excelente percepción visual! Al usar -diametro, evitamos el efecto visual tosco de ver desaparecer una esfera a medio camino.',
           },
           {
-            id: 'b6-opt-c',
+            id: 'b7-opt-c',
             text: 'Porque el diámetro siempre debe ser estrictamente mayor a la posición cartesiana X.',
             isCorrect: false,
             feedback: 'El diámetro es una dimensión; no tiene restricción de ser mayor que la posición.',
           },
           {
-            id: 'b6-opt-d',
+            id: 'b7-opt-d',
             text: 'Para que la gravedad de Processing invierta la dirección del agua hacia abajo.',
             isCorrect: false,
             feedback: 'No tiene relación con la gravedad.',
@@ -1174,13 +1322,13 @@ if (y < -diametro) {
       },
     },
     {
-      id: 'b-stage-7',
-      stageNumber: 7,
-      title: 'Etapa 7. Laboratorio Libre de Burbujas',
+      id: 'b-stage-8',
+      stageNumber: 8,
+      title: 'Etapa 8. Laboratorio Libre de Burbujas',
       moment: 'free-lab',
       objective: 'Experimentar libremente con las 5 burbujas, explorar sus métodos, consultar el historial y descargar el archivo .pde.',
       explanation:
-        'Has dominado la transferencia de conceptos de POO a una nueva clase. Experimenta con las 5 burbujas, perturba sus trayectorias, cambia sus transparencias y descarga tu sketch completo de Processing Java.',
+        'Has dominado la transferencia de conceptos de POO a una nueva clase con física marina y ruido Perlin 2D desacoplado. Experimenta con las 5 burbujas, perturba sus trayectorias y descarga tu sketch completo de Processing Java.',
     },
   ],
 };

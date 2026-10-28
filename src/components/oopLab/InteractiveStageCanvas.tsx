@@ -125,11 +125,16 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
             inst.x += vx;
             inst.y += vy;
 
-            // Organic 2D Perlin Noise Floating Modulation in X and Y
+            // Organic 2D Perlin Noise Floating Modulation in X and Y (decoupled seeds)
             if (inst.isFloating) {
-              inst.floatOffset = (inst.floatOffset ?? 0) + 0.015;
-              const fx = (noise2D(inst.x * 0.01, inst.floatOffset) - 0.5) * 3.5;
-              const fy = (noise2D(inst.y * 0.01 + 50, inst.floatOffset) - 0.5) * 2.8;
+              const paso = inst.floatPaso ?? 0.015;
+              const amp = inst.floatAmp ?? 3.5;
+              inst.tX = (inst.tX ?? (inst.id * 137.5)) + paso;
+              inst.tY = (inst.tY ?? (inst.id * 293.1 + 800)) + paso;
+
+              // Independent 1D Perlin noise along decoupled time dimensions
+              const fx = (noise2D(inst.tX, 0) - 0.5) * 2 * amp;
+              const fy = (noise2D(inst.tY, 0) - 0.5) * 2 * (amp * 0.7);
               inst.x += fx;
               inst.y += fy;
             }
@@ -163,11 +168,14 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
             // Burbuja: asciende restando velocidad a Y
             inst.y -= inst.velocidad;
 
-            // Vaivén y corriente subacuática orgánica con ruido Perlin (noise) en X e Y
-            inst.floatOffset = (inst.floatOffset ?? 0) + 0.018;
-            const intensity = inst.isFloating ? 2.5 : 1.0;
-            const pasoX = (noise2D(inst.x * 0.015, inst.floatOffset) - 0.5) * intensity;
-            const pasoY = (noise2D(inst.y * 0.015 + 80, inst.floatOffset) - 0.5) * (intensity * 0.7);
+            // Vaivén y corriente subacuática orgánica con ruido Perlin (noise) desacoplado en X e Y
+            const paso = inst.floatPaso ?? 0.012;
+            const amp = inst.floatAmp ?? (inst.isFloating ? 2.5 : 1.2);
+            inst.tX = (inst.tX ?? (inst.id * 97.3)) + paso;
+            inst.tY = (inst.tY ?? (inst.id * 314.1 + 1000)) + paso;
+
+            const pasoX = (noise2D(inst.tX, 0) - 0.5) * 2 * amp;
+            const pasoY = (noise2D(inst.tY, 0) - 0.5) * 2 * (amp * 0.6);
             inst.x += pasoX;
             inst.y += pasoY;
 
@@ -383,12 +391,16 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
         />
 
         {/* Minimalist coordinate callout strip */}
-        <div className="absolute top-2 right-2 px-2 py-1 bg-[#F6F5F0]/90 backdrop-blur-xs border border-[#DCDDD8] font-mono text-[10px] text-[#767773] flex items-center gap-2">
+        <div className="absolute top-2 right-2 px-2.5 py-1 bg-[#F6F5F0]/95 backdrop-blur-xs border border-[#DCDDD8] font-mono text-[10px] text-[#767773] flex items-center gap-2">
           <span>x:{Math.round(selectedInst.x)}</span>
           <span className="text-[#DCDDD8]">|</span>
           <span>y:{Math.round(selectedInst.y)}</span>
           <span className="text-[#DCDDD8]">|</span>
           <span>ø:{Math.round(selectedInst.diametro)}px</span>
+          <span className="text-[#DCDDD8]">|</span>
+          <span className="text-[#4263CF]">tX:{(selectedInst.tX ?? 0).toFixed(1)}</span>
+          <span className="text-[#DCDDD8]">|</span>
+          <span className="text-[#4263CF]">tY:{(selectedInst.tY ?? (isPelota ? 500 : 1000)).toFixed(1)}</span>
         </div>
       </div>
 

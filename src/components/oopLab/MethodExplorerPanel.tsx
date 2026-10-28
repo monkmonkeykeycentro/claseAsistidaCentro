@@ -53,7 +53,9 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
     nuevaVelocidad: 4.5,
     nuevaVX: 4.0,
     nuevaVY: 2.5,
+    pasoRuido: 0.015,
     intensidad: 3.5,
+    balanceo: 2.2,
     nuevaX: 180,
     nuevaY: 150,
     incremento: 8,
@@ -100,9 +102,11 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
     } else if (activeMethod.id === 'rebotar') {
       effectText = `Evaluó límites del lienzo e invirtió velocidades de choque (*= -1)`;
     } else if (activeMethod.id === 'flotar') {
+      const paso = Number(paramInputs.pasoRuido ?? 0.015);
+      const amp = Number(paramInputs.intensidad ?? paramInputs.balanceo ?? 3.5);
       effectText = isPelota
-        ? `Ruido Perlin 2D activado: x e y modulados suavemente con noise() (intensidad: ${paramInputs.intensidad ?? 3.5})`
-        : `Vaivén subacuático con noise(): x e y perturbados orgánicamente (intensidad: ${paramInputs.intensidad ?? 2.0})`;
+        ? `Deriva 2D con ruido Perlin desacoplado: tX += ${paso}, tY += ${paso}, amplitud = ${amp}px`
+        : `Vaivén subacuático con noise(tX, tY): paso = ${paso}, balanceo = ${amp}px`;
     } else if (activeMethod.id === 'cambiarTamano') {
       effectText = `Diámetro actualizado a ${paramInputs.nuevoDiametro} px`;
     } else if (activeMethod.id === 'cambiarColor') {
@@ -176,7 +180,7 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
             <span className="text-[10px]">60 fps</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs font-mono">
             <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
               <span className="text-[10px] text-[#767773] block">x (pos)</span>
               <span className="font-bold text-[#181818] tabular-nums">
@@ -214,6 +218,12 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
               </span>
               <span className="font-bold text-[#181818] truncate block">
                 {isPelota ? selectedInstance.colorHex : `${selectedInstance.opacidad ?? 160}/255`}
+              </span>
+            </div>
+            <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
+              <span className="text-[10px] text-[#767773] block">semillas (tX, tY)</span>
+              <span className="font-bold text-[#4263CF] tabular-nums truncate block">
+                {(selectedInstance.tX ?? 0).toFixed(1)}, {(selectedInstance.tY ?? (isPelota ? 500 : 1000)).toFixed(1)}
               </span>
             </div>
           </div>

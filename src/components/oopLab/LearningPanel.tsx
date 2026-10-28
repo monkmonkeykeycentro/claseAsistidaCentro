@@ -43,6 +43,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
   onNextStage,
   onPrevStage,
   onChallengeAnswered,
+  isChallengeCompleted = false,
 }) => {
   const [selectedOptId, setSelectedOptId] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
@@ -163,49 +164,74 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                 className={`p-3.5 border-l-4 text-xs leading-relaxed font-sans ${
                   chosenOption.isCorrect
                     ? 'bg-[#FFFFFF] border-l-[#4263CF] border border-[#DCDDD8] text-[#181818]'
-                    : 'bg-[#FFFFFF] border-l-amber-500 border border-[#DCDDD8] text-[#181818]'
+                    : 'bg-[#FFFFFF] border-l-rose-500 border border-[#DCDDD8] text-[#181818]'
                 }`}
               >
                 <div className="font-semibold mb-1 flex items-center gap-1.5 font-mono text-xs">
                   {chosenOption.isCorrect ? (
                     <>
                       <Check className="w-4 h-4 text-[#4263CF]" />
-                      <span className="text-[#4263CF] font-bold">RESPUESTA CORRECTA</span>
+                      <span className="text-[#4263CF] font-bold">[COMPRENSIÓN CONCEPTUAL VALIDADA]</span>
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="w-4 h-4 text-amber-600" />
-                      <span className="text-amber-800 font-bold">REVISEMOS ESTE CONCEPTO:</span>
+                      <AlertCircle className="w-4 h-4 text-rose-600" />
+                      <span className="text-rose-800 font-bold">[DIAGNÓSTICO TÉCNICO DE ERROR]</span>
                     </>
                   )}
                 </div>
-                <p className="text-[#555652]">{chosenOption.feedback}</p>
+                <p className="text-[#181818] leading-relaxed">{chosenOption.feedback}</p>
                 <div className="pt-2 mt-2 border-t border-[#DCDDD8] flex items-center justify-between">
                   <span className="text-[11px] font-mono text-[#767773]">
-                    {chosenOption.isCorrect ? 'Concepto asimilado' : 'Puedes probar otra respuesta'}
+                    {chosenOption.isCorrect
+                      ? 'Código desbloqueado e integrado en el editor'
+                      : 'Reevalúa la arquitectura y selecciona la respuesta técnica adecuada'}
                   </span>
-                  <button
-                    onClick={() => {
-                      setSelectedOptId(null);
-                      setShowFeedback(false);
-                    }}
-                    className="min-h-[28px] px-2.5 py-1 bg-[#EEEDE8] hover:bg-[#DCDDD8] text-[#181818] border border-[#DCDDD8] font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3 text-[#767773]" />
-                    <span>Reintentar</span>
-                  </button>
+                  {!chosenOption.isCorrect && (
+                    <button
+                      onClick={() => {
+                        setSelectedOptId(null);
+                        setShowFeedback(false);
+                      }}
+                      className="min-h-[28px] px-2.5 py-1 bg-[#EEEDE8] hover:bg-[#DCDDD8] text-[#181818] border border-[#DCDDD8] font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3 text-[#767773]" />
+                      <span>Reintentar</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* 3-Level Progressive Hints */}
+            {/* Application Task (unlocked upon correct comprehension) */}
+            {activity.applicationTask && (isChallengeCompleted || chosenOption?.isCorrect) && (
+              <div className="p-3.5 bg-[#FFFFFF] border-2 border-[#181818] space-y-2 mt-3 font-mono">
+                <div className="flex items-center justify-between text-xs font-bold text-[#181818]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-[#4263CF]" />
+                    <span>APLICACIÓN PRÁCTICA DEL CONCEPTO</span>
+                  </div>
+                  <span className="text-[10px] bg-[#D5E35F] text-[#181818] px-1.5 py-0.5 font-bold uppercase">
+                    Comprobación Activa
+                  </span>
+                </div>
+                <p className="text-xs font-sans text-[#181818] leading-relaxed">
+                  {activity.applicationTask.instruction}
+                </p>
+                <div className="text-[11px] text-[#767773] pt-1.5 border-t border-[#DCDDD8] flex items-center justify-between">
+                  <span>Esperado: {activity.applicationTask.expectedOutcome}</span>
+                </div>
+              </div>
+            )}
+
+            {/* 3-Level Progressive Analytical Hints */}
             <div className="pt-2 border-t border-[#DCDDD8] space-y-2">
               <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
                 <span className="flex items-center gap-1 font-semibold text-[#181818]">
                   <Lightbulb className="w-3.5 h-3.5 text-[#4263CF]" />
-                  <span>Pistas analíticas (3 niveles):</span>
+                  <span>Pistas analíticas de ingeniería (3 niveles):</span>
                 </span>
-                <span className="text-[11px]">Consultar si es necesario</span>
+                <span className="text-[11px]">Consultar deducción</span>
               </div>
 
               <div className="grid grid-cols-3 gap-1.5">
@@ -237,7 +263,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
         )}
       </div>
 
-      {/* 3. Stage Stepper & Bottom Navigation */}
+      {/* 3. Stage Stepper & Bottom Navigation with Strict Gating */}
       <div className="pt-4 border-t border-[#DCDDD8] flex items-center justify-between gap-3 font-mono text-xs">
         <button
           onClick={onPrevStage}
@@ -264,14 +290,25 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
           ))}
         </div>
 
-        <button
-          onClick={onNextStage}
-          disabled={currentStageIdx === totalStages - 1}
-          className="min-h-[40px] px-4 py-1.5 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] font-medium disabled:opacity-30 transition-colors flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Siguiente</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        {(() => {
+          const hasUnsolvedChallenge = challenge && !isChallengeCompleted && !chosenOption?.isCorrect;
+
+          return (
+            <button
+              onClick={onNextStage}
+              disabled={currentStageIdx === totalStages - 1 || Boolean(hasUnsolvedChallenge)}
+              className={`min-h-[40px] px-4 py-1.5 font-medium transition-colors flex items-center gap-1.5 cursor-pointer border ${
+                hasUnsolvedChallenge
+                  ? 'bg-[#EEEDE8] text-[#767773] border-[#DCDDD8] cursor-not-allowed opacity-60'
+                  : 'bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] border-[#181818]'
+              }`}
+              title={hasUnsolvedChallenge ? 'Resuelve el reto analítico para avanzar a la siguiente etapa' : 'Avanzar a la siguiente etapa'}
+            >
+              <span>{hasUnsolvedChallenge ? 'Resuelve el reto' : 'Siguiente'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          );
+        })()}
       </div>
     </div>
   );
