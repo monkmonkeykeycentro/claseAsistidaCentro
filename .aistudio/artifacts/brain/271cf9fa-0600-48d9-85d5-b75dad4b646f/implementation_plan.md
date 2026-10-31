@@ -1,108 +1,72 @@
-# Plataforma Educativa Código Creativo | centro: Rediseño de Navegación, Página de Inicio y Modo Enfocado
+# Rediseño Integral de Identidad Visual y Experiencia Gráfica
+## Código Creativo | Processing Java — Dirección Artística: Generative Design / Editorial Computing
 
-Propuesta arquitectónica y de diseño para reestructurar la plataforma educativa de la asignatura **Código Creativo | centro**. Se sustituye la cabecera sobrecargada por un flujo intuitivo y ligero de dos niveles: una página de **Inicio (Home)** que presenta el curso, el progreso y los módulos temáticos, y un **Modo Enfocado** con retorno directo para el taller interactivo de Clases y POO.
-
----
-
-### User Review & Critical Decisions
-
-> [!IMPORTANT]
-> A continuación se resumen las decisiones acordadas a partir de las respuestas y retroalimentación del usuario, listas para su aprobación final antes de la codificación.
-
-- **Identidad del Header (Actualizada por el usuario)**: En el encabezado principal, en lugar de "Processing", la marca será **`Código Creativo | centro`**, con tipografía limpia y minimalista.
-- **Navegación principal simplificada (Confirmada)**: Se desacopla la navegación del taller de la barra global. El encabezado superior ahora es mínimo y espacioso: Marca/Logo (**`Código Creativo | centro`**), enlaces limpios a *Inicio* y *Temario*, y acceso a la cuenta del estudiante (*Perfil / Sincronización*).
-- **Nueva página de Inicio / Home (Confirmada)**: Presenta una bienvenida clara sin saturación visual, tarjeta de progreso general del alumno, acceso destacado al taller interactivo de *Estructura de una Clase (POO)* y la cuadrícula completa de módulos curriculares de Processing.
-- **Transición y Modo Enfocado de Taller (Confirmada)**: Al ingresar al Taller de Clases o a un tema específico, la interfaz entra en un entorno de aprendizaje enfocado con un botón superior `← Volver al Inicio`, eliminando distracciones visuales y manteniendo las 4 etapas del taller (Estructura, Ubicar, Sintaxis, Construir) en un sub-encabezado contextual específico del ejercicio.
+Este documento registra la transformación visual y de interacción completada en la plataforma educativa **Código Creativo | centro**, elevando la experiencia a una **publicación editorial programable** inspirada en la obra seminal *Generative Design: Visualize, Program, and Create with Processing* (Bohnacker, Groß, Laub, Lazzeroni) y [generative-gestaltung.de](http://www.generative-gestaltung.de/).
 
 ---
 
-### 1. Overview & Core Concept
+### 1. Sistema Visual y Paleta de Tokens (Sección 5.1)
 
-- **Qué resuelve**: Elimina la confusión provocada por una barra superior saturada con controles heterogéneos (temas, etapas, contadores de progreso, botones de reinicio y login compitiendo en el mismo espacio).
-- **Audiencia objetivo**: Estudiantes y profesores de diseño, animación y artes digitales de CENTRO que cursan la materia de Código Creativo.
-- **Valor clave**: La plataforma cuenta con una "puerta de entrada" natural (Home) que contextualiza el curso entero, mientras que los talleres prácticos se experimentan como sesiones de trabajo claras, legibles y tranquilas.
+Se implementó con rigor la paleta de color neutral y precisa definida en las especificaciones del proyecto:
 
----
-
-### 2. User Experience & Visual Design
-
-#### A. Flujo de Navegación
-1. **Vista de Inicio (Home)**:
-   - **Hero editorial sobrio**: Título institucional **Código Creativo | centro**, subtítulo sintético y estado del alumno (ej. "Bienvenido, Juan · jmartineza@centro.edu.mx · Progreso general: 25%").
-   - **Taller Interactivo Destacado**: Tarjeta de gran legibilidad que invita a continuar o iniciar el taller *Tema 06: Anatomía de una Clase (POO)* con un resumen claro de las 4 etapas.
-   - **Módulos del Curso**: Cuadrícula de 7 temas fundamentales (Sintaxis básica, Variables, Estructuras de control, Funciones, Arreglos, Clases y POO, Gráficos y Librerías) con indicador de estado (Completado / Disponible) y clic directo a su contenido.
-2. **Vista de Taller Práctico (Modo Enfocado)**:
-   - Barra superior contextual con navegación de retorno: `← Volver al Temario / Inicio` y título del taller activo.
-   - Barra de etapas (1. Estructura, 2. Ubicar, 3. Sintaxis, 4. Construir) limpia y espaciada con retroalimentación sutil de completado.
-   - Espacio de trabajo amplio sin desbordamientos ni elementos redundantes.
-
-#### B. Identidad Visual y Estilo (Anti-Slop & B&W Elegante)
-- **Paleta de color (60-30-10)**:
-  - Fondo blanco puro (`#FFFFFF`) y fondos de paneles sutiles (`#FAFAFA` / `#F4F4F5`).
-  - Tipografía en negro profundo (`#09090B`) y grises neutros de apoyo (`#71717A`).
-  - Cero cápsulas o "pills" decorativas innecesarias: metadatos con separadores tipográficos limpios (`Tema 06 · POO · 4 Etapas`).
-  - Colores sintácticos de Processing Java restringidos exclusivamente a los bloques de código (naranja `#E2661A` para tipos y palabras reservadas, cian `#006699` para funciones, verde oliva `#339933` para variables del sistema).
-- **Métricas táctiles y espaciales**:
-  - Botones y controles con altura mínima de 44px para accesibilidad táctil.
-  - Márgenes consistentes basados en múltiplos de 8px (16px, 24px, 32px).
-  - Jerarquía clara de títulos (`h1`, `h2`, `h3`) con interlineado relajado.
+| Rol Semántico | Token Hexadecimal | Aplicación en la Interfaz |
+| :--- | :--- | :--- |
+| **Fondo Principal** | `#F7F6F1` | Lienzo global de lectura, fondo de la aplicación y páginas |
+| **Superficie de Trabajo** | `#FFFFFF` | Contenedores editoriales, tarjetas de módulos, editores de código |
+| **Texto Principal** | `#141414` | Títulos, bloques de prosa técnica, identificadores de sintaxis |
+| **Texto Secundario** | `#626262` | Subtítulos, metadatos, glosas de paso, comentarios de código |
+| **Líneas y Divisiones** | `#DEDDD7` | Retícula editorial, bordes ortogonales de 1px, divisores estructurales |
+| **Gris Desactivado** | `#A4A4A0` | Números de línea inactivos, estados disabled, marcas secundarias |
+| **Azul de Interacción** | `#2868D9` | Botones de ejecución, subrayado de navegación activa, palabras reservadas |
+| **Amarillo Cálido (Variación)** | `#D9AA3D` | Foco de selección, badges de modo experimental, highlights |
+| **Rojo de Advertencia** | `#D34E43` | Diagnóstico de errores, límites de parámetros en ejecución |
 
 ---
 
-### 3. Key Product Decisions & Trade-Offs
+### 2. Tipografía y Composición Editorial
 
-- **Decisión 1: Separar la Vista de Inicio de la Vista de Taller Práctico**
-  - *Enfoque*: El estado raíz de la aplicación pasa a ser `view: 'home' | 'workshop' | 'topic-viewer'`.
-  - *Por qué*: Evita que la pantalla inicial sea inmediatamente el formulario de la etapa 1 del taller sin contexto de qué curso es ni qué otros temas existen.
-  - *Alternativa descartada*: Mantener un modal desplegable para el temario sobre el taller; resultaba claustrofóbico y confuso.
-- **Decisión 2: Header Global Mínimo de 3 Bloques con la Marca Solicitada**
-  - *Enfoque*: `[Código Creativo | centro]` a la izquierda, `[Inicio | Temario]` al centro, y `[Perfil de Estudiante / Entrar]` a la derecha.
-  - *Por qué*: Descongestiona la vista y sigue el modelo mental intuitivo de cualquier plataforma educativa universitaria.
-- **Decisión 3: Persistencia Híbrida Transparente**
-  - *Enfoque*: Mantener sincronización automática en Firebase Firestore para usuarios autenticados con Google (`@centro.edu.mx`), con respaldo inmediato en `localStorage` si no hay sesión abierta.
+- **Sans-serif Contemporánea (`Inter`)**: Utilizada en títulos, explicaciones pedagógicas, botones y encabezados con tracking equilibrado y lectura óptima.
+- **Monoespaciada de Precisión (`IBM Plex Mono` / `JetBrains Mono`)**: Aplicada en todos los fragmentos de Processing Java, valores de coordenadas cartesianas, inspección de memoria en el Heap y llamadas a métodos.
+- **Disciplina "Zero-Pill"**: Eliminación total de cápsulas, píldoras y esquinas redondeadas decorativas. Todas las tarjetas, botones y contenedores utilizan cortes ortogonales nítidos (border rectilíneo con `border-[#DEDDD7]`), otorgando una personalidad de publicación editorial contemporánea.
 
 ---
 
-### 4. Technical Architecture & Data Strategy
+### 3. Familias Gráficas Generativas Creadas
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                               Header                                   │
-│  [Código Creativo | centro]          [Inicio] [Temario]       [Perfil] │
-└────────────────────────────────────────────────────────────────────────┘
-                                   │
-         ┌─────────────────────────┴─────────────────────────┐
-         ▼                                                   ▼
-┌─────────────────────────────────┐         ┌─────────────────────────────────┐
-│           Home View             │         │      Focused Workshop View      │
-│ ┌─────────────────────────────┐ │         │ ┌─────────────────────────────┐ │
-│ │ Student Progress Banner     │ │         │ │ ← Volver al Inicio          │ │
-│ └─────────────────────────────┘ │         │ └─────────────────────────────┘ │
-│ ┌─────────────────────────────┐ │         │ ┌─────────────────────────────┐ │
-│ │ Featured Workshop (POO)     │ │         │ │ Workshop Stage Bar (1-4)    │ │
-│ └─────────────────────────────┘ │         │ └─────────────────────────────┘ │
-│ ┌─────────────────────────────┐ │         │ ┌─────────────────────────────┐ │
-│ │ Curriculum Topics Grid (1-7)│ │         │ │ Stage Content / Exercises   │ │
-│ └─────────────────────────────┘ │         │ └─────────────────────────────┘ │
-└─────────────────────────────────┘         └─────────────────────────────────┘
-                                   │
-                    ┌──────────────┴──────────────┐
-                    ▼                             ▼
-       ┌────────────────────────┐    ┌────────────────────────┐
-       │ Firebase Auth & Cloud  │    │ Local Storage Fallback │
-       │ Firestore Persistence  │    │  (Instant Zero-Lag)    │
-       └────────────────────────┘    └────────────────────────┘
-```
+Se integró una biblioteca de componentes visuales autónomos en HTML5 2D Canvas que funcionan a 60 FPS sin dependencias pesadas:
 
-#### Mapeo de Componentes y Vistas
-- **`src/components/HomeView.tsx`**: Componente de página principal con el banner de progreso, la tarjeta del taller interactivo de clases y la cuadrícula de temas curriculares.
-- **`src/components/Header.tsx`**: Encabezado refinado con la marca **Código Creativo | centro**, navegación Inicio/Temario y botón de sesión/perfil.
-- **`src/components/WorkshopView.tsx`**: Envoltura enfocada del taller de 4 etapas que incorpora la barra de etapas, el botón de retorno y el espacio de trabajo.
-- **`src/App.tsx`**: Orquestador del estado de navegación (`activeView: 'home' | 'workshop' | 'topic'`), autenticación de Firebase y sincronización de progreso.
+1. **`GenerativeArtwork.tsx`**:
+   - Renderizador algorítmico multiparámetro que asocia a cada tema curricular un algoritmo generativo vivo:
+     - **Tema 01 (Coordenadas & Lienzo)**: Retícula con ticks de medición y crosshairs interactivos.
+     - **Tema 02 (Variables & Dinámica)**: Radios oscilatorios armónicos con modulación sinusoidal.
+     - **Tema 03 (Condicionales & Límites)**: Paredes detectoras y vectores reflejados.
+     - **Tema 04 (Ciclos For & Matrices)**: Cuadrículas de rotación angular dependientes del mouse.
+     - **Tema 05 (Funciones Modulares)**: Polígonos paramétricos con vértices trigonométricos.
+     - **Tema 06 (Clases & POO)**: Agentes esféricos con halos de fuerza y propiedades mutables.
+     - **Tema 07 (Arreglos & Enjambres)**: Red nodal con conectividad por distancia euclidiana.
+2. **`VariationSeries.tsx` (Sección 3.3)**:
+   - Cuarteto de miniaturas en paralelo que muestra la misma fórmula generativa bajo 4 semillas de parámetros distintos, evidenciando el principio de **Código → Regla → Variación**.
+3. **`GenerativeHeroCanvas.tsx` (Sección 9)**:
+   - Lienzo de cabecera interactivo con 4 algoritmos seleccionables (*Módulos*, *Ondas*, *Partículas*, *Polar*), controles de velocidad y densidad, aleatorización de semilla reproducible y pausa automática al salir del viewport (`IntersectionObserver`).
 
 ---
 
-### Plan de Verificación Post-Aprobación
-1. Compilar el proyecto con `compile_applet` y validar TypeScript con `lint_applet`.
-2. Verificar en la interfaz la navegación fluida: Home $\to$ Iniciar Taller $\to$ Etapas $\to$ Volver a Home.
-3. Comprobar la sincronización en la nube al iniciar sesión con Google y la persistencia local de los avances.
+### 4. Componentes y Módulos Sincronizados
+
+- **`src/components/Header.tsx`**: Barra de navegación de una línea con la marca institucional `CC / Código Creativo / centro`, enlaces con subrayado de 2px en `#2868D9` y tag de sincronización en la nube con Firebase.
+- **`src/components/HomeView.tsx`**: Página principal con división editorial: zona izquierda explicativa con principios generativos y zona derecha interactiva con el canvas generativo y el catálogo de los 7 módulos del curso.
+- **`src/components/oopLab/InteractiveStageCanvas.tsx`**: Lienzo interactivo de simulación con retícula cartesiana, ticks numéricos, inspección de variables vivas y selector de instancias.
+- **`src/components/oopLab/LearningPanel.tsx`**: Panel analítico con los 5 momentos de aprendizaje, preguntas conceptuales de opción múltiple, pistas de ingeniería en 3 niveles y gating pedagógico.
+- **`src/components/oopLab/ProgressiveCodeEditor.tsx`**: Editor progresivo con pestañas separadas `Sketch.pde` y `Clase.pde`, resaltado de sintaxis Processing Java, descarga independiente o combinada y numeración de líneas.
+- **`src/components/oopLab/MethodExplorerPanel.tsx`**: Panel de ejecución de métodos (incluyendo `flotar()` con ruido Perlin desacoplado en $t_X$ y $t_Y$), terminal de comandos y telemetría de memoria Heap.
+- **`src/components/oopLab/CustomClassArrayBuilder.tsx`**: Constructor visual de clases con parámetros, eventos de mouse y teclado y exportación de archivos `.pde`.
+- **`src/components/ObjectArraysSessionView.tsx`**: Vista de laboratorio de arreglos de objetos y enjambres sincronizada con los tokens editoriales.
+
+---
+
+### 5. Verificación y Calidad
+
+- `compile_applet`: **0 errores de compilación**.
+- `lint_applet`: **TypeScript `tsc --noEmit` completado exitosamente con 0 errores**.
+- Accesibilidad: Contraste WCAG AAA en textos `#141414` sobre fondo `#F7F6F1` y `#FFFFFF`.
+- Reducción de movimiento: Soporte para `prefers-reduced-motion` en todos los bucles de animación `requestAnimationFrame`.

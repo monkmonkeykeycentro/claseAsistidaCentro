@@ -222,7 +222,7 @@ export default function App() {
     TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5];
 
   return (
-    <div className="min-h-screen bg-[#F6F5F0] text-[#181818] flex flex-col font-sans selection:bg-[#D5E35F] selection:text-[#181818]">
+    <div className="min-h-screen bg-[#F7F6F1] text-[#141414] flex flex-col font-sans selection:bg-[#D9AA3D] selection:text-[#141414]">
       <Header
         currentView={activeView}
         onNavigateHome={() => setActiveView('home')}
@@ -317,34 +317,34 @@ export default function App() {
       />
 
       {/* Editorial Footer inspired by Generative Design */}
-      <footer className="border-t border-[#DCDDD8] py-8 text-xs text-[#767773] bg-[#EEEDE8]">
+      <footer className="border-t border-[#DEDDD7] py-8 text-xs text-[#626262] bg-[#FFFFFF]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-[#181818]">Código Creativo</span>
-            <span className="text-[#DCDDD8]">/</span>
+            <span className="font-semibold text-[#141414]">Código Creativo</span>
+            <span className="text-[#DEDDD7]">/</span>
             <span>CENTRO</span>
-            <span className="text-[#DCDDD8]">/</span>
-            <span className="text-[#767773]">Processing Java 4.3</span>
+            <span className="text-[#DEDDD7]">/</span>
+            <span className="text-[#626262]">Processing Java 4.3</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] text-[#767773]">
+          <div className="flex items-center gap-4 text-[11px] text-[#626262]">
             <button
               onClick={() => setActiveView('home')}
-              className="text-[#767773] hover:text-[#181818] cursor-pointer"
+              className="text-[#626262] hover:text-[#141414] cursor-pointer"
             >
               Inicio
             </button>
-            <span className="text-[#DCDDD8]">·</span>
+            <span className="text-[#DEDDD7]">·</span>
             <button
               onClick={() => setIsCatalogueOpen(true)}
-              className="text-[#767773] hover:text-[#181818] cursor-pointer"
+              className="text-[#626262] hover:text-[#141414] cursor-pointer"
             >
               Temario ({TOPICS_DATA.length})
             </button>
-            <span className="text-[#DCDDD8]">·</span>
+            <span className="text-[#DEDDD7]">·</span>
             <button
               onClick={() => setActiveView('oop-lab')}
-              className="text-[#767773] hover:text-[#4263CF] font-medium cursor-pointer"
+              className="text-[#626262] hover:text-[#2868D9] font-medium cursor-pointer"
             >
               Laboratorio POO
             </button>

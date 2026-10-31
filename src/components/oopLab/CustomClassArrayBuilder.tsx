@@ -717,19 +717,19 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Top Banner & Mode Description */}
-      <div className="p-5 bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8] flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono">
+      <div className="p-5 bg-[#FFFFFF] text-[#141414] border border-[#DEDDD7] flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-[#767773]">
-            <span className="font-bold uppercase tracking-wider bg-[#181818] text-[#F6F5F0] px-1.5 py-0.5 text-[10px]">
+          <div className="flex items-center gap-2 text-xs text-[#626262]">
+            <span className="font-bold uppercase tracking-wider bg-[#141414] text-[#F7F6F1] px-1.5 py-0.5 text-[10px]">
               ESTUDIO CREATIVO
             </span>
-            <span className="text-[#DCDDD8]">/</span>
+            <span className="text-[#DEDDD7]">/</span>
             <span>Clases, Constructor, Arreglos y Eventos (if, mouse, keys)</span>
           </div>
-          <h2 className="text-xl font-semibold tracking-tight text-[#181818] font-sans">
+          <h2 className="text-xl font-semibold tracking-tight text-[#141414] font-sans">
             Constructor & Alimentador de Arreglos de Objetos
           </h2>
-          <p className="text-xs text-[#555652] max-w-2xl leading-relaxed font-sans">
+          <p className="text-xs text-[#626262] max-w-2xl leading-relaxed font-sans">
             Define la arquitectura de tu propia clase, configura los parámetros de su constructor, incorpora condicionales <code>if</code> y activa eventos para poblar dinámicamente tu colección.
           </p>
         </div>
@@ -737,7 +737,7 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onBackToGuided}
-            className="min-h-[38px] px-3.5 py-1.5 bg-[#181818] hover:bg-[#4263CF] text-xs font-mono text-[#F6F5F0] transition-colors cursor-pointer"
+            className="min-h-[38px] px-3.5 py-1.5 bg-[#141414] hover:bg-[#2868D9] text-xs font-mono text-[#F7F6F1] transition-colors cursor-pointer"
           >
             ← Volver a Módulos Guiados
           </button>
@@ -749,7 +749,7 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
         {/* LEFT COLUMN: Controls & Configurations (6 cols) */}
         <div className="lg:col-span-6 space-y-6">
           {/* Builder Navigation Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-[#EEEDE8] border border-[#DCDDD8] overflow-x-auto font-mono text-xs">
+          <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#DEDDD7] overflow-x-auto font-mono text-xs">
             {[
               { id: 'structure', label: '1. Clase & Constructor', icon: Layers },
               { id: 'feed', label: '2. Alimentar Arreglo', icon: Plus },
@@ -765,8 +765,8 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
                   onClick={() => setActiveBuilderTab(tab.id as typeof activeBuilderTab)}
                   className={`min-h-[36px] px-3 py-1 text-xs border transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     isActive
-                      ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                      : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] border-[#DCDDD8]'
+                      ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                      : 'bg-[#FFFFFF] hover:bg-[#F7F6F1] text-[#141414] border-[#DEDDD7]'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -778,13 +778,13 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
 
           {/* TAB 1: STRUCTURE OF CLASS & CONSTRUCTOR */}
           {activeBuilderTab === 'structure' && (
-            <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 space-y-5 shadow-xs">
+            <div className="bg-[#FFFFFF] border border-[#DEDDD7] p-5 sm:p-6 space-y-5">
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-zinc-950 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-zinc-900" />
+                <h3 className="text-base font-bold text-[#141414] flex items-center gap-2 font-mono">
+                  <Layers className="w-4 h-4 text-[#2868D9]" />
                   <span>Estructura de la Clase y el Constructor</span>
                 </h3>
-                <p className="text-xs text-zinc-600">
+                <p className="text-xs text-[#626262] font-sans">
                   Configura cómo se declara la clase, su nombre y qué campos recibirá su constructor.
                 </p>
               </div>
@@ -792,7 +792,7 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
               {/* Class Name & Type */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-700 block">
+                  <label className="text-xs font-semibold text-[#171717] block font-mono">
                     Nombre de la Clase
                   </label>
                   <input
@@ -804,16 +804,16 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
                         className: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') || 'MiClase',
                       }))
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 font-mono text-xs focus:ring-2 focus:ring-zinc-950 focus:outline-hidden"
+                    className="w-full px-3 py-2 border border-[#E3E3DD] font-mono text-xs focus:ring-1 focus:ring-[#2779BD] focus:outline-hidden bg-[#FFFFFF]"
                     placeholder="Ej. Pelota, Burbuja, Particula"
                   />
-                  <span className="text-[11px] text-zinc-400 block font-mono">
+                  <span className="text-[11px] text-[#666666] block font-mono">
                     class {config.className} {'{ ... }'}
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-700 block">
+                  <label className="text-xs font-semibold text-[#171717] block font-mono">
                     Tipo de Colección en Processing
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -821,10 +821,10 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
                       onClick={() =>
                         setConfig((prev) => ({ ...prev, collectionType: 'arrayList' }))
                       }
-                      className={`min-h-[40px] px-2.5 py-2 rounded-lg border text-xs font-medium text-center transition-colors cursor-pointer ${
+                      className={`min-h-[40px] px-2.5 py-2 border text-xs font-medium text-center transition-colors cursor-pointer ${
                         config.collectionType === 'arrayList'
-                          ? 'border-zinc-950 bg-zinc-950 text-white font-semibold'
-                          : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                          ? 'border-[#171717] bg-[#171717] text-[#F7F7F2] font-semibold'
+                          : 'border-[#E3E3DD] bg-[#FFFFFF] text-[#171717] hover:bg-[#F7F7F2]'
                       }`}
                     >
                       <span className="block font-mono text-[11px]">ArrayList&lt;{config.className}&gt;</span>
@@ -835,10 +835,10 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
                       onClick={() =>
                         setConfig((prev) => ({ ...prev, collectionType: 'array' }))
                       }
-                      className={`min-h-[40px] px-2.5 py-2 rounded-lg border text-xs font-medium text-center transition-colors cursor-pointer ${
+                      className={`min-h-[40px] px-2.5 py-2 border text-xs font-medium text-center transition-colors cursor-pointer ${
                         config.collectionType === 'array'
-                          ? 'border-zinc-950 bg-zinc-950 text-white font-semibold'
-                          : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                          ? 'border-[#171717] bg-[#171717] text-[#F7F7F2] font-semibold'
+                          : 'border-[#E3E3DD] bg-[#FFFFFF] text-[#171717] hover:bg-[#F7F7F2]'
                       }`}
                     >
                       <span className="block font-mono text-[11px]">{config.className}[]</span>

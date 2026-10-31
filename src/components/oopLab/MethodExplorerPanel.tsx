@@ -129,30 +129,30 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
   };
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#DCDDD8] p-5 sm:p-6 space-y-6 flex flex-col justify-between">
+    <div className="bg-[#FFFFFF] border border-[#DEDDD7] p-5 sm:p-6 space-y-6 flex flex-col justify-between">
       {/* 1. Header & Animation Mode Toggle */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DCDDD8] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DEDDD7] pb-3">
           <div>
-            <h3 className="font-semibold text-sm sm:text-base text-[#181818] flex items-center gap-2 font-mono uppercase">
-              <Sliders className="w-4 h-4 text-[#4263CF]" />
+            <h3 className="font-semibold text-sm sm:text-base text-[#141414] flex items-center gap-2 font-mono uppercase">
+              <Sliders className="w-4 h-4 text-[#2868D9]" />
               <span>Explorador de Métodos & Memoria</span>
             </h3>
-            <p className="text-xs text-[#767773] font-mono mt-0.5">
-              Instancia activa: <strong className="text-[#181818]">{instancePrefix}</strong>
+            <p className="text-xs text-[#626262] font-mono mt-0.5">
+              Instancia activa: <strong className="text-[#141414]">{instancePrefix}</strong>
             </p>
           </div>
 
           {/* Mode Switch: Paso a paso vs Animación continua */}
-          <div className="flex items-center gap-1 p-1 bg-[#EEEDE8] border border-[#DCDDD8] font-mono text-xs">
+          <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#DEDDD7] font-mono text-xs">
             <button
               onClick={() => {
                 if (isContinuousAnimation) onToggleContinuous();
               }}
               className={`px-3 py-1 text-xs border transition-colors cursor-pointer ${
                 !isContinuousAnimation
-                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
+                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
               }`}
             >
               Paso a paso
@@ -163,66 +163,66 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
               }}
               className={`px-3 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
                 isContinuousAnimation
-                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
+                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
               }`}
             >
-              {isContinuousAnimation ? <Pause className="w-3 h-3 text-[#D5E35F]" /> : <Play className="w-3 h-3" />}
+              {isContinuousAnimation ? <Pause className="w-3 h-3 text-[#D9AA3D]" /> : <Play className="w-3 h-3" />}
               <span>Animación draw()</span>
             </button>
           </div>
         </div>
 
         {/* 2. Live Field State Inspector for the selected instance */}
-        <div className="p-3 bg-[#EEEDE8] border border-[#DCDDD8] space-y-2">
-          <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
-            <span className="font-bold text-[#181818]">CAMPOS EN MEMORIA DE {instancePrefix}:</span>
+        <div className="p-3 bg-[#F7F6F1] border border-[#DEDDD7] space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
+            <span className="font-bold text-[#141414]">CAMPOS EN MEMORIA DE {instancePrefix}:</span>
             <span className="text-[10px]">60 fps</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs font-mono">
-            <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
-              <span className="text-[10px] text-[#767773] block">x (pos)</span>
-              <span className="font-bold text-[#181818] tabular-nums">
+            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
+              <span className="text-[10px] text-[#626262] block">x (pos)</span>
+              <span className="font-bold text-[#141414] tabular-nums">
                 {Math.round(selectedInstance.x)}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
-              <span className="text-[10px] text-[#767773] block">y (pos)</span>
-              <span className="font-bold text-[#181818] tabular-nums">
+            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
+              <span className="text-[10px] text-[#626262] block">y (pos)</span>
+              <span className="font-bold text-[#141414] tabular-nums">
                 {Math.round(selectedInstance.y)}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
-              <span className="text-[10px] text-[#767773] block">diametro</span>
-              <span className="font-bold text-[#181818] tabular-nums">
+            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
+              <span className="text-[10px] text-[#626262] block">diametro</span>
+              <span className="font-bold text-[#141414] tabular-nums">
                 {Math.round(selectedInstance.diametro)}px
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
-              <span className="text-[10px] text-[#767773] block">
+            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
+              <span className="text-[10px] text-[#626262] block">
                 {isPelota ? 'vel (vx, vy)' : 'velocidad'}
               </span>
-              <span className="font-bold text-[#181818] tabular-nums truncate block">
+              <span className="font-bold text-[#141414] tabular-nums truncate block">
                 {isPelota
                   ? `${(selectedInstance.velocidadX ?? selectedInstance.velocidad).toFixed(1)}, ${(selectedInstance.velocidadY ?? 0).toFixed(1)}`
                   : (selectedInstance.velocidad > 0 ? `+${selectedInstance.velocidad}` : selectedInstance.velocidad)}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
-              <span className="text-[10px] text-[#767773] block flex items-center justify-between">
+            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
+              <span className="text-[10px] text-[#626262] block flex items-center justify-between">
                 <span>{isPelota ? 'tono' : 'opacidad'}</span>
                 {selectedInstance.isFloating && (
-                  <span className="text-[9px] bg-[#D5E35F] text-[#181818] font-bold px-1">🌊 noise</span>
+                  <span className="text-[9px] bg-[#D9AA3D] text-[#141414] font-bold px-1">~ noise</span>
                 )}
               </span>
-              <span className="font-bold text-[#181818] truncate block">
+              <span className="font-bold text-[#141414] truncate block">
                 {isPelota ? selectedInstance.colorHex : `${selectedInstance.opacidad ?? 160}/255`}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DCDDD8]">
-              <span className="text-[10px] text-[#767773] block">semillas (tX, tY)</span>
-              <span className="font-bold text-[#4263CF] tabular-nums truncate block">
+            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
+              <span className="text-[10px] text-[#626262] block">semillas (tX, tY)</span>
+              <span className="font-bold text-[#2868D9] tabular-nums truncate block">
                 {(selectedInstance.tX ?? 0).toFixed(1)}, {(selectedInstance.tY ?? (isPelota ? 500 : 1000)).toFixed(1)}
               </span>
             </div>
@@ -231,7 +231,7 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
 
         {/* 3. Method Selection List */}
         <div className="space-y-2">
-          <div className="text-xs font-mono uppercase tracking-wider text-[#767773] flex items-center justify-between">
+          <div className="text-xs font-mono uppercase tracking-wider text-[#626262] flex items-center justify-between">
             <span>Métodos disponibles ({methods.length})</span>
             <span className="text-[11px]">Click para probar</span>
           </div>
@@ -245,8 +245,8 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
                   onClick={() => setSelectedMethodId(m.id)}
                   className={`p-2 border text-left transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                      : 'bg-[#FFFFFF] hover:border-[#181818] border-[#DCDDD8] text-[#181818]'
+                      ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                      : 'bg-[#FFFFFF] hover:border-[#141414] border-[#DEDDD7] text-[#141414]'
                   }`}
                 >
                   <div className="truncate">{m.name}()</div>
@@ -260,31 +260,31 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
         </div>
 
         {/* 4. Active Method Controller Card */}
-        <div className="p-4 bg-[#F6F5F0] border border-[#DCDDD8] space-y-3.5">
+        <div className="p-4 bg-[#F7F6F1] border border-[#DEDDD7] space-y-3.5">
           <div className="space-y-1">
             <div className="flex items-center justify-between font-mono">
-              <span className="text-xs sm:text-sm font-bold text-[#181818]">
+              <span className="text-xs sm:text-sm font-bold text-[#141414]">
                 {activeMethod.signature}
               </span>
-              <span className="text-[11px] text-[#767773]">
+              <span className="text-[11px] text-[#626262]">
                 Muta: {activeMethod.fieldsModified.join(', ') || 'Ninguno'}
               </span>
             </div>
-            <p className="text-xs text-[#555652] font-sans leading-relaxed">
+            <p className="text-xs text-[#626262] font-sans leading-relaxed">
               {activeMethod.description}
             </p>
           </div>
 
           {/* Parameters Controls if any */}
           {activeMethod.parameters.length > 0 && (
-            <div className="space-y-3 pt-2 border-t border-[#DCDDD8]">
+            <div className="space-y-3 pt-2 border-t border-[#DEDDD7]">
               {activeMethod.parameters.map((param) => {
                 const currentVal = paramInputs[param.name] ?? param.defaultValue;
 
                 return (
                   <div key={param.name} className="space-y-1.5 text-xs font-mono">
-                    <div className="flex items-center justify-between text-[#181818]">
-                      <span>Parámetro: <code className="font-bold text-[#4263CF]">{param.name}</code></span>
+                    <div className="flex items-center justify-between text-[#141414]">
+                      <span>Parámetro: <code className="font-bold text-[#2868D9]">{param.name}</code></span>
                       <span className="font-bold tabular-nums">
                         {String(currentVal)}
                       </span>
@@ -296,9 +296,9 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
                           type="color"
                           value={String(currentVal)}
                           onChange={(e) => handleParamChange(param.name, e.target.value)}
-                          className="w-10 h-8 border border-[#DCDDD8] p-0.5 cursor-pointer bg-white"
+                          className="w-10 h-8 border border-[#DEDDD7] p-0.5 cursor-pointer bg-white"
                         />
-                        <span className="font-mono text-xs text-[#767773] uppercase">
+                        <span className="font-mono text-xs text-[#626262] uppercase">
                           {String(currentVal)}
                         </span>
                       </div>
@@ -310,7 +310,7 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
                         step={param.step ?? 1}
                         value={Number(currentVal)}
                         onChange={(e) => handleParamChange(param.name, Number(e.target.value))}
-                        className="w-full accent-[#181818] cursor-pointer"
+                        className="w-full accent-[#2868D9] cursor-pointer"
                       />
                     )}
                   </div>
@@ -320,19 +320,19 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
           )}
 
           {/* Visible Code Call in Processing Java */}
-          <div className="pt-2 border-t border-[#DCDDD8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="pt-2 border-t border-[#DEDDD7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1 flex-1">
-              <span className="text-[10px] text-[#767773] font-mono uppercase block">
+              <span className="text-[10px] text-[#626262] font-mono uppercase block">
                 Instrucción ejecutable en Processing:
               </span>
-              <code className="px-3 py-2 bg-[#EEEDE8] border border-[#DCDDD8] text-[#181818] font-mono text-xs block overflow-x-auto">
+              <code className="px-3 py-2 bg-[#FFFFFF] border border-[#DEDDD7] text-[#141414] font-mono text-xs block overflow-x-auto">
                 {buildCallString(activeMethod)}
               </code>
             </div>
 
             <button
               onClick={handleExecute}
-              className="min-h-[42px] px-5 py-2 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] text-xs font-mono font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              className="min-h-[42px] px-5 py-2 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] text-xs font-mono font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
             >
               <Play className="w-3.5 h-3.5" />
               <span>Ejecutar Método</span>
@@ -342,16 +342,16 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
       </div>
 
       {/* 5. Chronological Method Call History */}
-      <div className="space-y-2 pt-2 border-t border-[#DCDDD8]">
-        <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
-          <span className="flex items-center gap-1.5 font-bold text-[#181818]">
-            <Terminal className="w-3.5 h-3.5 text-[#4263CF]" />
+      <div className="space-y-2 pt-2 border-t border-[#DEDDD7]">
+        <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
+          <span className="flex items-center gap-1.5 font-bold text-[#141414]">
+            <Terminal className="w-3.5 h-3.5 text-[#2868D9]" />
             <span>TERMINAL DE EJECUCIÓN ({callHistory.length})</span>
           </span>
           {callHistory.length > 0 && (
             <button
               onClick={onClearHistory}
-              className="text-[11px] text-[#767773] hover:text-[#181818] underline cursor-pointer"
+              className="text-[11px] text-[#626262] hover:text-[#141414] underline cursor-pointer"
             >
               Limpiar terminal
             </button>
@@ -359,7 +359,7 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
         </div>
 
         {callHistory.length === 0 ? (
-          <p className="text-xs font-mono text-[#767773] italic py-2">
+          <p className="text-xs font-mono text-[#626262] italic py-2">
             Aún no se han ejecutado métodos. Haz clic en "Ejecutar Método" para observar el cambio de estado.
           </p>
         ) : (
@@ -367,15 +367,15 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
             {callHistory.slice(-5).reverse().map((rec) => (
               <div
                 key={rec.id}
-                className="p-2 bg-[#F6F5F0] border border-[#DCDDD8] flex items-center justify-between"
+                className="p-2 bg-[#F7F6F1] border border-[#DEDDD7] flex items-center justify-between"
               >
                 <div className="flex items-center gap-2 truncate">
-                  <span className="text-[#181818] font-bold">{rec.callString}</span>
-                  <span className="text-[#767773] text-[11px] truncate">
+                  <span className="text-[#141414] font-bold">{rec.callString}</span>
+                  <span className="text-[#626262] text-[11px] truncate">
                     → {rec.effectDescription}
                   </span>
                 </div>
-                <span className="text-[10px] text-[#767773] tabular-nums shrink-0">
+                <span className="text-[10px] text-[#626262] tabular-nums shrink-0">
                   {rec.timestamp}
                 </span>
               </div>

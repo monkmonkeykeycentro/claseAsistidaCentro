@@ -356,30 +356,30 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Top Breadcrumb & Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DCDDD8]">
-        <div className="flex items-center gap-2 text-xs font-mono text-[#767773]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DEDDD7]">
+        <div className="flex items-center gap-2 text-xs font-mono text-[#626262]">
           <button
             onClick={onBackToHome}
-            className="hover:text-[#181818] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2 py-1 bg-[#EEEDE8] border border-[#DCDDD8] text-[#181818] cursor-pointer"
+            className="hover:text-[#141414] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2.5 py-1 bg-[#FFFFFF] border border-[#DEDDD7] text-[#141414] cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Inicio</span>
           </button>
-          <span className="text-[#DCDDD8]">/</span>
+          <span className="text-[#DEDDD7]">/</span>
           <button
             onClick={onOpenCatalogue}
-            className="hover:text-[#181818] transition-colors flex items-center gap-1 cursor-pointer"
+            className="hover:text-[#141414] transition-colors flex items-center gap-1 cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Temario</span>
           </button>
-          <span className="text-[#DCDDD8]">/</span>
-          <span className="text-[#181818] font-bold">Laboratorio POO</span>
+          <span className="text-[#DEDDD7]">/</span>
+          <span className="text-[#141414] font-bold">Laboratorio POO</span>
         </div>
 
         {/* Module Switcher (Módulo 1: Pelota, Módulo 2: Burbuja, Constructor Creativo) */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 bg-[#EEEDE8] border border-[#DCDDD8] font-mono text-xs">
+          <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#DEDDD7] font-mono text-xs">
             <button
               onClick={() => {
                 setActiveModuleId('pelota');
@@ -387,11 +387,11 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
               }}
               className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'pelota'
-                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
+                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
               }`}
             >
-              <Circle className="w-3.5 h-3.5 text-[#E2661A]" />
+              <Circle className="w-3.5 h-3.5 text-[#D9AA3D]" />
               <span>Módulo 1: Pelota</span>
             </button>
 
@@ -402,11 +402,11 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
               }}
               className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'burbuja'
-                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
+                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
               }`}
             >
-              <Droplets className="w-3.5 h-3.5 text-[#38BDF8]" />
+              <Droplets className="w-3.5 h-3.5 text-[#2868D9]" />
               <span>Módulo 2: Burbuja</span>
             </button>
 
@@ -416,11 +416,11 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
               }}
               className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'builder'
-                  ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                  : 'bg-transparent text-[#767773] border-transparent hover:text-[#181818]'
+                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#D5E35F]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#D9AA3D]" />
               <span>Constructor & Eventos</span>
             </button>
           </div>
@@ -428,7 +428,7 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           {activeModuleId !== 'builder' && (
             <button
               onClick={handleResetModule}
-              className="min-h-[36px] p-2 border border-[#DCDDD8] bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#767773] hover:text-[#181818] transition-colors cursor-pointer"
+              className="min-h-[36px] p-2 border border-[#DEDDD7] bg-[#FFFFFF] hover:bg-[#F7F6F1] text-[#626262] hover:text-[#141414] transition-colors cursor-pointer"
               title="Reiniciar módulo a etapa 1"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -444,19 +444,19 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
         <>
           {/* Hero Header */}
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-[#767773] font-mono">
-              <span className="font-bold text-[#181818] bg-[#EEEDE8] border border-[#DCDDD8] px-2 py-0.5">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#626262] font-mono">
+              <span className="font-bold text-[#141414] bg-[#FFFFFF] border border-[#DEDDD7] px-2 py-0.5">
                 {currentModule.moduleName}
               </span>
-              <span className="text-[#DCDDD8]">/</span>
+              <span className="text-[#DEDDD7]">/</span>
               <span>Progresión: Observar → Describir → Construir → Experimentar → Aplicar</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#181818] font-sans">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#141414] font-sans">
               Laboratorio de Objetos: Construcción Progresiva en Processing Java
             </h1>
 
-            <p className="text-xs sm:text-sm text-[#555652] max-w-4xl leading-relaxed font-sans">
+            <p className="text-xs sm:text-sm text-[#626262] max-w-4xl leading-relaxed font-sans">
               {isPelota
                 ? 'Comprende la relación entre memoria y comportamiento visual: desde declarar campos cartesianos (x, y, diametro) y su constructor, hasta programar 7 métodos con física 2D, flotación armónica con ruido Perlin (noise) y gobierno de arreglos Pelota[].'
                 : 'Aplica los fundamentos aprendidos modelando la clase Burbuja: cinemática ascendente, canal alfa de opacidad, expansión elástica de diámetro y dispersión colectiva en un arreglo Burbuja[].'}

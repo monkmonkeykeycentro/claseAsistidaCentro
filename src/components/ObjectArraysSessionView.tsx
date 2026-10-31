@@ -1059,15 +1059,15 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
             <span>Temario</span>
           </button>
           <span>/</span>
-          <span className="text-zinc-400">Programación Orientada a Objetos</span>
+          <span className="text-[#626262]">Programación Orientada a Objetos</span>
           <span>/</span>
-          <span className="text-zinc-950 font-semibold font-mono">Tema 07 · Sesión Completa</span>
+          <span className="text-[#141414] font-semibold font-mono">Tema 07 · Sesión Completa</span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigateTopic('classes')}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[38px] px-3.5 py-1.5 border border-[#DEDDD7] bg-[#FFFFFF] hover:bg-[#F7F6F1] text-xs font-mono text-[#141414] transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <span>Taller previo: Anatomía de Clase (Tema 6)</span>
           </button>
@@ -1076,63 +1076,63 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
 
       {/* Hero Section */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2.5 text-xs text-zinc-500">
-          <span className="font-mono text-xs text-zinc-900 font-semibold bg-zinc-100 px-2 py-0.5 rounded">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#626262] font-mono">
+          <span className="text-xs text-[#141414] font-semibold bg-[#FFFFFF] border border-[#DEDDD7] px-2 py-0.5">
             Módulo Canónico 07
           </span>
-          <span>·</span>
-          <span className="font-mono text-zinc-600 bg-zinc-50 border border-zinc-200 px-2 py-0.5 rounded">
+          <span className="text-[#DEDDD7]">/</span>
+          <span className="text-[#626262] bg-[#FFFFFF] border border-[#DEDDD7] px-2 py-0.5">
             Gato[] y ArrayList&lt;Gato&gt;
           </span>
-          <span>·</span>
+          <span className="text-[#DEDDD7]">/</span>
           <span>Estudio & Laboratorio Interactivo</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#141414] font-sans">
           Arreglos y Colecciones de Objetos
         </h1>
 
-        <p className="text-sm sm:text-base text-zinc-600 max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base text-[#626262] max-w-3xl leading-relaxed font-sans">
           Diseña la clase con sus campos, constructor y métodos, programa reglas lógicas con{' '}
-          <code className="text-xs bg-zinc-100 px-1 py-0.5 rounded font-mono text-zinc-800">if</code>, conecta eventos de{' '}
-          <code className="text-xs bg-zinc-100 px-1 py-0.5 rounded font-mono text-zinc-800">mousePressed()</code> y{' '}
-          <code className="text-xs bg-zinc-100 px-1 py-0.5 rounded font-mono text-zinc-800">keyPressed()</code>, y alimenta el
+          <code className="text-xs bg-[#FFFFFF] border border-[#DEDDD7] px-1 py-0.5 font-mono text-[#141414]">if</code>, conecta eventos de{' '}
+          <code className="text-xs bg-[#FFFFFF] border border-[#DEDDD7] px-1 py-0.5 font-mono text-[#141414]">mousePressed()</code> y{' '}
+          <code className="text-xs bg-[#FFFFFF] border border-[#DEDDD7] px-1 py-0.5 font-mono text-[#141414]">keyPressed()</code>, y alimenta el
           arreglo para simular enjambres vivos en Processing.
         </p>
       </div>
 
       {/* Segmented Tab Navigation Bar */}
-      <div className="flex items-center gap-1.5 p-1 bg-zinc-100 rounded-xl border border-zinc-200 max-w-fit overflow-x-auto">
+      <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#DEDDD7] max-w-fit overflow-x-auto font-mono text-xs">
         <button
           onClick={() => setActiveTab('builder')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'builder'
-              ? 'bg-zinc-950 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-950'
+              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
           }`}
         >
-          <Sliders className="w-4 h-4" />
+          <Sliders className="w-4 h-4 text-[#2868D9]" />
           <span>Diseñar Clase & Eventos</span>
         </button>
 
         <button
           onClick={() => setActiveTab('lab')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'lab'
-              ? 'bg-zinc-950 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-950'
+              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
           }`}
         >
-          <Sparkles className="w-4 h-4" />
+          <Sparkles className="w-4 h-4 text-[#D9AA3D]" />
           <span>Laboratorio de Enjambres</span>
         </button>
 
         <button
           onClick={() => setActiveTab('memory')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'memory'
-              ? 'bg-zinc-950 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-950'
+              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
           }`}
         >
           <Cpu className="w-4 h-4" />
@@ -1141,10 +1141,10 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
 
         <button
           onClick={() => setActiveTab('guide')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'guide'
-              ? 'bg-zinc-950 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-950'
+              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
           }`}
         >
           <Code2 className="w-4 h-4" />
@@ -1153,10 +1153,10 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
 
         <button
           onClick={() => setActiveTab('challenges')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'challenges'
-              ? 'bg-zinc-950 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-950'
+              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
           }`}
         >
           <HelpCircle className="w-4 h-4" />
@@ -1171,7 +1171,7 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
         <div
           tabIndex={0}
           onKeyDown={handleBuilderKeyDown}
-          className="space-y-6 outline-none focus:ring-1 focus:ring-zinc-400 rounded-2xl"
+          className="space-y-6 outline-none focus:ring-1 focus:ring-[#2868D9]"
         >
           {/* Preset Quick Start */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs">

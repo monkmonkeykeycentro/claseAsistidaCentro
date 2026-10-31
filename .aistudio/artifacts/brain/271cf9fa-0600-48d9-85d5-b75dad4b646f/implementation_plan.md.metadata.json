@@ -1,6 +1,6 @@
 {
-  "summary": "Actualización de la propuesta arquitectónica: se incorpora la identidad solicitada 'Código Creativo | centro' en el encabezado principal, manteniendo la estructura limpia con Inicio, Temario, Modo Enfocado de Taller y autenticación institucional.",
-  "updatedAt": "2026-10-19T18:17:34.246690897Z",
-  "requestFeedback": true,
-  "userFacing": true
+  "summary":  "Documentación técnica y resumen de la transformación visual integral de Código Creativo | centro hacia la dirección artística 'Generative Design / Editorial Computing', inspirada en Hartmut Bohnacker, Benedikt Groß, Julia Laub y Claudius Lazzeroni. Incluye paleta de diseño, catálogo de familias algorítmicas, arquitectura de componentes, tipografía, cero-pill discipline y validación de compilación.",
+  "updatedAt":  "2026-10-31T04:12:03.236278144Z",
+  "requestFeedback":  true,
+  "userFacing":  true
 }

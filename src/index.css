@@ -3,19 +3,28 @@
 @layer base {
   :root {
     color-scheme: light;
-    --bg-primary: #F6F5F0;
-    --text-primary: #181818;
-    --surface-secondary: #EEEDE8;
-    --border-primary: #DCDDD8;
-    --accent-interaction: #4263CF;
-    --accent-experimental: #D5E35F;
+    --bg-primary: #F7F6F1;
+    --surface-work: #FFFFFF;
+    --surface-secondary: #EFEFEA;
+    --text-primary: #141414;
+    --text-secondary: #626262;
+    --border-primary: #DEDDD7;
+    --border-subtle: #EBEAE5;
+    --disabled-gray: #A4A4A0;
+    --accent-blue: #2868D9;
+    --accent-blue-hover: #1D54B3;
+    --accent-yellow: #D9AA3D;
+    --accent-yellow-light: #FBF4E2;
+    --accent-red: #D34E43;
   }
 
   body {
-    font-family: 'IBM Plex Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #F6F5F0;
-    color: #181818;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #F7F6F1;
+    color: #141414;
     letter-spacing: -0.012em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   code, pre, .font-mono {
@@ -25,7 +34,7 @@
 
   /* Accessible and branded focus indicators */
   *:focus-visible {
-    outline: 2px solid #4263CF;
+    outline: 2px solid #2868D9;
     outline-offset: 2px;
   }
 }
@@ -33,8 +42,8 @@
 /* Subtle, elegant scrollbar for light theme */
 pre::-webkit-scrollbar,
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 pre::-webkit-scrollbar-track,
@@ -44,18 +53,18 @@ pre::-webkit-scrollbar-track,
 
 pre::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(24, 24, 27, 0.15);
-  border-radius: 3px;
+  background: rgba(20, 20, 20, 0.15);
+  border-radius: 1px;
 }
 
 pre::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(24, 24, 27, 0.3);
+  background: rgba(20, 20, 20, 0.3);
 }
 
 /* Generative Design subtle dot grid */
 .generative-grid-subtle {
-  background-image: radial-gradient(#DCDDD8 1px, transparent 1px);
+  background-image: radial-gradient(#DEDDD7 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
@@ -63,6 +72,6 @@ pre::-webkit-scrollbar-thumb:hover,
 .coord-tick {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
-  color: #767773;
+  color: #626262;
   letter-spacing: 0.05em;
 }

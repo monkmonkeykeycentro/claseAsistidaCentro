@@ -514,35 +514,35 @@ ${
   const currentGuide = STAGE_SKETCH_NOTES[currentStageIdx] || STAGE_SKETCH_NOTES[6];
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs flex flex-col">
+    <div className="bg-[#FFFFFF] border border-[#E3E3DD] overflow-hidden flex flex-col">
       {/* 1. Header with 2 Distinct Tabs & File Action Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 bg-[#EEEDE8] border-b border-[#DCDDD8] font-mono text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 bg-[#F7F7F2] border-b border-[#E3E3DD] font-mono text-xs">
         {/* 2 Tabs: Main Sketch vs Class */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveTab('sketch')}
             className={`min-h-[34px] px-3 py-1 text-xs border transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'sketch'
-                ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] border-[#DCDDD8]'
+                ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                : 'bg-[#FFFFFF] hover:bg-[#F7F6F1] text-[#141414] border-[#DEDDD7]'
             }`}
           >
-            <Code2 className="w-3.5 h-3.5 text-[#4263CF]" />
+            <Code2 className="w-3.5 h-3.5 text-[#2868D9]" />
             <span>Sketch.pde (Principal)</span>
-            <span className="w-1.5 h-1.5 bg-[#4263CF] inline-block" />
+            <span className="w-1.5 h-1.5 bg-[#2868D9] inline-block" />
           </button>
 
           <button
             onClick={() => setActiveTab('class')}
             className={`min-h-[34px] px-3 py-1 text-xs border transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'class'
-                ? 'bg-[#181818] text-[#F6F5F0] border-[#181818] font-bold'
-                : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] border-[#DCDDD8]'
+                ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
+                : 'bg-[#FFFFFF] hover:bg-[#F7F6F1] text-[#141414] border-[#DEDDD7]'
             }`}
           >
-            <FileCode className="w-3.5 h-3.5 text-[#D5E35F]" />
+            <FileCode className="w-3.5 h-3.5 text-[#D9AA3D]" />
             <span>{className}.pde (Clase)</span>
-            {hasClassDeclared && <span className="w-1.5 h-1.5 bg-[#D5E35F] inline-block" />}
+            {hasClassDeclared && <span className="w-1.5 h-1.5 bg-[#D9AA3D] inline-block" />}
           </button>
         </div>
 
@@ -550,13 +550,13 @@ ${
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => handleCopy('active', currentCode)}
-            className="min-h-[34px] px-2.5 py-1 bg-[#FFFFFF] hover:bg-[#EEEDE8] border border-[#DCDDD8] text-[#181818] text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[34px] px-2.5 py-1 bg-[#FFFFFF] hover:bg-[#F7F6F1] border border-[#DEDDD7] text-[#141414] text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
             title={`Copiar ${activeTab === 'sketch' ? 'Sketch.pde' : className + '.pde'} al portapapeles`}
           >
             {copiedType === 'active' ? (
               <>
-                <Check className="w-3.5 h-3.5 text-[#4263CF]" />
-                <span className="font-bold text-[#181818]">¡Copiado!</span>
+                <Check className="w-3.5 h-3.5 text-[#2868D9]" />
+                <span className="font-bold text-[#141414]">¡Copiado!</span>
               </>
             ) : (
               <>
@@ -568,7 +568,7 @@ ${
 
           <button
             onClick={handleDownloadActive}
-            className="min-h-[34px] px-3 py-1 bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[34px] px-3 py-1 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
             title={`Descargar archivo individual ${activeTab === 'sketch' ? 'Sketch.pde' : className + '.pde'}`}
           >
             <Download className="w-3.5 h-3.5" />
@@ -577,10 +577,10 @@ ${
 
           <button
             onClick={handleDownloadBoth}
-            className="min-h-[34px] px-2.5 py-1 bg-[#FFFFFF] hover:bg-[#EEEDE8] border border-[#DCDDD8] text-[#181818] text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[34px] px-2.5 py-1 bg-[#FFFFFF] hover:bg-[#F7F6F1] border border-[#DEDDD7] text-[#141414] text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
             title="Descargar ambos archivos separados (Sketch.pde y clase .pde) para Processing IDE"
           >
-            <Layers className="w-3.5 h-3.5 text-[#767773]" />
+            <Layers className="w-3.5 h-3.5 text-[#626262]" />
             <span className="hidden sm:inline">Descargar Ambos</span>
             <span className="sm:hidden">Ambos</span>
           </button>
@@ -588,9 +588,9 @@ ${
       </div>
 
       {/* Processing Multi-Tab Architecture Explanatory Banner */}
-      <div className="px-4 py-2 bg-[#F6F5F0] border-b border-[#DCDDD8] text-xs font-mono flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[#555652]">
-          <span className="bg-[#EEEDE8] text-[#181818] border border-[#DCDDD8] text-[10px] font-bold px-1.5 py-0.5 shrink-0">
+      <div className="px-4 py-2 bg-[#F7F6F1] border-b border-[#DEDDD7] text-xs font-mono flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[#626262]">
+          <span className="bg-[#FFFFFF] text-[#141414] border border-[#DEDDD7] text-[10px] font-bold px-1.5 py-0.5 shrink-0">
             ARQUITECTURA
           </span>
           <span className="text-[11px] leading-tight">
@@ -600,7 +600,7 @@ ${
               </>
             ) : (
               <>
-                <strong>{className}.pde:</strong> Archivo independiente de la clase. En Processing crea esta pestaña con <kbd className="bg-[#FFFFFF] px-1 py-0.5 border border-[#DCDDD8] font-mono text-[10px]">Ctrl+Mayús+N</kbd>.
+                <strong>{className}.pde:</strong> Archivo independiente de la clase. En Processing crea esta pestaña con <kbd className="bg-[#FFFFFF] px-1 py-0.5 border border-[#DEDDD7] font-mono text-[10px]">Ctrl+Mayús+N</kbd>.
               </>
             )}
           </span>
@@ -608,17 +608,17 @@ ${
       </div>
 
       {/* 2. Progressive Sketch & Class Evolution Guide Banner */}
-      <div className="px-4 py-2 bg-[#EEEDE8] border-b border-[#DCDDD8] text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[#181818]">
-          <span className="bg-[#181818] text-[#F6F5F0] text-[10px] font-bold px-1.5 py-0.5">
+      <div className="px-4 py-2 bg-[#FFFFFF] border-b border-[#DEDDD7] text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[#141414]">
+          <span className="bg-[#141414] text-[#F7F6F1] text-[10px] font-bold px-1.5 py-0.5">
             ETAPA 0{currentStageIdx + 1}
           </span>
           <span className="font-semibold">{currentGuide.title}:</span>
-          <span className="text-[#767773] truncate">{currentGuide.addition}</span>
+          <span className="text-[#626262] truncate">{currentGuide.addition}</span>
         </div>
 
-        <div className="text-[11px] text-[#767773] flex items-center gap-1 shrink-0">
-          <Info className="w-3.5 h-3.5 text-[#767773] shrink-0" />
+        <div className="text-[11px] text-[#626262] flex items-center gap-1 shrink-0">
+          <Info className="w-3.5 h-3.5 text-[#626262] shrink-0" />
           <span>{currentGuide.rationale}</span>
         </div>
       </div>
@@ -638,12 +638,12 @@ ${
                 key={idx}
                 className={`table-row transition-colors ${
                   isClassDecl || isNewInst
-                    ? 'bg-[#D5E35F]/20 font-semibold'
-                    : 'hover:bg-[#F6F5F0]'
+                    ? 'bg-[#D9AA3D]/15 font-semibold'
+                    : 'hover:bg-[#F7F6F1]'
                 }`}
               >
                 {/* Line number */}
-                <span className="table-cell select-none pr-4 text-right text-[#A5A6A0] font-mono text-[11px] w-9 tabular-nums">
+                <span className="table-cell select-none pr-4 text-right text-[#A4A4A0] font-mono text-[11px] w-9 tabular-nums">
                   {lineNum}
                 </span>
 
@@ -651,8 +651,8 @@ ${
                 <span
                   className={`table-cell whitespace-pre ${
                     isComment || isHeader
-                      ? 'text-[#767773] font-mono text-[11px] italic'
-                      : 'text-[#181818]'
+                      ? 'text-[#626262] font-mono text-[11px] italic'
+                      : 'text-[#141414]'
                   }`}
                 >
                   {highlightProcessingSyntax(line)}
@@ -664,11 +664,11 @@ ${
       </div>
 
       {/* 4. Footer Status Bar with Processing Architecture Note */}
-      <div className="px-4 py-2 bg-[#EEEDE8] border-t border-[#DCDDD8] text-[11px] text-[#767773] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
+      <div className="px-4 py-2 bg-[#F7F6F1] border-t border-[#DEDDD7] text-[11px] text-[#626262] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-[#181818] font-semibold">Processing Java 4.3</span>
-          <span className="text-[#DCDDD8]">|</span>
+          <span className="w-2 h-2 bg-[#2868D9] inline-block" />
+          <span className="text-[#141414] font-semibold">Processing Java 4.3</span>
+          <span className="text-[#DEDDD7]">|</span>
           <span>
             {activeTab === 'class'
               ? `Pestaña ${className}.pde (Definición independiente de la clase)`
@@ -676,7 +676,7 @@ ${
           </span>
         </div>
 
-        <div className="text-[#767773]">
+        <div className="text-[#626262]">
           {activeTab === 'sketch' && 'setup() se ejecuta 1 vez · draw() se ejecuta a 60 fps'}
           {activeTab === 'class' && `${module.methods.length} métodos encapsulados en ${className}`}
         </div>
@@ -688,7 +688,7 @@ ${
 // Lightweight editorial token highlighter for Processing Java
 function highlightProcessingSyntax(line: string): React.ReactNode {
   if (line.trim().startsWith('//')) {
-    return <span className="text-[#767773] italic">{line}</span>;
+    return <span className="text-[#626262] italic">{line}</span>;
   }
 
   // Tokens regex including noise, frameCount, width, height
@@ -699,14 +699,14 @@ function highlightProcessingSyntax(line: string): React.ReactNode {
   return parts.map((part, pIdx) => {
     if (['class', 'new', 'for', 'if', 'else', 'return'].includes(part)) {
       return (
-        <span key={pIdx} className="text-[#4263CF] font-bold">
+        <span key={pIdx} className="text-[#2868D9] font-bold">
           {part}
         </span>
       );
     }
     if (['float', 'color', 'int', 'boolean', 'String', 'void'].includes(part)) {
       return (
-        <span key={pIdx} className="text-[#181818] font-semibold">
+        <span key={pIdx} className="text-[#141414] font-semibold">
           {part}
         </span>
       );
@@ -733,14 +733,14 @@ function highlightProcessingSyntax(line: string): React.ReactNode {
       ].includes(part)
     ) {
       return (
-        <span key={pIdx} className="text-[#181818] font-medium underline decoration-[#DCDDD8] decoration-1">
+        <span key={pIdx} className="text-[#141414] font-medium underline decoration-[#DEDDD7] decoration-1">
           {part}
         </span>
       );
     }
     if (['{', '}', '(', ')', ';', '=', '+', '-', '*', '/'].includes(part)) {
       return (
-        <span key={pIdx} className="text-[#767773] font-bold">
+        <span key={pIdx} className="text-[#626262] font-bold">
           {part}
         </span>
       );

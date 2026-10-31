@@ -70,58 +70,58 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
   const chosenOption = challenge?.options.find((o) => o.id === selectedOptId);
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#DCDDD8] p-5 sm:p-6 space-y-5 flex flex-col justify-between">
+    <div className="bg-[#FFFFFF] border border-[#DEDDD7] p-5 sm:p-6 space-y-5 flex flex-col justify-between">
       {/* 1. Moment Indicator & Step Index */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2 border-b border-[#DCDDD8] pb-3 text-xs font-mono">
+        <div className="flex items-center justify-between gap-2 border-b border-[#DEDDD7] pb-3 text-xs font-mono">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#181818] bg-[#EEEDE8] px-2 py-0.5 border border-[#DCDDD8]">
+            <span className="font-bold text-[#141414] bg-[#F7F6F1] px-2 py-0.5 border border-[#DEDDD7]">
               MOMENTO {momentInfo.step}
             </span>
-            <span className="text-[#181818] font-semibold">
+            <span className="text-[#141414] font-semibold">
               {momentInfo.title}
             </span>
-            <span className="text-[#DCDDD8] hidden sm:inline">/</span>
-            <span className="text-[#767773] hidden sm:inline text-[11px]">
+            <span className="text-[#DEDDD7] hidden sm:inline">/</span>
+            <span className="text-[#626262] hidden sm:inline text-[11px]">
               {momentInfo.subtitle}
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-[#767773]">
+          <div className="flex items-center gap-1 text-[#626262]">
             <span>ETAPA</span>
-            <span className="font-bold text-[#181818] tabular-nums">0{currentStageIdx + 1}</span>
-            <span className="text-[#DCDDD8]">/</span>
+            <span className="font-bold text-[#141414] tabular-nums">0{currentStageIdx + 1}</span>
+            <span className="text-[#DEDDD7]">/</span>
             <span className="tabular-nums">0{totalStages}</span>
           </div>
         </div>
 
         {/* Stage Title & Learning Objective */}
         <div className="space-y-1.5 pt-1">
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#181818] font-sans">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#141414] font-sans">
             {activity.title}
           </h2>
-          <div className="text-xs text-[#767773] font-mono leading-relaxed">
-            <span className="text-[#181818] font-semibold uppercase">Objetivo:</span> {activity.objective}
+          <div className="text-xs text-[#626262] font-mono leading-relaxed">
+            <span className="text-[#141414] font-semibold uppercase">Objetivo:</span> {activity.objective}
           </div>
         </div>
 
         {/* Pedagogical Explanation */}
-        <p className="text-xs sm:text-sm text-[#555652] leading-relaxed font-sans pt-1">
+        <p className="text-xs sm:text-sm text-[#626262] leading-relaxed font-sans pt-1">
           {activity.explanation}
         </p>
 
         {/* 2. Challenge / Question Section */}
         {challenge && (
-          <div className="p-4 bg-[#EEEDE8] border border-[#DCDDD8] space-y-3 mt-3">
-            <div className="flex items-center justify-between text-xs font-mono text-[#767773] border-b border-[#DCDDD8] pb-2">
-              <div className="flex items-center gap-1.5 font-bold text-[#181818]">
-                <HelpCircle className="w-3.5 h-3.5 text-[#4263CF]" />
+          <div className="p-4 bg-[#F7F6F1] border border-[#DEDDD7] space-y-3 mt-3">
+            <div className="flex items-center justify-between text-xs font-mono text-[#626262] border-b border-[#DEDDD7] pb-2">
+              <div className="flex items-center gap-1.5 font-bold text-[#141414]">
+                <HelpCircle className="w-3.5 h-3.5 text-[#2868D9]" />
                 <span>PREGUNTA DE COMPRENSIÓN</span>
               </div>
               <span>Selecciona una opción</span>
             </div>
 
-            <p className="text-xs sm:text-sm font-medium text-[#181818] leading-relaxed font-sans">
+            <p className="text-xs sm:text-sm font-medium text-[#141414] leading-relaxed font-sans">
               {challenge.question}
             </p>
 
@@ -136,18 +136,18 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                     className={`w-full p-3 border text-left text-xs transition-colors flex items-start gap-3 cursor-pointer ${
                       isSelected
                         ? opt.isCorrect
-                          ? 'bg-[#181818] text-[#F6F5F0] border-[#181818]'
-                          : 'bg-[#FFFFFF] text-[#181818] border-[#4263CF] ring-1 ring-[#4263CF]'
-                        : 'bg-[#FFFFFF] hover:border-[#181818] border-[#DCDDD8] text-[#181818]'
+                          ? 'bg-[#141414] text-[#F7F6F1] border-[#141414]'
+                          : 'bg-[#FFFFFF] text-[#141414] border-[#2868D9] ring-1 ring-[#2868D9]'
+                        : 'bg-[#FFFFFF] hover:border-[#141414] border-[#DEDDD7] text-[#141414]'
                     }`}
                   >
                     <span
                       className={`w-5 h-5 border flex items-center justify-center shrink-0 mt-0.5 font-mono text-[10px] font-bold ${
                         isSelected && opt.isCorrect
-                          ? 'bg-[#D5E35F] text-[#181818] border-[#D5E35F]'
+                          ? 'bg-[#D9AA3D] text-[#141414] border-[#D9AA3D]'
                           : isSelected
-                          ? 'bg-[#4263CF] text-white border-[#4263CF]'
-                          : 'bg-[#EEEDE8] border-[#DCDDD8] text-[#181818]'
+                          ? 'bg-[#2868D9] text-white border-[#2868D9]'
+                          : 'bg-[#F7F6F1] border-[#DEDDD7] text-[#141414]'
                       }`}
                     >
                       {String.fromCharCode(65 + idx)}
@@ -163,26 +163,26 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
               <div
                 className={`p-3.5 border-l-4 text-xs leading-relaxed font-sans ${
                   chosenOption.isCorrect
-                    ? 'bg-[#FFFFFF] border-l-[#4263CF] border border-[#DCDDD8] text-[#181818]'
-                    : 'bg-[#FFFFFF] border-l-rose-500 border border-[#DCDDD8] text-[#181818]'
+                    ? 'bg-[#FFFFFF] border-l-[#2868D9] border border-[#DEDDD7] text-[#141414]'
+                    : 'bg-[#FFFFFF] border-l-[#D34E43] border border-[#DEDDD7] text-[#141414]'
                 }`}
               >
                 <div className="font-semibold mb-1 flex items-center gap-1.5 font-mono text-xs">
                   {chosenOption.isCorrect ? (
                     <>
-                      <Check className="w-4 h-4 text-[#4263CF]" />
-                      <span className="text-[#4263CF] font-bold">[COMPRENSIÓN CONCEPTUAL VALIDADA]</span>
+                      <Check className="w-4 h-4 text-[#2868D9]" />
+                      <span className="text-[#2868D9] font-bold">[COMPRENSIÓN CONCEPTUAL VALIDADA]</span>
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="w-4 h-4 text-rose-600" />
-                      <span className="text-rose-800 font-bold">[DIAGNÓSTICO TÉCNICO DE ERROR]</span>
+                      <AlertCircle className="w-4 h-4 text-[#D34E43]" />
+                      <span className="text-[#D34E43] font-bold">[DIAGNÓSTICO TÉCNICO DE ERROR]</span>
                     </>
                   )}
                 </div>
-                <p className="text-[#181818] leading-relaxed">{chosenOption.feedback}</p>
-                <div className="pt-2 mt-2 border-t border-[#DCDDD8] flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-[#767773]">
+                <p className="text-[#141414] leading-relaxed">{chosenOption.feedback}</p>
+                <div className="pt-2 mt-2 border-t border-[#DEDDD7] flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-[#626262]">
                     {chosenOption.isCorrect
                       ? 'Código desbloqueado e integrado en el editor'
                       : 'Reevalúa la arquitectura y selecciona la respuesta técnica adecuada'}
@@ -193,9 +193,9 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                         setSelectedOptId(null);
                         setShowFeedback(false);
                       }}
-                      className="min-h-[28px] px-2.5 py-1 bg-[#EEEDE8] hover:bg-[#DCDDD8] text-[#181818] border border-[#DCDDD8] font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                      className="min-h-[28px] px-2.5 py-1 bg-[#FFFFFF] hover:bg-[#F7F6F1] text-[#141414] border border-[#DEDDD7] font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
                     >
-                      <RotateCcw className="w-3 h-3 text-[#767773]" />
+                      <RotateCcw className="w-3 h-3 text-[#626262]" />
                       <span>Reintentar</span>
                     </button>
                   )}
@@ -205,30 +205,30 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
 
             {/* Application Task (unlocked upon correct comprehension) */}
             {activity.applicationTask && (isChallengeCompleted || chosenOption?.isCorrect) && (
-              <div className="p-3.5 bg-[#FFFFFF] border-2 border-[#181818] space-y-2 mt-3 font-mono">
-                <div className="flex items-center justify-between text-xs font-bold text-[#181818]">
+              <div className="p-3.5 bg-[#FFFFFF] border-2 border-[#141414] space-y-2 mt-3 font-mono">
+                <div className="flex items-center justify-between text-xs font-bold text-[#141414]">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-[#4263CF]" />
+                    <span className="w-2 h-2 bg-[#2868D9]" />
                     <span>APLICACIÓN PRÁCTICA DEL CONCEPTO</span>
                   </div>
-                  <span className="text-[10px] bg-[#D5E35F] text-[#181818] px-1.5 py-0.5 font-bold uppercase">
+                  <span className="text-[10px] bg-[#D9AA3D] text-[#141414] px-1.5 py-0.5 font-bold uppercase">
                     Comprobación Activa
                   </span>
                 </div>
-                <p className="text-xs font-sans text-[#181818] leading-relaxed">
+                <p className="text-xs font-sans text-[#141414] leading-relaxed">
                   {activity.applicationTask.instruction}
                 </p>
-                <div className="text-[11px] text-[#767773] pt-1.5 border-t border-[#DCDDD8] flex items-center justify-between">
+                <div className="text-[11px] text-[#626262] pt-1.5 border-t border-[#DEDDD7] flex items-center justify-between">
                   <span>Esperado: {activity.applicationTask.expectedOutcome}</span>
                 </div>
               </div>
             )}
 
             {/* 3-Level Progressive Analytical Hints */}
-            <div className="pt-2 border-t border-[#DCDDD8] space-y-2">
-              <div className="flex items-center justify-between text-xs font-mono text-[#767773]">
-                <span className="flex items-center gap-1 font-semibold text-[#181818]">
-                  <Lightbulb className="w-3.5 h-3.5 text-[#4263CF]" />
+            <div className="pt-2 border-t border-[#DEDDD7] space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
+                <span className="flex items-center gap-1 font-semibold text-[#141414]">
+                  <Lightbulb className="w-3.5 h-3.5 text-[#2868D9]" />
                   <span>Pistas analíticas de ingeniería (3 niveles):</span>
                 </span>
                 <span className="text-[11px]">Consultar deducción</span>
@@ -241,8 +241,8 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
                     onClick={() => setActiveHintLevel(activeHintLevel === lvl ? null : (lvl as 1 | 2 | 3))}
                     className={`px-2 py-1 text-[11px] font-mono border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
                       activeHintLevel === lvl
-                        ? 'bg-[#181818] text-[#F6F5F0] border-[#181818]'
-                        : 'bg-[#FFFFFF] hover:bg-[#EEEDE8] border-[#DCDDD8] text-[#181818]'
+                        ? 'bg-[#141414] text-[#F7F6F1] border-[#141414]'
+                        : 'bg-[#FFFFFF] hover:bg-[#F7F6F1] border-[#DEDDD7] text-[#141414]'
                     }`}
                   >
                     <span>Pista 0{lvl}</span>
@@ -252,7 +252,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
               </div>
 
               {activeHintLevel && (
-                <div className="p-3 bg-[#FFFFFF] border border-[#DCDDD8] text-xs text-[#555652] leading-relaxed font-sans">
+                <div className="p-3 bg-[#FFFFFF] border border-[#DEDDD7] text-xs text-[#626262] leading-relaxed font-sans">
                   {activeHintLevel === 1 && challenge.hints.hint1}
                   {activeHintLevel === 2 && challenge.hints.hint2}
                   {activeHintLevel === 3 && challenge.hints.hint3}
@@ -264,11 +264,11 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
       </div>
 
       {/* 3. Stage Stepper & Bottom Navigation with Strict Gating */}
-      <div className="pt-4 border-t border-[#DCDDD8] flex items-center justify-between gap-3 font-mono text-xs">
+      <div className="pt-4 border-t border-[#DEDDD7] flex items-center justify-between gap-3 font-mono text-xs">
         <button
           onClick={onPrevStage}
           disabled={currentStageIdx === 0}
-          className="min-h-[40px] px-3.5 py-1.5 border border-[#DCDDD8] bg-[#FFFFFF] hover:bg-[#EEEDE8] text-[#181818] disabled:opacity-30 transition-colors flex items-center gap-1.5 cursor-pointer"
+          className="min-h-[40px] px-3.5 py-1.5 border border-[#DEDDD7] bg-[#FFFFFF] hover:bg-[#F7F6F1] text-[#141414] disabled:opacity-30 transition-colors flex items-center gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Etapa anterior</span>
@@ -282,8 +282,8 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
               onClick={() => onSelectStageIdx(i)}
               className={`h-2 transition-all cursor-pointer ${
                 i === currentStageIdx
-                  ? 'bg-[#4263CF] w-5'
-                  : 'bg-[#DCDDD8] hover:bg-[#767773] w-2'
+                  ? 'bg-[#2868D9] w-5'
+                  : 'bg-[#DEDDD7] hover:bg-[#626262] w-2'
               }`}
               title={`Ir a etapa ${i + 1}`}
             />
@@ -299,8 +299,8 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({
               disabled={currentStageIdx === totalStages - 1 || Boolean(hasUnsolvedChallenge)}
               className={`min-h-[40px] px-4 py-1.5 font-medium transition-colors flex items-center gap-1.5 cursor-pointer border ${
                 hasUnsolvedChallenge
-                  ? 'bg-[#EEEDE8] text-[#767773] border-[#DCDDD8] cursor-not-allowed opacity-60'
-                  : 'bg-[#181818] hover:bg-[#4263CF] text-[#F6F5F0] border-[#181818]'
+                  ? 'bg-[#F7F6F1] text-[#626262] border-[#DEDDD7] cursor-not-allowed opacity-60'
+                  : 'bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] border-[#141414]'
               }`}
               title={hasUnsolvedChallenge ? 'Resuelve el reto analítico para avanzar a la siguiente etapa' : 'Avanzar a la siguiente etapa'}
             >
