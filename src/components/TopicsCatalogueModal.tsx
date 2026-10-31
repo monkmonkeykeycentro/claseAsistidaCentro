@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TOPICS_DATA } from '../data/topicsData';
+import { TopicItem, TOPICS_DATA } from '../data/topicsData';
 import { BookOpen, Check, ArrowRight, X, Clock, Layers } from 'lucide-react';
 
 interface TopicsCatalogueModalProps {
@@ -8,6 +8,7 @@ interface TopicsCatalogueModalProps {
   currentTopicId: string;
   onSelectTopic: (topicId: string) => void;
   classesProgressCount: number;
+  topics?: TopicItem[];
 }
 
 export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
@@ -15,11 +16,14 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
   onClose,
   currentTopicId,
   onSelectTopic,
+  topics,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   if (!isOpen) return null;
+
+  const allTopics = topics && topics.length > 0 ? topics : TOPICS_DATA;
 
   const categories = [
     { id: 'all', label: 'Todos los temas' },
@@ -29,7 +33,7 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
     { id: 'Programación Orientada a Objetos', label: 'POO' },
   ];
 
-  const filteredTopics = TOPICS_DATA.filter((topic) => {
+  const filteredTopics = allTopics.filter((topic) => {
     const matchesCat =
       selectedCategory === 'all' || topic.category === selectedCategory;
     const matchesSearch =

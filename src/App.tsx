@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { StageId, UserProgress, BuilderState, ZoneId } from './types/classStructure';
 import { INITIAL_BUILDER_STATE } from './data/stageData';
-import { TOPICS_DATA } from './data/topicsData';
+import { TOPICS_DATA, TopicItem } from './data/topicsData';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
 import { FocusedWorkshopView } from './components/FocusedWorkshopView';
@@ -25,6 +25,8 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import {
   seedCmsFromExistingContentIfEmpty,
   subscribeToSiteContent,
+  getTopicFromCmsOrFallback,
+  getAllTopicsFromCmsOrFallback,
 } from './services/cmsService';
 import { CmsSiteContentCombined } from './types/cms';
 import { BookOpen, Eye, X, Settings } from 'lucide-react';
@@ -63,11 +65,71 @@ export default function App() {
     return 'classes';
   });
 
+  const [dynamicTopic, setDynamicTopic] = useState<TopicItem>(() => {
+    return TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5];
+  });
+
+  const [allCurriculumTopics, setAllCurriculumTopics] = useState<TopicItem[]>(TOPICS_DATA);
+
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState<StageId>(1);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleNavigateAdmin = () => {
+    setActiveView('admin');
+    window.location.hash = '#admin';
+  };
+
+  const handleExitAdmin = () => {
+    setActiveView('home');
+    if (window.location.hash === '#admin' || window.location.hash === '#cms') {
+      try {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch {
+        window.location.hash = '';
+      }
+    }
+  };
+
+  // URL route detection (#admin, #cms, ?admin, /admin) and keyboard shortcut (Ctrl+Shift+A)
+  useEffect(() => {
+    const checkAdminRoute = () => {
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      const pathname = window.location.pathname.toLowerCase();
+
+      if (
+        hash === '#admin' ||
+        hash === '#cms' ||
+        search.includes('admin') ||
+        search.includes('cms') ||
+        pathname.endsWith('/admin') ||
+        pathname.endsWith('/cms')
+      ) {
+        setActiveView('admin');
+      }
+    };
+
+    checkAdminRoute();
+    window.addEventListener('hashchange', checkAdminRoute);
+    window.addEventListener('popstate', checkAdminRoute);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        handleNavigateAdmin();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('hashchange', checkAdminRoute);
+      window.removeEventListener('popstate', checkAdminRoute);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Initialize CMS content and seed existing topics idempotently
   useEffect(() => {
@@ -85,6 +147,24 @@ export default function App() {
       unsubscribeSite();
     };
   }, []);
+
+  // Refresh dynamic topic data from CMS whenever topic or view changes
+  useEffect(() => {
+    let isMounted = true;
+    getTopicFromCmsOrFallback(currentTopicId, isStudentPreviewMode).then((t) => {
+      if (isMounted) setDynamicTopic(t);
+    });
+
+    getAllTopicsFromCmsOrFallback(isStudentPreviewMode).then((list) => {
+      if (isMounted && list && list.length > 0) {
+        setAllCurriculumTopics(list);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentTopicId, isStudentPreviewMode, activeView]);
 
   const [progress, setProgress] = useState<UserProgress>(() => {
     try {
@@ -282,7 +362,7 @@ export default function App() {
         onNavigateHome={() => setActiveView('home')}
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
         onNavigateOopLab={() => setActiveView('oop-lab')}
-        onNavigateAdmin={() => setActiveView('admin')}
+        onNavigateAdmin={handleNavigateAdmin}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         isSyncing={isSyncing}
@@ -293,7 +373,7 @@ export default function App() {
         {activeView === 'admin' && (
           <AdminDashboard
             currentUser={currentUser}
-            onExitAdmin={() => setActiveView('home')}
+            onExitAdmin={handleExitAdmin}
             onPreviewAsStudent={() => {
               setIsStudentPreviewMode(true);
               setActiveView('home');
@@ -323,7 +403,8 @@ export default function App() {
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onResetProgress={handleResetAllProgress}
             siteContent={siteContent}
-            onNavigateAdmin={() => setActiveView('admin')}
+            onNavigateAdmin={handleNavigateAdmin}
+            topics={allCurriculumTopics}
           />
         )}
 
@@ -346,7 +427,7 @@ export default function App() {
         {/* VIEW 3: General Curriculum Topic Viewer */}
         {activeView === 'topic' && (
           <TopicViewer
-            topic={currentTopic}
+            topic={dynamicTopic}
             onNavigateTopic={(tId) => {
               setCurrentTopicId(tId);
               if (tId === 'classes') {
@@ -376,6 +457,7 @@ export default function App() {
         classesProgressCount={
           Object.values(progress.stageCompleted).filter(Boolean).length
         }
+        topics={allCurriculumTopics}
       />
 
       {/* Auth Modal */}
@@ -416,13 +498,6 @@ export default function App() {
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Laboratorio POO
-            </button>
-            <span className="text-[#E1E7E1]">·</span>
-            <button
-              onClick={() => setActiveView('admin')}
-              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors font-semibold"
-            >
-              CMS / Admin
             </button>
           </div>
         </div>

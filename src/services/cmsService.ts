@@ -24,7 +24,7 @@ import {
   CmsRevision,
   CurriculumExportData,
 } from '../types/cms';
-import { TOPICS_DATA } from '../data/topicsData';
+import { TOPICS_DATA, TopicItem, TopicConcept } from '../data/topicsData';
 
 enum OperationType {
   CREATE = 'create',
@@ -858,5 +858,115 @@ export async function importCurriculumBackup(backup: CurriculumExportData): Prom
     for (const m of backup.media) {
       await setDoc(doc(db, 'cms_media', m.id), m);
     }
+  }
+}
+
+// ============================================================================
+// 11. DYNAMIC TOPIC ADAPTER (READ CMS EDITS IN STUDENT VIEWS)
+// ============================================================================
+
+export async function getTopicFromCmsOrFallback(
+  topicId: string,
+  includeUnpublished = false
+): Promise<TopicItem> {
+  const fallback = TOPICS_DATA.find((t) => t.id === topicId) || TOPICS_DATA[0];
+  try {
+    const lessonIdCandidates = [`les_${topicId}`, topicId];
+    let lesson: CmsLesson | null = null;
+    let foundLessonId = '';
+
+    for (const cand of lessonIdCandidates) {
+      const snap = await getDoc(doc(db, 'cms_lessons', cand));
+      if (snap.exists()) {
+        lesson = snap.data() as CmsLesson;
+        foundLessonId = cand;
+        break;
+      }
+    }
+
+    if (!lesson) {
+      return fallback;
+    }
+
+    // Check visibility / status if not previewing
+    if (!includeUnpublished && (lesson.status !== 'published' || !lesson.visible)) {
+      return fallback;
+    }
+
+    const sections = await getCmsSections(foundLessonId, includeUnpublished);
+    if (!sections || sections.length === 0) {
+      return {
+        ...fallback,
+        title: lesson.title || fallback.title,
+        summary: lesson.summary || fallback.summary,
+        badge: lesson.badge || fallback.badge,
+        estimatedTime: lesson.estimatedTime || fallback.estimatedTime,
+      };
+    }
+
+    const concepts: TopicConcept[] = [];
+    let quickChallenge = fallback.quickChallenge;
+
+    for (const sec of sections) {
+      const blocks = await getCmsBlocks(sec.id);
+      const textBlock = blocks.find((b) => b.type === 'rich-text');
+      const codeBlock = blocks.find((b) => b.type === 'code');
+      const tipBlock = blocks.find((b) => b.type === 'callout' && (b.calloutType === 'tip' || b.calloutType === 'info'));
+      const mistakeBlock = blocks.find((b) => b.type === 'callout' && b.calloutType === 'warning');
+      const activityBlock = blocks.find((b) => b.type === 'activity');
+
+      if (activityBlock && activityBlock.activityConfig) {
+        try {
+          quickChallenge = JSON.parse(activityBlock.activityConfig);
+        } catch {
+          // ignore
+        }
+      }
+
+      concepts.push({
+        id: sec.id.replace('sec_', ''),
+        title: sec.title,
+        summary: sec.summary || '',
+        explanation: textBlock ? textBlock.content : (sec.summary || ''),
+        codeSnippet: codeBlock ? codeBlock.content : '',
+        didacticTip: sec.didacticTip || (tipBlock ? tipBlock.content : ''),
+        commonMistake: sec.commonMistake || (mistakeBlock ? mistakeBlock.content : undefined),
+      });
+    }
+
+    return {
+      ...fallback,
+      title: lesson.title || fallback.title,
+      summary: lesson.summary || fallback.summary,
+      badge: lesson.badge || fallback.badge,
+      estimatedTime: lesson.estimatedTime || fallback.estimatedTime,
+      conceptsCount: concepts.length,
+      concepts: concepts.length > 0 ? concepts : fallback.concepts,
+      quickChallenge,
+    };
+  } catch (err) {
+    console.warn('Notice loading dynamic CMS topic (using fallback):', err);
+    return fallback;
+  }
+}
+
+export async function getAllTopicsFromCmsOrFallback(
+  includeUnpublished = false
+): Promise<TopicItem[]> {
+  try {
+    const modules = await getCmsModules(includeUnpublished);
+    if (!modules || modules.length === 0) {
+      return TOPICS_DATA;
+    }
+
+    const result: TopicItem[] = [];
+    for (let i = 0; i < TOPICS_DATA.length; i++) {
+      const staticTopic = TOPICS_DATA[i];
+      const dynamicTopic = await getTopicFromCmsOrFallback(staticTopic.id, includeUnpublished);
+      result.push(dynamicTopic);
+    }
+    return result;
+  } catch {
+    return TOPICS_DATA;
   }
 }

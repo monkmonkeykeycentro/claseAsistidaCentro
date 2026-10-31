@@ -1,5 +1,5 @@
 import React from 'react';
-import { TOPICS_DATA } from '../data/topicsData';
+import { TOPICS_DATA, TopicItem } from '../data/topicsData';
 import { UserProgress, StageId } from '../types/classStructure';
 import { AppUser } from '../services/firebase';
 import { GenerativeHeroCanvas } from './generative/GenerativeHeroCanvas';
@@ -16,7 +16,6 @@ import {
   Layers,
   Play,
   Heart,
-  Edit3,
 } from 'lucide-react';
 
 interface HomeViewProps {
@@ -31,6 +30,7 @@ interface HomeViewProps {
   onResetProgress?: () => void;
   siteContent?: CmsSiteContentCombined | null;
   onNavigateAdmin?: () => void;
+  topics?: TopicItem[];
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -45,7 +45,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onResetProgress,
   siteContent,
   onNavigateAdmin,
+  topics,
 }) => {
+  const allCurriculumTopics = topics && topics.length > 0 ? topics : TOPICS_DATA;
   const activeProgress = progress || classesProgress || {
     stageCompleted: { 1: false, 2: false, 3: false, 4: false },
     stage3CompletedExercises: [],
@@ -85,22 +87,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {/* LEFT: Friendly Editorial Area */}
           <div className="lg:col-span-6 space-y-5">
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full">
-                  <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
-                  <span>Laboratorio de Código Creativo</span>
-                </span>
-                {onNavigateAdmin && (
-                  <button
-                    onClick={onNavigateAdmin}
-                    className="text-xs text-[#59645C] hover:text-[#407B5D] flex items-center gap-1 font-medium cursor-pointer"
-                    title="Editar textos en CMS"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    <span>Editar textos</span>
-                  </button>
-                )}
-              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full">
+                <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
+                <span>Laboratorio de Código Creativo</span>
+              </span>
 
               <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-[#232A24] leading-[1.15]">
                 {siteContent?.heroHeadline || 'Aprende a programar creando arte y sistemas visuales.'}
@@ -339,7 +329,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {TOPICS_DATA.map((topic) => {
+          {allCurriculumTopics.map((topic) => {
             const isClasses = topic.id === 'classes';
 
             return (
@@ -421,21 +411,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* 5. Friendly Creative Coding Philosophy Note */}
       <section className="p-6 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
-            <Heart className="w-4 h-4 text-[#407B5D]" />
-            <span>Filosofía de Código Creativo · Generative Design</span>
-          </div>
-          {onNavigateAdmin && (
-            <button
-              onClick={onNavigateAdmin}
-              className="text-xs text-[#59645C] hover:text-[#407B5D] flex items-center gap-1 cursor-pointer"
-              title="Editar en CMS"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Editar en CMS</span>
-            </button>
-          )}
+        <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
+          <Heart className="w-4 h-4 text-[#407B5D]" />
+          <span>Filosofía de Código Creativo · Generative Design</span>
         </div>
         <p className="text-xs sm:text-sm text-[#59645C] leading-relaxed max-w-3xl">
           {siteContent?.footerText ||

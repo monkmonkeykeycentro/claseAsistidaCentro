@@ -23,6 +23,26 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   isSyncing,
 }) => {
+  const logoClicksRef = React.useRef<{ count: number; lastTime: number }>({ count: 0, lastTime: 0 });
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if (now - logoClicksRef.current.lastTime < 1000) {
+      logoClicksRef.current.count += 1;
+    } else {
+      logoClicksRef.current.count = 1;
+    }
+    logoClicksRef.current.lastTime = now;
+
+    if (logoClicksRef.current.count >= 3 && onNavigateAdmin) {
+      logoClicksRef.current.count = 0;
+      onNavigateAdmin();
+      return;
+    }
+
+    onNavigateHome();
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-[#FFFFFF]/90 backdrop-blur-md border-b border-[#E1E7E1] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Brand: Código Creativo / centro */}
           <div className="flex items-center gap-3 shrink-0">
             <button
-              onClick={onNavigateHome}
+              onClick={handleLogoClick}
               className="flex items-center gap-2.5 group text-left min-h-[44px] cursor-pointer"
               title="Laboratorio de Código Creativo — Inicio"
             >
@@ -51,56 +71,53 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Navigation Links — Friendly tabs with soft rounded corners */}
           <nav className="flex items-center gap-1.5 sm:gap-2 text-sm font-medium">
-            <button
-              onClick={onNavigateHome}
-              className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-                currentView === 'home'
-                  ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                  : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
-              }`}
-            >
-              Inicio
-            </button>
+            {currentView === 'admin' ? (
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 bg-[#407B5D] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs">
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>CMS Administrativo</span>
+                </div>
+                <button
+                  onClick={onNavigateHome}
+                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] transition-all cursor-pointer"
+                >
+                  Volver al sitio
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={onNavigateHome}
+                  className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+                    currentView === 'home'
+                      ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
+                      : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
+                  }`}
+                >
+                  Inicio
+                </button>
 
-            <button
-              onClick={onNavigateOopLab}
-              className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                currentView === 'oop-lab'
-                  ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                  : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
-              <span>Laboratorio POO</span>
-            </button>
+                <button
+                  onClick={onNavigateOopLab}
+                  className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                    currentView === 'oop-lab'
+                      ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
+                      : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
+                  <span>Laboratorio POO</span>
+                </button>
 
-            <button
-              onClick={onOpenCatalogue}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50 transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <BookOpen className="w-4 h-4 text-[#59645C]" />
-              <span>Temario</span>
-              <span className="text-xs font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">7</span>
-            </button>
-
-            {onNavigateAdmin && (
-              <button
-                onClick={onNavigateAdmin}
-                className={`min-h-[40px] px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                  currentView === 'admin'
-                    ? 'bg-[#E8EEE8] text-[#407B5D] font-bold border border-[#407B5D]/30'
-                    : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
-                }`}
-                title="Panel de Administración Educativa (CMS)"
-              >
-                <Settings className={`w-4 h-4 ${currentView === 'admin' ? 'text-[#407B5D]' : 'text-[#59645C]'}`} />
-                <span>CMS</span>
-                {isUserAdmin(currentUser) && (
-                  <span className="text-[10px] uppercase font-bold bg-[#407B5D] text-white px-1.5 py-0.2 rounded">
-                    Admin
-                  </span>
-                )}
-              </button>
+                <button
+                  onClick={onOpenCatalogue}
+                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4 text-[#59645C]" />
+                  <span>Temario</span>
+                  <span className="text-xs font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">7</span>
+                </button>
+              </>
             )}
           </nav>
 
