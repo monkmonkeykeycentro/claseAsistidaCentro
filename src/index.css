@@ -3,35 +3,52 @@
 @layer base {
   :root {
     color-scheme: light;
-    --bg-primary: #F7F8F4;
-    --surface-work: #FFFFFF;
-    --surface-soft: #E8EEE8;
-    --text-primary: #232A24;
-    --text-secondary: #59645C;
-    --border-primary: #E1E7E1;
-    --primary-green: #407B5D;
-    --primary-green-hover: #33654C;
-    --soft-green: #E8EEE8;
-    --accent-warm: #E6B65A;
+    /* Processing Education */
+    --color-primary: #3169D8;
+    --color-primary-dark: #2447A4;
+    --color-primary-light: #B8D0FF;
+
+    /* Acentos generativos */
+    --color-lavender: #A78BE8;
+    --color-pink: #F3D9EA;
+
+    /* Superficies */
+    --color-background: #F6F8FF;
+    --color-surface: #FFFFFF;
+    --color-border: #DCE5F7;
+
+    /* Textos */
+    --color-text: #27365A;
+    --color-text-secondary: #5B6680;
+
+    /* Tipografía */
+    --font-interface: "Nunito", sans-serif;
+    --font-code: "IBM Plex Mono", monospace;
+
+    /* Geometría */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
   }
 
   body {
-    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #F7F8F4;
-    color: #232A24;
+    font-family: var(--font-interface), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #F6F8FF;
+    color: #27365A;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   code, pre, .font-mono {
-    font-family: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: var(--font-code), 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-feature-settings: "tnum" 1, "zero" 1;
   }
 
   /* Accessible and branded focus indicators */
   *:focus-visible {
-    outline: 2px solid #407B5D;
+    outline: 2px solid #3169D8;
     outline-offset: 2px;
   }
 }
@@ -50,25 +67,25 @@ pre::-webkit-scrollbar-track,
 
 pre::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(20, 20, 20, 0.15);
-  border-radius: 1px;
+  background: rgba(39, 54, 90, 0.15);
+  border-radius: 4px;
 }
 
 pre::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(20, 20, 20, 0.3);
+  background: rgba(39, 54, 90, 0.3);
 }
 
 /* Generative Design subtle dot grid */
 .generative-grid-subtle {
-  background-image: radial-gradient(#DEDDD7 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-image: radial-gradient(#DCE5F7 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
 }
 
 /* Coordinate ticks for canvas and cards */
 .coord-tick {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-code), monospace;
   font-size: 10px;
-  color: #626262;
+  color: #5B6680;
   letter-spacing: 0.05em;
 }

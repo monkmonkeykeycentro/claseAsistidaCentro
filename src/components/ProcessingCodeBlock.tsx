@@ -36,33 +36,33 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
 
   return (
     <div
-      className={`relative bg-[#FFFFFF] border border-[#E3E3DD] rounded-none overflow-hidden font-mono text-xs sm:text-sm ${className}`}
+      className={`relative bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl overflow-hidden font-mono text-xs sm:text-sm shadow-xs ${className}`}
     >
       {/* Editor top header */}
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-[#F7F7F2] border-b border-[#E3E3DD] text-xs text-[#171717]">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-[#F7F8F4] border-b border-[#E1E7E1] text-xs text-[#232A24]">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] tracking-wider text-[#666666] uppercase">
-            [PDE]
+          <span className="font-mono text-[10px] tracking-wider text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded-full font-bold uppercase">
+            PDE
           </span>
-          <span className="font-mono text-[#171717] font-semibold text-xs">
+          <span className="font-mono text-[#232A24] font-semibold text-xs">
             {filename}
           </span>
         </div>
         {showCopyButton && (
           <button
             onClick={handleCopy}
-            className="min-h-[36px] flex items-center gap-1.5 px-3 py-1 bg-[#FFFFFF] hover:bg-[#F7F7F2] border border-[#E3E3DD] text-[#171717] text-xs font-mono transition-colors cursor-pointer"
+            className="min-h-[34px] flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] rounded-xl text-[#232A24] text-xs font-mono transition-colors cursor-pointer shadow-xs"
             title="Copiar código al portapapeles"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-[#2779BD]" />
-                <span className="text-[#2779BD] font-semibold">COPIADO</span>
+                <Check className="w-3.5 h-3.5 text-[#407B5D]" />
+                <span className="text-[#407B5D] font-bold">COPIADO</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-[#666666]" />
-                <span>COPIAR</span>
+                <Copy className="w-3.5 h-3.5 text-[#59645C]" />
+                <span className="font-medium">COPIAR</span>
               </>
             )}
           </button>
@@ -82,15 +82,15 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
             return (
               <div
                 key={idx}
-                className={`flex items-start transition-colors px-2 py-0.5 ${
+                className={`flex items-start transition-colors px-2 py-0.5 rounded-md ${
                   isLineActive
-                    ? 'bg-[#F7F7F2] border-l-2 border-[#2779BD]'
+                    ? 'bg-[#E8EEE8]/70 border-l-2 border-[#407B5D]'
                     : isSectionActive
-                    ? 'bg-[#F7F7F2]'
-                    : 'hover:bg-[#F7F7F2]'
+                    ? 'bg-[#E8EEE8]/40'
+                    : 'hover:bg-[#F7F8F4]'
                 }`}
               >
-                <span className="w-8 select-none text-right pr-4 text-[#666666] text-xs font-mono">
+                <span className="w-8 select-none text-right pr-4 text-[#59645C]/60 text-xs font-mono">
                   {lineNum}
                 </span>
                 <span className="flex-1 whitespace-pre">
@@ -110,29 +110,29 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
       </div>
 
       {/* Footer with Processing Java syntax guide */}
-      <div className="px-3 sm:px-4 py-2 bg-[#F7F7F2] border-t border-[#E3E3DD] text-[11px] text-[#666666] flex flex-wrap items-center justify-between gap-2">
+      <div className="px-3 sm:px-4 py-2 bg-[#F7F8F4] border-t border-[#E1E7E1] text-[11px] text-[#59645C] flex flex-wrap items-center justify-between gap-2">
         {onSelectToken ? (
-          <span className="flex items-center gap-1.5 text-[#171717] font-mono">
-            <Eye className="w-3.5 h-3.5 text-[#2779BD]" />
+          <span className="flex items-center gap-1.5 text-[#232A24] font-mono">
+            <Eye className="w-3.5 h-3.5 text-[#407B5D]" />
             Haz clic en una palabra para inspeccionar su sintaxis
           </span>
         ) : (
-          <span className="font-mono text-[#666666]">Processing Java · PDE</span>
+          <span className="font-mono text-[#59645C]">Processing Java · PDE</span>
         )}
         
         {/* Visual syntax legend */}
         <div className="flex items-center gap-3 text-[10px] font-mono">
           <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-[#2779BD]" />
-            <span className="text-[#2779BD] font-bold">tipos/class</span>
+            <span className="w-2 h-2 rounded-full bg-[#407B5D]" />
+            <span className="text-[#407B5D] font-bold">tipos/class</span>
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-[#171717]" />
-            <span className="text-[#171717] font-medium">métodos</span>
+            <span className="w-2 h-2 rounded-full bg-[#232A24]" />
+            <span className="text-[#232A24] font-medium">métodos</span>
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-[#666666]" />
-            <span className="text-[#666666] font-medium">sistema</span>
+            <span className="w-2 h-2 rounded-full bg-[#E6B65A]" />
+            <span className="text-[#8A6318] font-medium">sistema</span>
           </span>
         </div>
       </div>

@@ -101,15 +101,16 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
         ...prev,
         [currentExercise.id]: {
           status: 'success',
-          message: 'Sintaxis correcta.',
+          message: '¡Sintaxis correcta! Bloque validado con éxito.',
         },
       }));
       onSaveCompletedExercise(currentExercise.id);
 
-      const updatedList = Array.from(
+      const allIds = ETAPA3_EXERCISES.map((e) => e.id);
+      const updatedCompleted = Array.from(
         new Set([...completedExerciseIds, currentExercise.id])
       );
-      if (updatedList.length === ETAPA3_EXERCISES.length) {
+      if (allIds.every((id) => updatedCompleted.includes(id))) {
         onComplete();
       }
     } else {
@@ -117,7 +118,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
         ...prev,
         [currentExercise.id]: {
           status: 'error',
-          message: errorDetail,
+          message: errorDetail || 'Revisa la sintaxis e intenta de nuevo.',
         },
       }));
     }
@@ -136,36 +137,37 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* Stage Header */}
-      <div className="border-b border-zinc-200 pb-6">
+      <div className="border-b border-[#E1E7E1] pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider block">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#407B5D] bg-[#E8EEE8] px-2.5 py-0.5 rounded-full inline-block mb-1.5">
               Etapa 03
             </span>
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 mt-1">
-              Completar la sintaxis de Processing Java
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#232A24]">
+              Completar la sintaxis precisa
             </h2>
           </div>
           {isCompleted && (
-            <div className="flex items-center gap-1.5 text-xs text-zinc-600 font-mono py-1">
-              <Check className="w-3.5 h-3.5 text-zinc-900" />
-              <span>Ejercicios superados ({ETAPA3_EXERCISES.length}/{ETAPA3_EXERCISES.length})</span>
+            <div className="flex items-center gap-1.5 text-xs text-[#407B5D] font-semibold py-1 bg-[#E8EEE8] px-3 rounded-full">
+              <Check className="w-3.5 h-3.5" />
+              <span>Sintaxis completada</span>
             </div>
           )}
         </div>
-        <p className="text-sm text-zinc-600 mt-2 max-w-2xl leading-relaxed">
-          Escribe las partes faltantes en cada ejercicio para asimilar la estructura de clases, nombres, constructor, métodos y delimitadores.
+        <p className="text-sm text-[#59645C] mt-2 max-w-2xl leading-relaxed">
+          Practica escribir la puntuación y palabras clave exactas que Processing Java requiere: llaves, paréntesis, puntos y coma y tipos de datos.
         </p>
       </div>
 
-      {/* Clean Exercise Navigation Bar */}
-      <div className="flex items-center justify-between bg-zinc-50 border border-zinc-200 p-2 rounded-xl">
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
+      {/* Stepper bar across exercises */}
+      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2">
           {ETAPA3_EXERCISES.map((ex, idx) => {
-            const isCompletedEx = completedExerciseIds.includes(ex.id);
+            const isDone = completedExerciseIds.includes(ex.id);
             const isCurrent = currentIdx === idx;
+
             return (
               <button
                 key={ex.id}
@@ -173,22 +175,22 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
                   setCurrentIdx(idx);
                   setShowHint(false);
                 }}
-                className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                   isCurrent
-                    ? 'bg-zinc-900 text-white font-semibold shadow-xs'
-                    : isCompletedEx
-                    ? 'bg-white text-zinc-800 border border-zinc-200'
-                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                    ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+                    : isDone
+                    ? 'bg-[#E8EEE8] text-[#407B5D] border-[#E1E7E1]'
+                    : 'bg-white text-[#59645C] border-[#E1E7E1] hover:bg-[#E8EEE8]'
                 }`}
               >
-                <span>{ex.title.split(':')[0]}</span>
-                {isCompletedEx && <Check className="w-3.5 h-3.5 text-zinc-500" strokeWidth={2.5} />}
+                <span>{ex.title}</span>
+                {isDone && <Check className="w-3 h-3 text-[#407B5D]" />}
               </button>
             );
           })}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 ml-3">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => {
               if (currentIdx > 0) {
@@ -197,12 +199,12 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
               }
             }}
             disabled={currentIdx === 0}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 disabled:opacity-30 text-zinc-600 transition-colors"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl bg-white border border-[#E1E7E1] hover:bg-[#E8EEE8] disabled:opacity-30 text-[#232A24] transition-colors cursor-pointer shadow-xs"
             title="Anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono text-zinc-500 px-1">
+          <span className="text-xs font-mono text-[#59645C] px-1 font-semibold">
             {currentIdx + 1}/{ETAPA3_EXERCISES.length}
           </span>
           <button
@@ -213,7 +215,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
               }
             }}
             disabled={currentIdx === ETAPA3_EXERCISES.length - 1}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 disabled:opacity-30 text-zinc-600 transition-colors"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl bg-white border border-[#E1E7E1] hover:bg-[#E8EEE8] disabled:opacity-30 text-[#232A24] transition-colors cursor-pointer shadow-xs"
             title="Siguiente"
           >
             <ChevronRight className="w-4 h-4" />
@@ -221,30 +223,30 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
         </div>
       </div>
 
-      {/* Spacious 2-Column Resolution View */}
+      {/* 2-Column Resolution View */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Interactive Exercise Card (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-7 space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <h3 className="text-base font-semibold text-zinc-900">
+          <div className="bg-white border border-[#E1E7E1] rounded-2xl p-6 sm:p-7 space-y-6 shadow-xs">
+            <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-3">
+              <h3 className="text-base font-bold text-[#232A24]">
                 {currentExercise.title}
               </h3>
-              <span className="text-xs font-mono text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-md">
+              <span className="text-xs font-mono text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full font-semibold">
                 {currentExercise.badge}
               </span>
             </div>
 
             {/* Prompt */}
-            <p className="text-sm font-medium text-zinc-800 leading-relaxed">
+            <p className="text-sm font-semibold text-[#232A24] leading-relaxed">
               {currentExercise.prompt}
             </p>
 
             {/* Code Snippet with Processing Java syntax highlighting & live blanks */}
-            <div className="p-4 sm:p-5 bg-white rounded-xl border border-zinc-200 font-mono text-xs sm:text-sm text-zinc-900 shadow-2xs">
-              <div className="flex items-center justify-between text-[11px] text-zinc-400 font-sans uppercase tracking-wider mb-2.5 border-b border-zinc-100 pb-1.5">
+            <div className="p-4 sm:p-5 bg-[#F7F8F4] rounded-xl border border-[#E1E7E1] font-mono text-xs sm:text-sm text-[#232A24]">
+              <div className="flex items-center justify-between text-[11px] text-[#59645C] font-sans uppercase tracking-wider mb-2.5 border-b border-[#E1E7E1] pb-1.5 font-bold">
                 <span>Código en Processing:</span>
-                <span className="font-mono text-zinc-400">Processing Java</span>
+                <span className="font-mono text-[#59645C]">Processing Java</span>
               </div>
               <div className="whitespace-pre overflow-x-auto leading-relaxed">
                 {renderSnippetWithBlanks(
@@ -261,7 +263,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
                 const val = currentInputs[blank.id] || '';
                 return (
                   <div key={blank.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                    <label className="text-xs font-mono text-zinc-600 min-w-36">
+                    <label className="text-xs font-mono text-[#59645C] min-w-36 font-semibold">
                       {blank.label}:
                     </label>
                     <input
@@ -269,7 +271,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
                       value={val}
                       onChange={(e) => handleInputChange(blank.id, e.target.value)}
                       placeholder={blank.placeholder || 'Escribe aquí...'}
-                      className="min-h-[44px] flex-1 bg-white border border-zinc-300 rounded-lg px-3.5 py-2 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors"
+                      className="min-h-[44px] flex-1 bg-white border border-[#E1E7E1] rounded-xl px-3.5 py-2 text-xs font-mono text-[#232A24] placeholder:text-[#59645C]/60 focus:outline-none focus:ring-1 focus:ring-[#407B5D] focus:border-[#407B5D] transition-colors"
                     />
                   </div>
                 );
@@ -277,18 +279,18 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
             </div>
 
             {/* Action buttons with 44px min touch target */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-zinc-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#E1E7E1]">
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleCheckCurrent}
-                  className="min-h-[44px] flex-1 sm:flex-none px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-black text-white font-medium text-xs sm:text-sm transition-colors flex items-center justify-center gap-2"
+                  className="min-h-[44px] flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>Comprobar</span>
                 </button>
                 <button
                   onClick={handleResetCurrent}
-                  className="min-h-[44px] px-3.5 py-2.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 text-xs transition-colors flex items-center justify-center gap-1.5"
+                  className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#59645C] text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-medium"
                   title="Limpiar campos"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -298,35 +300,35 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
 
               <button
                 onClick={() => setShowHint(!showHint)}
-                className="min-h-[44px] text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 transition-colors self-end sm:self-auto px-2"
+                className="min-h-[44px] text-xs text-[#59645C] hover:text-[#232A24] flex items-center gap-1.5 transition-colors self-end sm:self-auto px-2 cursor-pointer font-medium"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-zinc-400" />
+                <HelpCircle className="w-3.5 h-3.5 text-[#407B5D]" />
                 <span>{showHint ? 'Ocultar pista' : 'Pista'}</span>
               </button>
             </div>
 
             {/* Hint Box */}
             {showHint && (
-              <div className="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs text-zinc-700 space-y-1">
-                <span className="font-semibold text-zinc-900 block">Pista:</span>
+              <div className="p-3.5 bg-[#FFF9EE] rounded-xl border border-[#E6B65A] text-xs text-[#232A24] space-y-1">
+                <span className="font-bold text-[#8A6318] block">Pista:</span>
                 {currentExercise.blanks.map((b) => (
-                  <div key={b.id} className="text-zinc-600 text-[12px]">
+                  <div key={b.id} className="text-[#59645C] text-[12px]">
                     — <strong>{b.label}:</strong> {b.hint}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Sober feedback message */}
+            {/* Feedback message */}
             {currentFeedback.status !== 'idle' && (
               <div
                 className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 ${
                   currentFeedback.status === 'success'
-                    ? 'bg-zinc-50 border-zinc-300 text-zinc-900 font-medium'
-                    : 'bg-zinc-50 border-zinc-300 text-zinc-600'
+                    ? 'bg-[#E8EEE8] border-[#407B5D] text-[#232A24] font-medium'
+                    : 'bg-[#FFF9EE] border-[#E6B65A] text-[#232A24]'
                 }`}
               >
-                <span className="font-mono text-zinc-900 font-bold">
+                <span className="font-mono text-[#407B5D] font-bold">
                   {currentFeedback.status === 'success' ? '✓' : '—'}
                 </span>
                 <span>{currentFeedback.message}</span>
@@ -336,7 +338,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
 
           {/* Navigation to next exercise */}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-zinc-500 font-mono">
+            <span className="text-xs text-[#59645C] font-mono">
               {completedExerciseIds.length}/{ETAPA3_EXERCISES.length} superados
             </span>
 
@@ -346,7 +348,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
                   setCurrentIdx(currentIdx + 1);
                   setShowHint(false);
                 }}
-                className="min-h-[44px] px-5 py-2 rounded-lg bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-900 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2"
+                className="min-h-[44px] px-5 py-2 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <span>Siguiente ejercicio</span>
                 <ChevronRight className="w-4 h-4" />
@@ -354,7 +356,7 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
             ) : (
               <button
                 onClick={onGoNext}
-                className="min-h-[44px] px-5 py-2 rounded-lg bg-zinc-900 hover:bg-black text-white text-xs sm:text-sm font-medium transition-colors flex items-center gap-2"
+                className="min-h-[44px] px-5 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <span>Avanzar a Etapa 4: Construir clase</span>
                 <ArrowRight className="w-4 h-4" />
@@ -365,39 +367,39 @@ export const Stage3Syntax: React.FC<Stage3Props> = ({
 
         {/* Right Column: Synthetic Role & Delimiter Explanation (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#59645C]">
             Función sintáctica
           </div>
 
-          <div className="bg-white border border-zinc-200 rounded-xl p-5 space-y-4 text-xs">
+          <div className="bg-white border border-[#E1E7E1] rounded-2xl p-5 space-y-4 text-xs shadow-xs">
             <div>
-              <span className="font-semibold text-zinc-900 block mb-1">
+              <span className="font-bold text-[#232A24] block mb-1">
                 Rol en Processing Java:
               </span>
-              <p className="text-zinc-600 leading-relaxed text-xs sm:text-sm">
+              <p className="text-[#59645C] leading-relaxed text-xs sm:text-sm">
                 {currentExercise.signRoleExplanation}
               </p>
             </div>
 
             {currentExercise.counterConceptNote && (
-              <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-700 space-y-1 text-xs">
-                <span className="font-semibold text-zinc-900 block">
+              <div className="p-3 bg-[#FFF9EE] border border-[#E6B65A] rounded-xl text-[#232A24] space-y-1 text-xs">
+                <span className="font-bold text-[#8A6318] block">
                   A tener en cuenta:
                 </span>
-                <p className="leading-relaxed text-zinc-600">
+                <p className="leading-relaxed text-[#59645C]">
                   {currentExercise.counterConceptNote}
                 </p>
               </div>
             )}
 
             {/* Note on semicolons in Java */}
-            <div className="p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl space-y-1.5 text-xs text-zinc-600">
-              <div className="flex items-center gap-2 text-zinc-900 font-medium">
-                <Info className="w-4 h-4 text-zinc-500 shrink-0" />
+            <div className="p-3.5 bg-white border border-[#E1E7E1] rounded-xl space-y-1.5 text-xs text-[#59645C]">
+              <div className="flex items-center gap-2 text-[#407B5D] font-bold">
+                <Info className="w-4 h-4 shrink-0" />
                 <span>Punto y coma en Java</span>
               </div>
               <p className="leading-relaxed text-[12px]">
-                No todas las líneas terminan con punto y coma. Las cabeceras como <code className="text-zinc-900 font-mono bg-zinc-100 px-1 py-0.5 rounded">class Gato</code> o <code className="text-zinc-900 font-mono bg-zinc-100 px-1 py-0.5 rounded">void dibujar()</code> abren un bloque con llave y <strong>no</strong> llevan punto y coma.
+                No todas las líneas terminan con punto y coma. Las cabeceras como <code className="text-[#232A24] font-mono bg-[#E8EEE8] px-1 py-0.5 rounded">class Gato</code> o <code className="text-[#232A24] font-mono bg-[#E8EEE8] px-1 py-0.5 rounded">void dibujar()</code> abren un bloque con llave y <strong>no</strong> llevan punto y coma.
               </p>
             </div>
           </div>
