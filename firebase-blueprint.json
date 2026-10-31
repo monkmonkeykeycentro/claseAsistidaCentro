@@ -11,7 +11,7 @@
         },
         "email": {
           "type": "string",
-          "description": "Verified Google email address (e.g. jmartineza@centro.edu.mx)"
+          "description": "Verified Google email address"
         },
         "displayName": {
           "type": "string",
@@ -27,7 +27,7 @@
         },
         "role": {
           "type": "string",
-          "enum": ["student", "teacher", "admin"],
+          "enum": ["student", "teacher", "admin", "guest"],
           "description": "Assigned role in the platform"
         },
         "createdAt": {
@@ -40,6 +40,346 @@
         }
       },
       "required": ["uid", "email", "displayName"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Record designating an authenticated user as platform administrator",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "Admin email address"
+        },
+        "assignedAt": {
+          "type": "string",
+          "description": "ISO timestamp when admin role was granted"
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "CmsModule": {
+      "title": "CmsModule",
+      "description": "Educational module grouping related lessons",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique module identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title of the module"
+        },
+        "description": {
+          "type": "string",
+          "description": "Overview description of the module"
+        },
+        "category": {
+          "type": "string",
+          "description": "Subject category (e.g. Fundamentos, POO)"
+        },
+        "badge": {
+          "type": "string",
+          "description": "Short badge tag"
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-friendly slug"
+        },
+        "position": {
+          "type": "number",
+          "description": "Sorting order index (0-based)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published", "archived"],
+          "description": "Editorial publication status"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Whether visible to students when published"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["id", "title", "position", "status", "visible"]
+    },
+    "CmsLesson": {
+      "title": "CmsLesson",
+      "description": "Educational lesson or topic belonging to a module",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique lesson identifier"
+        },
+        "moduleId": {
+          "type": "string",
+          "description": "Parent module identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Lesson title"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Short pedagogical summary"
+        },
+        "badge": {
+          "type": "string",
+          "description": "Short tag badge"
+        },
+        "estimatedTime": {
+          "type": "string",
+          "description": "Estimated study time"
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-friendly slug"
+        },
+        "position": {
+          "type": "number",
+          "description": "Sorting order within module"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published", "archived"],
+          "description": "Editorial publication status"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Whether visible to students when published"
+        },
+        "hasInteractiveWorkshop": {
+          "type": "boolean",
+          "description": "Whether this lesson includes an interactive code simulator"
+        },
+        "workshopType": {
+          "type": "string",
+          "description": "Optional workshop identifier: 'classes' | 'oop-lab' | 'object-arrays'"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["id", "moduleId", "title", "position", "status", "visible"]
+    },
+    "CmsSection": {
+      "title": "CmsSection",
+      "description": "Section dividing a lesson into structured concepts or pedagogical stages",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique section identifier"
+        },
+        "lessonId": {
+          "type": "string",
+          "description": "Parent lesson identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Section title"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Section conceptual summary"
+        },
+        "position": {
+          "type": "number",
+          "description": "Sorting order within lesson"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Whether this section is visible"
+        },
+        "didacticTip": {
+          "type": "string",
+          "description": "Pedagogical structural tip"
+        },
+        "commonMistake": {
+          "type": "string",
+          "description": "Frequent student mistake note"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["id", "lessonId", "title", "position", "visible"]
+    },
+    "CmsBlock": {
+      "title": "CmsBlock",
+      "description": "Modular content unit inside a section: text, Processing code, image, video, callout, activity",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique block identifier"
+        },
+        "sectionId": {
+          "type": "string",
+          "description": "Parent section identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["rich-text", "code", "image", "video", "callout", "resources", "activity"],
+          "description": "Block content type"
+        },
+        "content": {
+          "type": "string",
+          "description": "Main text, code snippet, URL or markdown content"
+        },
+        "position": {
+          "type": "number",
+          "description": "Sorting order within section"
+        },
+        "filename": {
+          "type": "string",
+          "description": "Filename for code blocks, e.g. sketch.pde"
+        },
+        "caption": {
+          "type": "string",
+          "description": "Caption or didactic note for media/code"
+        },
+        "calloutType": {
+          "type": "string",
+          "enum": ["info", "tip", "warning", "success"],
+          "description": "Style variant for callout blocks"
+        },
+        "activityConfig": {
+          "type": "string",
+          "description": "JSON stringified interactive configuration or question payload"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["id", "sectionId", "type", "position"]
+    },
+    "CmsSiteContent": {
+      "title": "CmsSiteContent",
+      "description": "Global general texts, headings, and introductory content of the platform",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Unique text key identifier (e.g. hero_title, footer_note)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Descriptive label for editors"
+        },
+        "content": {
+          "type": "string",
+          "description": "Current text or HTML content"
+        },
+        "section": {
+          "type": "string",
+          "description": "Area in platform (e.g. portada, header, footer)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last edit"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Email or UID of editor"
+        }
+      },
+      "required": ["key", "content", "updatedAt"]
+    },
+    "CmsMediaResource": {
+      "title": "CmsMediaResource",
+      "description": "Media asset library for diagrams, sample output images and references",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique media identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Asset title"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL to media file"
+        },
+        "altText": {
+          "type": "string",
+          "description": "Accessible description"
+        },
+        "category": {
+          "type": "string",
+          "description": "Asset category"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["id", "title", "url"]
+    },
+    "CmsRevision": {
+      "title": "CmsRevision",
+      "description": "Version snapshot history for curriculum rollback and auditing",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique revision identifier"
+        },
+        "entityType": {
+          "type": "string",
+          "description": "Type of item: module, lesson, section, full_backup"
+        },
+        "entityId": {
+          "type": "string",
+          "description": "ID of the target entity"
+        },
+        "snapshotJson": {
+          "type": "string",
+          "description": "JSON serialized snapshot data"
+        },
+        "note": {
+          "type": "string",
+          "description": "Editorial reason or change summary"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Admin email or UID"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["id", "entityType", "snapshotJson", "createdAt"]
     },
     "UserTopicProgress": {
       "title": "UserTopicProgress",
@@ -86,6 +426,38 @@
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Stores user profiles with individual owner access control"
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminUser",
+      "description": "Platform administrators allowlist"
+    },
+    "/cms_modules/{moduleId}": {
+      "schema": "CmsModule",
+      "description": "Curricular educational modules"
+    },
+    "/cms_lessons/{lessonId}": {
+      "schema": "CmsLesson",
+      "description": "Educational lessons belonging to modules"
+    },
+    "/cms_sections/{sectionId}": {
+      "schema": "CmsSection",
+      "description": "Pedagogical sections inside lessons"
+    },
+    "/cms_blocks/{blockId}": {
+      "schema": "CmsBlock",
+      "description": "Modular content blocks inside sections"
+    },
+    "/cms_site_content/{contentKey}": {
+      "schema": "CmsSiteContent",
+      "description": "General platform texts and intro content"
+    },
+    "/cms_media/{mediaId}": {
+      "schema": "CmsMediaResource",
+      "description": "Educational media and diagram resources"
+    },
+    "/cms_revisions/{revisionId}": {
+      "schema": "CmsRevision",
+      "description": "Editorial revision history and snapshots"
     },
     "/users/{userId}/progress/{topicId}": {
       "schema": "UserTopicProgress",

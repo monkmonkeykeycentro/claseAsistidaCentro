@@ -5,6 +5,7 @@ import { AppUser } from '../services/firebase';
 import { GenerativeHeroCanvas } from './generative/GenerativeHeroCanvas';
 import { GenerativeArtwork } from './generative/GenerativeArtwork';
 import { VariationSeries } from './generative/VariationSeries';
+import { CmsSiteContentCombined } from '../types/cms';
 import {
   ArrowRight,
   BookOpen,
@@ -15,6 +16,7 @@ import {
   Layers,
   Play,
   Heart,
+  Edit3,
 } from 'lucide-react';
 
 interface HomeViewProps {
@@ -27,6 +29,8 @@ interface HomeViewProps {
   currentUser: AppUser | null;
   onOpenAuth?: () => void;
   onResetProgress?: () => void;
+  siteContent?: CmsSiteContentCombined | null;
+  onNavigateAdmin?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -39,6 +43,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   currentUser,
   onOpenAuth,
   onResetProgress,
+  siteContent,
+  onNavigateAdmin,
 }) => {
   const activeProgress = progress || classesProgress || {
     stageCompleted: { 1: false, 2: false, 3: false, 4: false },
@@ -79,17 +85,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {/* LEFT: Friendly Editorial Area */}
           <div className="lg:col-span-6 space-y-5">
             <div className="space-y-2.5">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full">
-                <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
-                <span>Laboratorio de Código Creativo</span>
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
+                  <span>Laboratorio de Código Creativo</span>
+                </span>
+                {onNavigateAdmin && (
+                  <button
+                    onClick={onNavigateAdmin}
+                    className="text-xs text-[#59645C] hover:text-[#407B5D] flex items-center gap-1 font-medium cursor-pointer"
+                    title="Editar textos en CMS"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>Editar textos</span>
+                  </button>
+                )}
+              </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-[#232A24] leading-[1.15]">
-                Aprende a programar creando arte y sistemas visuales.
+                {siteContent?.heroHeadline || 'Aprende a programar creando arte y sistemas visuales.'}
               </h1>
 
               <p className="text-base sm:text-lg text-[#59645C] leading-relaxed pt-1">
-                Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en <strong>Processing Java</strong> y ves su resultado interactivo de inmediato.
+                {siteContent?.heroSubtitle ||
+                  'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.'}
               </p>
             </div>
 
@@ -99,15 +118,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 ¿Cómo funciona el pensamiento generativo?
               </span>
               <div className="flex items-center gap-2 flex-wrap text-xs">
-                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">1. Código</span>
-                <span className="text-[#59645C] font-semibold">→</span>
-                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">2. Sistema</span>
-                <span className="text-[#59645C] font-semibold">→</span>
-                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">3. Regla</span>
-                <span className="text-[#59645C] font-semibold">→</span>
-                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">4. Variación</span>
-                <span className="text-[#59645C] font-semibold">→</span>
-                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">5. Forma</span>
+                {(siteContent?.generativePrinciples || [
+                  '1. Código',
+                  '2. Sistema',
+                  '3. Regla',
+                  '4. Variación',
+                  '5. Forma',
+                ]).map((principle, idx, arr) => (
+                  <React.Fragment key={idx}>
+                    <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                      {principle}
+                    </span>
+                    {idx < arr.length - 1 && (
+                      <span className="text-[#59645C] font-semibold">→</span>
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
             </div>
 
@@ -395,12 +421,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* 5. Friendly Creative Coding Philosophy Note */}
       <section className="p-6 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
-          <Heart className="w-4 h-4 text-[#407B5D]" />
-          <span>Filosofía de Código Creativo · Generative Design</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
+            <Heart className="w-4 h-4 text-[#407B5D]" />
+            <span>Filosofía de Código Creativo · Generative Design</span>
+          </div>
+          {onNavigateAdmin && (
+            <button
+              onClick={onNavigateAdmin}
+              className="text-xs text-[#59645C] hover:text-[#407B5D] flex items-center gap-1 cursor-pointer"
+              title="Editar en CMS"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Editar en CMS</span>
+            </button>
+          )}
         </div>
         <p className="text-xs sm:text-sm text-[#59645C] leading-relaxed max-w-3xl">
-          Inspirado en los principios de <em>Generative Design</em>, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.
+          {siteContent?.footerText ||
+            'Inspirado en los principios de Generative Design, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.'}
         </p>
       </section>
     </div>

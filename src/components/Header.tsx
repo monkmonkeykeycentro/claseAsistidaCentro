@@ -1,12 +1,13 @@
 import React from 'react';
-import { AppUser } from '../services/firebase';
-import { User, Cloud, BookOpen } from 'lucide-react';
+import { AppUser, isUserAdmin } from '../services/firebase';
+import { User, Cloud, BookOpen, Settings } from 'lucide-react';
 
 interface HeaderProps {
-  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab';
+  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab' | 'admin';
   onNavigateHome: () => void;
   onOpenCatalogue: () => void;
   onNavigateOopLab: () => void;
+  onNavigateAdmin?: () => void;
   currentUser: AppUser | null;
   onOpenAuth: () => void;
   isSyncing?: boolean;
@@ -17,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateHome,
   onOpenCatalogue,
   onNavigateOopLab,
+  onNavigateAdmin,
   currentUser,
   onOpenAuth,
   isSyncing,
@@ -80,6 +82,26 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Temario</span>
               <span className="text-xs font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">7</span>
             </button>
+
+            {onNavigateAdmin && (
+              <button
+                onClick={onNavigateAdmin}
+                className={`min-h-[40px] px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                  currentView === 'admin'
+                    ? 'bg-[#E8EEE8] text-[#407B5D] font-bold border border-[#407B5D]/30'
+                    : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
+                }`}
+                title="Panel de Administración Educativa (CMS)"
+              >
+                <Settings className={`w-4 h-4 ${currentView === 'admin' ? 'text-[#407B5D]' : 'text-[#59645C]'}`} />
+                <span>CMS</span>
+                {isUserAdmin(currentUser) && (
+                  <span className="text-[10px] uppercase font-bold bg-[#407B5D] text-white px-1.5 py-0.2 rounded">
+                    Admin
+                  </span>
+                )}
+              </button>
+            )}
           </nav>
 
           {/* Student Account & Cloud Sync */}

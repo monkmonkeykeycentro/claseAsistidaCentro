@@ -14,9 +14,74 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    // Platform administrator verification (Bootstrapped email and /admins collection check)
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'jmartineza@centro.edu.mx' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     // Default deny all access
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // Admin Users Directory
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && isValidId(adminId);
+      allow write: if isAdmin() && isValidId(adminId);
+    }
+
+    // CMS Modules
+    match /cms_modules/{moduleId} {
+      allow get: if isValidId(moduleId) && (
+        isAdmin() || (resource.data.status == 'published' && resource.data.visible == true)
+      );
+      allow list: if isAdmin() || (resource.data.status == 'published' && resource.data.visible == true);
+      allow create, update, delete: if isAdmin() && isValidId(moduleId);
+    }
+
+    // CMS Lessons
+    match /cms_lessons/{lessonId} {
+      allow get: if isValidId(lessonId) && (
+        isAdmin() || (resource.data.status == 'published' && resource.data.visible == true)
+      );
+      allow list: if isAdmin() || (resource.data.status == 'published' && resource.data.visible == true);
+      allow create, update, delete: if isAdmin() && isValidId(lessonId);
+    }
+
+    // CMS Sections
+    match /cms_sections/{sectionId} {
+      allow get: if isValidId(sectionId) && (
+        isAdmin() || resource.data.visible == true
+      );
+      allow list: if isAdmin() || resource.data.visible == true;
+      allow create, update, delete: if isAdmin() && isValidId(sectionId);
+    }
+
+    // CMS Content Blocks
+    match /cms_blocks/{blockId} {
+      allow get: if isValidId(blockId);
+      allow list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(blockId);
+    }
+
+    // CMS Site General Content
+    match /cms_site_content/{contentKey} {
+      allow read: if isValidId(contentKey);
+      allow write: if isAdmin() && isValidId(contentKey);
+    }
+
+    // CMS Media Resources
+    match /cms_media/{mediaId} {
+      allow read: if isValidId(mediaId);
+      allow write: if isAdmin() && isValidId(mediaId);
+    }
+
+    // CMS Editorial Revisions & Backups
+    match /cms_revisions/{revisionId} {
+      allow read, write: if isAdmin() && isValidId(revisionId);
     }
 
     // User profiles: each user can only read and write their own profile
@@ -31,12 +96,12 @@ service cloud.firestore {
         && request.resource.data.email is string
         && request.resource.data.email.size() <= 256;
 
-      allow update: if isOwner(userId)
+      allow update: if (isOwner(userId) || isAdmin())
         && isValidId(userId)
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == resource.data.email; // Email cannot be changed maliciously
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email;
 
-      allow delete: if false; // Do not allow deleting accounts from client
+      allow delete: if isAdmin() && isValidId(userId);
 
       // User progress subcollection
       match /progress/{topicId} {
@@ -48,7 +113,7 @@ service cloud.firestore {
           && isValidId(topicId)
           && request.resource.data.userId == request.auth.uid;
 
-        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(topicId);
+        allow delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(topicId);
       }
     }
   }

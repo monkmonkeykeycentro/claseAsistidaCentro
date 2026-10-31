@@ -1,0 +1,1280 @@
+import React, { useState, useEffect } from 'react';
+import {
+  CmsModule,
+  CmsLesson,
+  CmsSiteContent,
+  CmsMediaResource,
+  CmsRevision,
+  CurriculumExportData,
+} from '../../types/cms';
+import {
+  getCmsModules,
+  saveCmsModule,
+  deleteCmsModule,
+  duplicateCmsModule,
+  getCmsLessons,
+  saveCmsLesson,
+  deleteCmsLesson,
+  duplicateCmsLesson,
+  reorderCmsItems,
+  getAllSiteContent,
+  saveSiteContent,
+  getCmsMediaResources,
+  saveCmsMediaResource,
+  deleteCmsMediaResource,
+  exportCurriculumBackup,
+  importCurriculumBackup,
+  getCmsRevisions,
+  seedCmsFromExistingContentIfEmpty,
+} from '../../services/cmsService';
+import { AdminLessonEditor } from './AdminLessonEditor';
+import { AppUser } from '../../services/firebase';
+import {
+  Layers,
+  BookOpen,
+  FileText,
+  Image as ImageIcon,
+  History,
+  Plus,
+  Edit3,
+  Copy,
+  Trash2,
+  Eye,
+  EyeOff,
+  ArrowUp,
+  ArrowDown,
+  Download,
+  Upload,
+  RefreshCw,
+  Search,
+  CheckCircle,
+  AlertTriangle,
+  ArrowLeft,
+  ShieldCheck,
+  ChevronRight,
+  ChevronDown,
+  Sparkles,
+} from 'lucide-react';
+
+interface AdminDashboardProps {
+  currentUser: AppUser | null;
+  onExitAdmin: () => void;
+  onPreviewAsStudent: () => void;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+  currentUser,
+  onExitAdmin,
+  onPreviewAsStudent,
+}) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'site_texts' | 'media' | 'history'>('content');
+  const [modules, setModules] = useState<CmsModule[]>([]);
+  const [lessons, setLessons] = useState<CmsLesson[]>([]);
+  const [siteContent, setSiteContent] = useState<Record<string, CmsSiteContent>>({});
+  const [mediaList, setMediaList] = useState<CmsMediaResource[]>([]);
+  const [revisions, setRevisions] = useState<CmsRevision[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'hidden'>('all');
+
+  // Currently editing lesson (switches to AdminLessonEditor)
+  const [editingLesson, setEditingLesson] = useState<CmsLesson | null>(null);
+
+  // Module creation/edit modal state
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState<boolean>(false);
+  const [moduleForm, setModuleForm] = useState<Partial<CmsModule>>({
+    title: '',
+    description: '',
+    category: 'Fundamentos',
+    badge: '',
+    status: 'published',
+    visible: true,
+  });
+
+  // Media creation modal state
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState<boolean>(false);
+  const [mediaForm, setMediaForm] = useState<Partial<CmsMediaResource>>({
+    title: '',
+    url: '',
+    altText: '',
+    category: 'diagramas',
+  });
+
+  // Notification Toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Expanded modules in the hierarchical tree
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Load all data
+  const loadAll = async () => {
+    setIsLoading(true);
+    try {
+      // 1. Seed if empty
+      await seedCmsFromExistingContentIfEmpty();
+
+      // 2. Load modules & lessons
+      const modList = await getCmsModules(true);
+      const lesList = await getCmsLessons(undefined, true);
+      setModules(modList);
+      setLessons(lesList);
+
+      // Auto-expand first 3 modules
+      const initialExp: Record<string, boolean> = {};
+      modList.slice(0, 4).forEach((m) => {
+        initialExp[m.id] = true;
+      });
+      setExpandedModules(initialExp);
+
+      // 3. Load site content
+      const texts = await getAllSiteContent();
+      setSiteContent(texts);
+
+      // 4. Load media & revisions
+      const media = await getCmsMediaResources();
+      setMediaList(media);
+      const revs = await getCmsRevisions();
+      setRevisions(revs);
+    } catch (e) {
+      console.error('Error loading CMS data:', e);
+      showToast('Error cargando contenidos desde la base de datos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAll();
+  }, []);
+
+  // Module actions
+  const handleOpenNewModule = () => {
+    setModuleForm({
+      id: `mod_${Date.now()}`,
+      title: '',
+      description: '',
+      category: 'Fundamentos',
+      badge: '',
+      position: modules.length,
+      status: 'published',
+      visible: true,
+    });
+    setIsModuleModalOpen(true);
+  };
+
+  const handleOpenEditModule = (mod: CmsModule) => {
+    setModuleForm({ ...mod });
+    setIsModuleModalOpen(true);
+  };
+
+  const handleSaveModuleModal = async () => {
+    if (!moduleForm.title?.trim()) {
+      alert('Ingresa un título para el módulo');
+      return;
+    }
+
+    const modToSave: CmsModule = {
+      id: moduleForm.id || `mod_${Date.now()}`,
+      title: moduleForm.title.trim(),
+      description: moduleForm.description || '',
+      category: moduleForm.category || 'Fundamentos',
+      badge: moduleForm.badge || '',
+      slug: moduleForm.title.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      position: moduleForm.position ?? modules.length,
+      status: moduleForm.status || 'published',
+      visible: moduleForm.visible ?? true,
+      createdAt: moduleForm.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveCmsModule(modToSave);
+    setIsModuleModalOpen(false);
+    await loadAll();
+    showToast(`Módulo "${modToSave.title}" guardado con éxito.`);
+  };
+
+  const handleToggleModuleVisibility = async (mod: CmsModule) => {
+    const updated: CmsModule = { ...mod, visible: !mod.visible };
+    await saveCmsModule(updated);
+    setModules(modules.map((m) => (m.id === mod.id ? updated : m)));
+    showToast(
+      updated.visible
+        ? `Módulo visible para estudiantes.`
+        : `Módulo oculto de la navegación pública.`
+    );
+  };
+
+  const handleDuplicateModule = async (moduleId: string) => {
+    setIsLoading(true);
+    try {
+      await duplicateCmsModule(moduleId);
+      await loadAll();
+      showToast('Módulo y sus lecciones duplicados con éxito.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteModule = async (moduleId: string) => {
+    if (
+      !confirm(
+        '¿Deseas archivar este módulo? No se borrará de la base de datos, pero dejará de ser visible para los estudiantes.'
+      )
+    ) {
+      return;
+    }
+    await deleteCmsModule(moduleId, false);
+    await loadAll();
+    showToast('Módulo archivado.');
+  };
+
+  const handleMoveModule = async (idx: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= modules.length) return;
+
+    const copy = [...modules];
+    const [moved] = copy.splice(idx, 1);
+    copy.splice(targetIdx, 0, moved);
+
+    const reordered = copy.map((m, p) => ({ ...m, position: p }));
+    setModules(reordered);
+    await reorderCmsItems(
+      'cms_modules',
+      reordered.map((m) => m.id)
+    );
+  };
+
+  // Lesson actions
+  const handleCreateNewLesson = (targetModuleId: string) => {
+    const newLesson: CmsLesson = {
+      id: `les_${Date.now()}`,
+      moduleId: targetModuleId,
+      title: 'Nueva Lección',
+      summary: 'Escribe aquí el resumen y objetivos pedagógicos de la lección...',
+      badge: 'Conceptos clave',
+      estimatedTime: '20 min',
+      slug: `leccion-${Date.now()}`,
+      position: lessons.filter((l) => l.moduleId === targetModuleId).length,
+      status: 'draft',
+      visible: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveCmsLesson(newLesson).then(() => {
+      setLessons([...lessons, newLesson]);
+      setEditingLesson(newLesson);
+    });
+  };
+
+  const handleToggleLessonVisibility = async (les: CmsLesson) => {
+    const updated: CmsLesson = { ...les, visible: !les.visible };
+    await saveCmsLesson(updated);
+    setLessons(lessons.map((l) => (l.id === les.id ? updated : l)));
+    showToast(
+      updated.visible
+        ? 'Lección visible para estudiantes.'
+        : 'Lección oculta de la navegación pública.'
+    );
+  };
+
+  const handleDuplicateLesson = async (lessonId: string) => {
+    setIsLoading(true);
+    try {
+      await duplicateCmsLesson(lessonId);
+      await loadAll();
+      showToast('Lección duplicada como borrador.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    if (!confirm('¿Deseas archivar esta lección?')) return;
+    await deleteCmsLesson(lessonId, false);
+    await loadAll();
+    showToast('Lección archivada.');
+  };
+
+  // Site text saving
+  const handleSaveSiteText = async (key: string, content: string) => {
+    const current = siteContent[key];
+    if (!current) return;
+    const updated: CmsSiteContent = {
+      ...current,
+      content,
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentUser?.email || 'admin',
+    };
+    await saveSiteContent(updated, currentUser?.email || undefined);
+    setSiteContent({ ...siteContent, [key]: updated });
+    showToast(`Texto "${current.title}" actualizado con éxito.`);
+  };
+
+  // Media actions
+  const handleAddMedia = async () => {
+    if (!mediaForm.title || !mediaForm.url) {
+      alert('Ingresa título y URL del recurso');
+      return;
+    }
+    const newMedia: CmsMediaResource = {
+      id: `med_${Date.now()}`,
+      title: mediaForm.title,
+      url: mediaForm.url,
+      altText: mediaForm.altText || mediaForm.title,
+      category: mediaForm.category || 'diagramas',
+      createdAt: new Date().toISOString(),
+    };
+    await saveCmsMediaResource(newMedia);
+    setIsMediaModalOpen(false);
+    setMediaList([newMedia, ...mediaList]);
+    showToast('Recurso multimedia agregado.');
+  };
+
+  const handleDeleteMedia = async (mediaId: string) => {
+    if (!confirm('¿Eliminar este recurso de la biblioteca?')) return;
+    await deleteCmsMediaResource(mediaId);
+    setMediaList(mediaList.filter((m) => m.id !== mediaId));
+    showToast('Recurso eliminado.');
+  };
+
+  // Backup export / import
+  const handleExportBackup = async () => {
+    try {
+      const backup = await exportCurriculumBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `respaldo_curriculum_centro_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Respaldo descargado exitosamente.');
+      const revs = await getCmsRevisions();
+      setRevisions(revs);
+    } catch (e) {
+      alert('Error al exportar: ' + String(e));
+    }
+  };
+
+  const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (
+      !confirm(
+        '¿Deseas restaurar el curriculum desde este archivo? Se creará una copia de seguridad automática de tu contenido actual antes de proceder.'
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const text = await file.text();
+      const data: CurriculumExportData = JSON.parse(text);
+      await importCurriculumBackup(data);
+      await loadAll();
+      showToast('Curriculum restaurado exitosamente.');
+    } catch (err) {
+      alert('Error importando archivo: ' + String(err));
+    } finally {
+      setIsLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  // Filter modules/lessons
+  const filteredModules = modules.filter((mod) => {
+    const matchesSearch =
+      mod.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mod.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mod.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'published'
+        ? mod.status === 'published' && mod.visible
+        : statusFilter === 'draft'
+        ? mod.status === 'draft'
+        : !mod.visible;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // If in lesson editor mode, render the specialized editor
+  if (editingLesson) {
+    return (
+      <AdminLessonEditor
+        lesson={editingLesson}
+        modules={modules}
+        onBack={() => {
+          setEditingLesson(null);
+          loadAll();
+        }}
+        onLessonUpdated={(updated) => {
+          setEditingLesson(updated);
+          setLessons(lessons.map((l) => (l.id === updated.id ? updated : l)));
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-150 font-sans">
+      {/* Top Admin Navigation Header */}
+      <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold uppercase tracking-wider bg-[#E8EEE8] text-[#407B5D] px-2.5 py-0.5 rounded-full text-[10px] flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Panel de Administración Privado</span>
+            </span>
+            <span className="text-[#E1E7E1]">/</span>
+            <span className="text-[#59645C] font-mono text-[11px]">
+              {currentUser?.email || 'jmartineza@centro.edu.mx'}
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#232A24]">
+            Gestor de Contenidos Educativos (CMS)
+          </h1>
+          <p className="text-xs text-[#59645C] leading-relaxed">
+            Administra módulos, lecciones, secciones, código Processing Java y textos generales de forma persistente en tiempo real.
+          </p>
+        </div>
+
+        {/* Global Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={onPreviewAsStudent}
+            className="min-h-[40px] px-4 py-2 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            title="Ver la plataforma tal como la ven los estudiantes"
+          >
+            <Eye className="w-4 h-4 text-[#407B5D]" />
+            <span>Vista Estudiante</span>
+          </button>
+
+          <button
+            onClick={handleExportBackup}
+            className="min-h-[40px] px-3.5 py-2 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            title="Exportar respaldo completo del curriculum en JSON"
+          >
+            <Download className="w-4 h-4 text-[#59645C]" />
+            <span>Exportar Respaldo</span>
+          </button>
+
+          <button
+            onClick={onExitAdmin}
+            className="min-h-[40px] px-4 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Salir al Sitio</span>
+          </button>
+        </div>
+      </div>
+
+      {toastMessage && (
+        <div className="p-3.5 bg-[#E8EEE8] border border-[#407B5D] text-[#232A24] text-xs font-semibold rounded-xl flex items-center justify-between shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-[#407B5D]" />
+            <span>{toastMessage}</span>
+          </div>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-[#59645C] hover:text-[#232A24] cursor-pointer text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Main Layout: Left Navigation Sidebar & Right Content Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Sidebar Navigation (3 cols) */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
+            {[
+              { id: 'content', label: 'Módulos y Lecciones', icon: Layers, count: modules.length },
+              { id: 'overview', label: 'Resumen & Estadísticas', icon: Sparkles },
+              { id: 'site_texts', label: 'Textos Generales', icon: FileText },
+              { id: 'media', label: 'Recursos Multimedia', icon: ImageIcon, count: mediaList.length },
+              { id: 'history', label: 'Historial y Respaldos', icon: History, count: revisions.length },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left transition-colors flex items-center justify-between cursor-pointer ${
+                    isActive
+                      ? 'bg-[#407B5D] text-white shadow-xs font-bold'
+                      : 'bg-white hover:bg-[#E8EEE8] text-[#232A24]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#407B5D]'}`} />
+                    <span>{tab.label}</span>
+                  </div>
+                  {tab.count !== undefined && (
+                    <span
+                      className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-[#F7F8F4] text-[#59645C]'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Help Card */}
+          <div className="p-4 bg-white border border-[#E1E7E1] rounded-2xl space-y-2 text-xs text-[#59645C] shadow-xs">
+            <span className="font-bold text-[#232A24] block flex items-center gap-1.5">
+              <CheckCircle className="w-3.5 h-3.5 text-[#407B5D]" />
+              <span>Base de Datos Firestore Conectada</span>
+            </span>
+            <p className="text-[11px] leading-relaxed">
+              Las modificaciones realizadas en este panel se guardan en la nube de Firebase y se reflejan al instante en la vista de los estudiantes.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Main Content Area (9 cols) */}
+        <div className="lg:col-span-9 space-y-6">
+          {/* ========================================================================= */}
+          {/* TAB 1: MÓDULOS Y LECCIONES                                                */}
+          {/* ========================================================================= */}
+          {activeTab === 'content' && (
+            <div className="space-y-4">
+              {/* Filter and Top Search Bar */}
+              <div className="p-4 bg-white border border-[#E1E7E1] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-[#59645C]" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por título, categoría o palabra clave..."
+                    className="w-full pl-9 pr-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] focus:outline-none focus:border-[#407B5D]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] focus:outline-none"
+                  >
+                    <option value="all">Todos los estados</option>
+                    <option value="published">Publicados y Visibles</option>
+                    <option value="draft">Borradores</option>
+                    <option value="hidden">Ocultos</option>
+                  </select>
+
+                  <button
+                    onClick={handleOpenNewModule}
+                    className="min-h-[38px] px-4 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Nuevo Módulo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modules & Lessons Hierarchy List */}
+              {isLoading ? (
+                <div className="p-12 text-center text-xs text-[#59645C] bg-white border border-[#E1E7E1] rounded-2xl">
+                  Cargando contenidos educativos...
+                </div>
+              ) : filteredModules.length === 0 ? (
+                <div className="p-12 text-center text-xs text-[#59645C] bg-white border border-[#E1E7E1] rounded-2xl space-y-3">
+                  <p>No se encontraron módulos con el filtro aplicado.</p>
+                  <button
+                    onClick={handleOpenNewModule}
+                    className="px-4 py-2 bg-[#407B5D] text-white rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Crear primer módulo
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredModules.map((mod, mIdx) => {
+                    const isExpanded = Boolean(expandedModules[mod.id]);
+                    const modLessons = lessons.filter((l) => l.moduleId === mod.id);
+
+                    return (
+                      <div
+                        key={mod.id}
+                        className="bg-white border border-[#E1E7E1] rounded-2xl overflow-hidden shadow-xs transition-all"
+                      >
+                        {/* Module Header Bar */}
+                        <div className="p-4 sm:p-5 bg-white border-b border-[#E1E7E1] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <button
+                              onClick={() =>
+                                setExpandedModules({
+                                  ...expandedModules,
+                                  [mod.id]: !isExpanded,
+                                })
+                              }
+                              className="p-1 rounded-lg hover:bg-[#E8EEE8] text-[#59645C] cursor-pointer shrink-0"
+                              title={isExpanded ? 'Contraer lecciones' : 'Expandir lecciones'}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="w-5 h-5 text-[#407B5D]" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-[#59645C]" />
+                              )}
+                            </button>
+
+                            <div className="space-y-0.5 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-xs font-bold text-[#407B5D]">
+                                  #{mIdx + 1}
+                                </span>
+                                <h3 className="font-bold text-base text-[#232A24] truncate">
+                                  {mod.title}
+                                </h3>
+                                <span className="text-[10px] font-semibold bg-[#F7F8F4] border border-[#E1E7E1] text-[#59645C] px-2 py-0.5 rounded-full">
+                                  {mod.category}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                    mod.status === 'published'
+                                      ? 'bg-[#E8EEE8] text-[#407B5D]'
+                                      : 'bg-[#FFF9EE] text-[#8A6318]'
+                                  }`}
+                                >
+                                  {mod.status === 'published' ? 'Publicado' : 'Borrador'}
+                                </span>
+                                {!mod.visible && (
+                                  <span className="text-[10px] bg-zinc-100 text-[#59645C] px-2 py-0.5 rounded-full border border-zinc-200">
+                                    Oculto
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#59645C] line-clamp-1">
+                                {mod.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Module Quick Actions */}
+                          <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
+                            <button
+                              onClick={() => handleMoveModule(mIdx, 'up')}
+                              disabled={mIdx === 0}
+                              className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] disabled:opacity-20 cursor-pointer"
+                              title="Subir posición"
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleMoveModule(mIdx, 'down')}
+                              disabled={mIdx === filteredModules.length - 1}
+                              className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] disabled:opacity-20 cursor-pointer"
+                              title="Bajar posición"
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleToggleModuleVisibility(mod)}
+                              className={`p-1.5 rounded-lg border border-[#E1E7E1] transition-colors cursor-pointer ${
+                                mod.visible
+                                  ? 'hover:bg-[#E8EEE8] text-[#407B5D]'
+                                  : 'bg-zinc-100 text-zinc-400'
+                              }`}
+                              title={mod.visible ? 'Ocultar módulo' : 'Mostrar módulo'}
+                            >
+                              {mod.visible ? (
+                                <Eye className="w-3.5 h-3.5" />
+                              ) : (
+                                <EyeOff className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+
+                            <button
+                              onClick={() => handleDuplicateModule(mod.id)}
+                              className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] cursor-pointer"
+                              title="Duplicar módulo y sus lecciones"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenEditModule(mod)}
+                              className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] cursor-pointer"
+                              title="Editar configuración del módulo"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteModule(mod.id)}
+                              className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-red-50 text-red-600 cursor-pointer"
+                              title="Archivar módulo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Lessons List inside Module */}
+                        {isExpanded && (
+                          <div className="p-4 sm:p-5 bg-[#F7F8F4]/50 space-y-3">
+                            <div className="flex items-center justify-between text-xs font-semibold text-[#59645C] mb-1">
+                              <span>Lecciones del módulo ({modLessons.length})</span>
+                              <button
+                                onClick={() => handleCreateNewLesson(mod.id)}
+                                className="px-3 py-1 rounded-lg bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#407B5D] text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Agregar Lección</span>
+                              </button>
+                            </div>
+
+                            {modLessons.length === 0 ? (
+                              <div className="p-4 bg-white rounded-xl border border-dashed border-[#E1E7E1] text-center text-xs text-[#59645C]">
+                                Este módulo no tiene lecciones aún. Pulsa &quot;Agregar Lección&quot; para crear la primera.
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {modLessons.map((les, lIdx) => (
+                                  <div
+                                    key={les.id}
+                                    className="p-3.5 bg-white border border-[#E1E7E1] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs hover:border-[#407B5D] transition-colors"
+                                  >
+                                    <div className="space-y-1 min-w-0 flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-mono text-xs font-semibold text-[#59645C]">
+                                          {lIdx + 1}.
+                                        </span>
+                                        <span className="font-bold text-xs sm:text-sm text-[#232A24]">
+                                          {les.title}
+                                        </span>
+                                        <span
+                                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                            les.status === 'published'
+                                              ? 'bg-[#E8EEE8] text-[#407B5D]'
+                                              : 'bg-[#FFF9EE] text-[#8A6318]'
+                                          }`}
+                                        >
+                                          {les.status === 'published' ? 'Publicado' : 'Borrador'}
+                                        </span>
+                                        {!les.visible && (
+                                          <span className="text-[10px] bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full border border-zinc-200">
+                                            Oculta
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-[#59645C] line-clamp-1">
+                                        {les.summary}
+                                      </p>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <button
+                                        onClick={() => handleToggleLessonVisibility(les)}
+                                        className={`p-1.5 rounded-lg border border-[#E1E7E1] transition-colors cursor-pointer ${
+                                          les.visible
+                                            ? 'hover:bg-[#E8EEE8] text-[#407B5D]'
+                                            : 'bg-zinc-100 text-zinc-400'
+                                        }`}
+                                        title={les.visible ? 'Ocultar lección' : 'Mostrar lección'}
+                                      >
+                                        {les.visible ? (
+                                          <Eye className="w-3.5 h-3.5" />
+                                        ) : (
+                                          <EyeOff className="w-3.5 h-3.5" />
+                                        )}
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleDuplicateLesson(les.id)}
+                                        className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] cursor-pointer"
+                                        title="Duplicar lección"
+                                      >
+                                        <Copy className="w-3.5 h-3.5" />
+                                      </button>
+
+                                      <button
+                                        onClick={() => setEditingLesson(les)}
+                                        className="min-h-[32px] px-3 py-1 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
+                                      >
+                                        <Edit3 className="w-3 h-3" />
+                                        <span>Editar Contenido</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleDeleteLesson(les.id)}
+                                        className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-red-50 text-red-600 cursor-pointer"
+                                        title="Archivar lección"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 2: RESUMEN Y ESTADÍSTICAS                                             */}
+          {/* ========================================================================= */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Metrics cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
+                  <span className="text-xs text-[#59645C] font-semibold block">Total Módulos</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-[#232A24] font-mono">
+                    {modules.length}
+                  </span>
+                  <span className="text-[11px] text-[#407B5D] block">
+                    {modules.filter((m) => m.status === 'published').length} publicados
+                  </span>
+                </div>
+
+                <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
+                  <span className="text-xs text-[#59645C] font-semibold block">Total Lecciones</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-[#232A24] font-mono">
+                    {lessons.length}
+                  </span>
+                  <span className="text-[11px] text-[#407B5D] block">
+                    {lessons.filter((l) => l.status === 'published').length} publicadas
+                  </span>
+                </div>
+
+                <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
+                  <span className="text-xs text-[#59645C] font-semibold block">En Borrador</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-[#8A6318] font-mono">
+                    {lessons.filter((l) => l.status === 'draft').length}
+                  </span>
+                  <span className="text-[11px] text-[#8A6318] block">Ediciones privadas</span>
+                </div>
+
+                <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
+                  <span className="text-xs text-[#59645C] font-semibold block">Recursos Media</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-[#232A24] font-mono">
+                    {mediaList.length}
+                  </span>
+                  <span className="text-[11px] text-[#59645C] block">Diagramas & assets</span>
+                </div>
+              </div>
+
+              {/* Quick Actions Panel */}
+              <div className="p-6 bg-white border border-[#E1E7E1] rounded-2xl space-y-4 shadow-xs">
+                <h3 className="text-sm font-bold text-[#232A24]">
+                  Acciones Rápidas del Administrador
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    onClick={handleOpenNewModule}
+                    className="p-4 rounded-xl border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/40 transition-colors text-left space-y-1 cursor-pointer"
+                  >
+                    <Plus className="w-5 h-5 text-[#407B5D]" />
+                    <span className="font-bold text-xs text-[#232A24] block">Crear Módulo</span>
+                    <span className="text-[11px] text-[#59645C] block">
+                      Añade un nuevo conjunto temático al curso.
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={handleExportBackup}
+                    className="p-4 rounded-xl border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/40 transition-colors text-left space-y-1 cursor-pointer"
+                  >
+                    <Download className="w-5 h-5 text-[#407B5D]" />
+                    <span className="font-bold text-xs text-[#232A24] block">Exportar Curriculum</span>
+                    <span className="text-[11px] text-[#59645C] block">
+                      Descarga todo el contenido en archivo JSON estructurado.
+                    </span>
+                  </button>
+
+                  <label className="p-4 rounded-xl border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/40 transition-colors text-left space-y-1 cursor-pointer block">
+                    <Upload className="w-5 h-5 text-[#407B5D]" />
+                    <span className="font-bold text-xs text-[#232A24] block">Restaurar Respaldo</span>
+                    <span className="text-[11px] text-[#59645C] block">
+                      Importa un archivo JSON de respaldo previo.
+                    </span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImportBackup}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 3: TEXTOS GENERALES (Site Content)                                   */}
+          {/* ========================================================================= */}
+          {activeTab === 'site_texts' && (
+            <div className="p-6 bg-white border border-[#E1E7E1] rounded-2xl space-y-5 shadow-xs">
+              <div className="border-b border-[#E1E7E1] pb-3">
+                <h3 className="text-base font-bold text-[#232A24]">
+                  Textos Generales de la Plataforma
+                </h3>
+                <p className="text-xs text-[#59645C]">
+                  Modifica los encabezados principales, mensajes de bienvenida y textos del pie de página sin tocar código.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {Object.values(siteContent).map((item) => (
+                  <div
+                    key={item.key}
+                    className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[#232A24] text-xs">
+                        {item.title} ({item.key})
+                      </span>
+                      <span className="text-[10px] text-[#59645C] font-mono">
+                        Última edición: {new Date(item.updatedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <textarea
+                      rows={item.content.length > 80 ? 3 : 2}
+                      defaultValue={item.content}
+                      onBlur={(e) => handleSaveSiteText(item.key, e.target.value)}
+                      className="w-full p-3 bg-white border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] focus:outline-none focus:border-[#407B5D]"
+                    />
+                    <span className="text-[10px] text-[#59645C]">
+                      💡 Haz clic fuera del campo para guardar los cambios automáticamente.
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 4: RECURSOS MULTIMEDIA                                               */}
+          {/* ========================================================================= */}
+          {activeTab === 'media' && (
+            <div className="p-6 bg-white border border-[#E1E7E1] rounded-2xl space-y-5 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-[#232A24]">
+                    Biblioteca de Recursos Multimedia
+                  </h3>
+                  <p className="text-xs text-[#59645C]">
+                    Diagramas, esquemas y capturas que puedes enlazar en cualquier lección o bloque.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsMediaModalOpen(true)}
+                  className="min-h-[38px] px-4 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Registrar Recurso</span>
+                </button>
+              </div>
+
+              {mediaList.length === 0 ? (
+                <div className="p-8 text-center text-xs text-[#59645C] bg-[#F7F8F4] rounded-2xl border border-dashed border-[#E1E7E1]">
+                  No hay recursos multimedia registrados aún. Pulsa &quot;Registrar Recurso&quot;.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {mediaList.map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-2 text-xs shadow-xs"
+                    >
+                      <div className="aspect-video bg-white rounded-xl border border-[#E1E7E1] overflow-hidden flex items-center justify-center">
+                        <img
+                          src={m.url}
+                          alt={m.altText || m.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as any).src =
+                              'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=80';
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-[#232A24] block truncate">
+                          {m.title}
+                        </span>
+                        <span className="text-[10px] text-[#59645C] font-mono block truncate">
+                          {m.url}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1 border-t border-[#E1E7E1]">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(m.url);
+                            showToast('Enlace copiado al portapapeles');
+                          }}
+                          className="text-[11px] font-semibold text-[#407B5D] hover:underline cursor-pointer"
+                        >
+                          Copiar URL
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMedia(m.id)}
+                          className="p-1 text-red-500 hover:text-red-700 cursor-pointer"
+                          title="Eliminar recurso"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 5: HISTORIAL Y RESPALDOS                                             */}
+          {/* ========================================================================= */}
+          {activeTab === 'history' && (
+            <div className="p-6 bg-white border border-[#E1E7E1] rounded-2xl space-y-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-[#232A24]">
+                    Historial de Revisiones & Respaldos
+                  </h3>
+                  <p className="text-xs text-[#59645C]">
+                    Registro cronológico de publicaciones, exportaciones y puntos de restauración.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportBackup}
+                    className="min-h-[38px] px-4 py-2 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Download className="w-4 h-4 text-[#407B5D]" />
+                    <span>Descargar Respaldo JSON</span>
+                  </button>
+                </div>
+              </div>
+
+              {revisions.length === 0 ? (
+                <div className="p-8 text-center text-xs text-[#59645C] bg-[#F7F8F4] rounded-2xl border border-dashed border-[#E1E7E1]">
+                  Aún no se han generado revisiones editoriales en esta sesión.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {revisions.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="p-3.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-[#232A24] block">
+                          {rev.note || 'Instantánea editorial'}
+                        </span>
+                        <div className="flex items-center gap-2 text-[10px] text-[#59645C] font-mono">
+                          <span>{rev.createdBy || 'Admin'}</span>
+                          <span>·</span>
+                          <span>{new Date(rev.createdAt).toLocaleString()}</span>
+                          <span>·</span>
+                          <span>Tipo: {rev.entityType}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Module Edit/Create Modal */}
+      {isModuleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white border border-[#E1E7E1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-[#232A24] border-b border-[#E1E7E1] pb-2">
+              {moduleForm.id ? 'Configurar Módulo' : 'Nuevo Módulo'}
+            </h3>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-[#232A24] block mb-1">
+                  Título del Módulo:
+                </label>
+                <input
+                  type="text"
+                  value={moduleForm.title || ''}
+                  onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
+                  placeholder="Ej. Módulo 01: Lienzo y Ciclo de Vida"
+                  className="w-full px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#232A24] block mb-1">
+                  Categoría curricular:
+                </label>
+                <select
+                  value={moduleForm.category || 'Fundamentos'}
+                  onChange={(e) => setModuleForm({ ...moduleForm, category: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs"
+                >
+                  <option value="Fundamentos">Fundamentos</option>
+                  <option value="Control y Lógica">Control y Lógica</option>
+                  <option value="Modularidad">Modularidad</option>
+                  <option value="Programación Orientada a Objetos">
+                    Programación Orientada a Objetos
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#232A24] block mb-1">
+                  Descripción pedagógica:
+                </label>
+                <textarea
+                  rows={3}
+                  value={moduleForm.description || ''}
+                  onChange={(e) =>
+                    setModuleForm({ ...moduleForm, description: e.target.value })
+                  }
+                  className="w-full px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-[#E1E7E1]">
+                <label className="flex items-center gap-2 cursor-pointer font-semibold text-[#232A24]">
+                  <input
+                    type="checkbox"
+                    checked={moduleForm.visible ?? true}
+                    onChange={(e) =>
+                      setModuleForm({ ...moduleForm, visible: e.target.checked })
+                    }
+                    className="w-4 h-4 rounded text-[#407B5D] accent-[#407B5D]"
+                  />
+                  <span>Módulo Visible</span>
+                </label>
+
+                <select
+                  value={moduleForm.status || 'published'}
+                  onChange={(e) =>
+                    setModuleForm({ ...moduleForm, status: e.target.value as any })
+                  }
+                  className="px-2.5 py-1 bg-[#F7F8F4] border border-[#E1E7E1] rounded-lg text-xs"
+                >
+                  <option value="published">Publicado</option>
+                  <option value="draft">Borrador</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E1E7E1]">
+              <button
+                onClick={() => setIsModuleModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-[#E1E7E1] text-xs font-semibold text-[#59645C] hover:bg-[#F7F8F4] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveModuleModal}
+                className="px-5 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white cursor-pointer shadow-xs"
+              >
+                Guardar Módulo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Registration Modal */}
+      {isMediaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white border border-[#E1E7E1] rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-[#232A24] border-b border-[#E1E7E1] pb-2">
+              Registrar Recurso Multimedia
+            </h3>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-[#232A24] block mb-1">
+                  Título del recurso:
+                </label>
+                <input
+                  type="text"
+                  value={mediaForm.title || ''}
+                  onChange={(e) => setMediaForm({ ...mediaForm, title: e.target.value })}
+                  placeholder="Ej. Diagrama de Flujo POO"
+                  className="w-full px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#232A24] block mb-1">
+                  URL de la imagen o diagrama:
+                </label>
+                <input
+                  type="text"
+                  value={mediaForm.url || ''}
+                  onChange={(e) => setMediaForm({ ...mediaForm, url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#232A24] block mb-1">
+                  Texto alternativo accesible:
+                </label>
+                <input
+                  type="text"
+                  value={mediaForm.altText || ''}
+                  onChange={(e) => setMediaForm({ ...mediaForm, altText: e.target.value })}
+                  placeholder="Descripción de la imagen"
+                  className="w-full px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E1E7E1]">
+              <button
+                onClick={() => setIsMediaModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-[#E1E7E1] text-xs font-semibold text-[#59645C] hover:bg-[#F7F8F4] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddMedia}
+                className="px-5 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white cursor-pointer shadow-xs"
+              >
+                Guardar Recurso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

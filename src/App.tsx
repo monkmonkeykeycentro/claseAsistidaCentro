@@ -19,8 +19,15 @@ import {
   subscribeToAuth,
   saveUserTopicProgress,
   loadUserTopicProgress,
+  isUserAdmin,
 } from './services/firebase';
-import { BookOpen } from 'lucide-react';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import {
+  seedCmsFromExistingContentIfEmpty,
+  subscribeToSiteContent,
+} from './services/cmsService';
+import { CmsSiteContentCombined } from './types/cms';
+import { BookOpen, Eye, X, Settings } from 'lucide-react';
 
 const STORAGE_KEY = 'processing_class_structure_progress';
 const TOPIC_STORAGE_KEY = 'processing_current_topic_id';
@@ -37,10 +44,12 @@ const DEFAULT_PROGRESS: UserProgress = {
   stage4BuilderCustomized: false,
 };
 
-type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab';
+type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'admin';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>('home');
+  const [siteContent, setSiteContent] = useState<CmsSiteContentCombined | null>(null);
+  const [isStudentPreviewMode, setIsStudentPreviewMode] = useState<boolean>(false);
 
   const [currentTopicId, setCurrentTopicId] = useState<string>(() => {
     try {
@@ -59,6 +68,23 @@ export default function App() {
   const [currentStage, setCurrentStage] = useState<StageId>(1);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Initialize CMS content and seed existing topics idempotently
+  useEffect(() => {
+    let isMounted = true;
+    seedCmsFromExistingContentIfEmpty().catch((err) => {
+      console.warn('CMS auto-seed check notice:', err);
+    });
+
+    const unsubscribeSite = subscribeToSiteContent((content) => {
+      if (isMounted) setSiteContent(content);
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribeSite();
+    };
+  }, []);
 
   const [progress, setProgress] = useState<UserProgress>(() => {
     try {
@@ -223,17 +249,58 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F7F8F4] text-[#232A24] flex flex-col font-sans selection:bg-[#E8EEE8] selection:text-[#232A24]">
+      {/* Student Preview Mode Banner */}
+      {isStudentPreviewMode && (
+        <div className="bg-[#407B5D] text-white px-4 py-2 text-xs font-semibold flex items-center justify-between sticky top-0 z-50 shadow-sm">
+          <div className="flex items-center gap-2 max-w-6xl mx-auto w-full justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-[#E6B65A]" />
+              <span>Modo &ldquo;Vista Previa como Estudiante&rdquo; activo: revisando contenidos en borrador.</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveView('admin')}
+                className="underline hover:text-[#E8EEE8] cursor-pointer text-xs"
+              >
+                Volver al CMS
+              </button>
+              <button
+                onClick={() => setIsStudentPreviewMode(false)}
+                className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded flex items-center gap-1 cursor-pointer"
+                title="Cerrar vista previa"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Cerrar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Header
         currentView={activeView}
         onNavigateHome={() => setActiveView('home')}
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
         onNavigateOopLab={() => setActiveView('oop-lab')}
+        onNavigateAdmin={() => setActiveView('admin')}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         isSyncing={isSyncing}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* VIEW 0: CMS Admin Dashboard */}
+        {activeView === 'admin' && (
+          <AdminDashboard
+            currentUser={currentUser}
+            onExitAdmin={() => setActiveView('home')}
+            onPreviewAsStudent={() => {
+              setIsStudentPreviewMode(true);
+              setActiveView('home');
+            }}
+          />
+        )}
+
         {/* VIEW 1: Home View */}
         {activeView === 'home' && (
           <HomeView
@@ -255,6 +322,8 @@ export default function App() {
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onResetProgress={handleResetAllProgress}
+            siteContent={siteContent}
+            onNavigateAdmin={() => setActiveView('admin')}
           />
         )}
 
@@ -347,6 +416,13 @@ export default function App() {
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Laboratorio POO
+            </button>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
+              onClick={() => setActiveView('admin')}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors font-semibold"
+            >
+              CMS / Admin
             </button>
           </div>
         </div>

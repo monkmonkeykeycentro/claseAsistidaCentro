@@ -40,7 +40,7 @@ export interface AppUser {
   displayName: string | null;
   photoURL: string | null;
   isCentroStudent: boolean;
-  role: 'student' | 'teacher' | 'guest';
+  role: 'student' | 'teacher' | 'admin' | 'guest';
 }
 
 /**
@@ -52,18 +52,32 @@ export function isCentroEmail(email?: string | null): boolean {
 }
 
 /**
+ * Checks if the user has administrative privileges
+ */
+export function isUserAdmin(user: FirebaseUser | AppUser | null): boolean {
+  if (!user || !user.email) return false;
+  const emailLower = user.email.toLowerCase();
+  return (
+    emailLower === 'jmartineza@centro.edu.mx' ||
+    emailLower.startsWith('admin@') ||
+    (user as AppUser).role === 'admin'
+  );
+}
+
+/**
  * Formats a Firebase user into our app user interface
  */
 export function mapFirebaseUser(user: FirebaseUser | null): AppUser | null {
   if (!user) return null;
   const isCentro = isCentroEmail(user.email);
+  const isAdmin = isUserAdmin(user);
   return {
     uid: user.uid,
     email: user.email,
     displayName: user.displayName || user.email?.split('@')[0] || 'Estudiante',
     photoURL: user.photoURL,
     isCentroStudent: isCentro,
-    role: isCentro ? 'student' : 'guest',
+    role: isAdmin ? 'admin' : isCentro ? 'student' : 'guest',
   };
 }
 
@@ -92,6 +106,19 @@ export async function signInWithGoogle(): Promise<AppUser> {
         },
         { merge: true }
       );
+
+      // If user is admin, also register in /admins/{uid} for Firestore rules verification
+      if (appUser.role === 'admin') {
+        await setDoc(
+          doc(db, 'admins', user.uid),
+          {
+            uid: user.uid,
+            email: user.email,
+            assignedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      }
     } catch (saveError) {
       console.warn('Could not update user profile in Firestore (non-fatal):', saveError);
     }
