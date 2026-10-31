@@ -49,46 +49,46 @@ export const FocusedWorkshopView: React.FC<FocusedWorkshopViewProps> = ({
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       {/* Workshop Navigation Header */}
-      <div className="border-b border-[#E3E3DD] pb-5 space-y-4">
+      <div className="border-b border-[#E1E7E1] pb-5 space-y-4">
         {/* Back and Breadcrumbs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={onBackToHome}
-              className="min-h-[38px] flex items-center gap-2 px-3 py-1.5 bg-[#FFFFFF] hover:bg-[#F7F7F2] text-xs font-mono text-[#171717] border border-[#E3E3DD] transition-colors cursor-pointer"
+              className="min-h-[38px] flex items-center gap-2 px-3 py-1.5 bg-[#FFFFFF] hover:bg-[#E8EEE8] text-xs font-medium text-[#232A24] border border-[#E1E7E1] rounded-xl transition-colors cursor-pointer shadow-xs"
               title="Volver a la página principal"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>← INICIO</span>
+              <span>← Inicio</span>
             </button>
 
-            <span className="text-[#E3E3DD]">/</span>
+            <span className="text-[#E1E7E1]">/</span>
 
-            <div className="flex items-center gap-1.5 text-xs text-[#666666] font-mono">
-              <span className="text-[#171717] font-bold">[TEMA 06]</span>
+            <div className="flex items-center gap-1.5 text-xs text-[#59645C]">
+              <span className="text-[#407B5D] font-bold bg-[#E8EEE8] px-2 py-0.5 rounded-full text-[11px]">Tema 06</span>
               <span>·</span>
-              <span className="text-[#171717] hidden sm:inline">Anatomía de una Clase (POO)</span>
+              <span className="text-[#232A24] font-semibold hidden sm:inline">Anatomía de una Clase (POO)</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-mono text-[#666666]">
-              {completedCount}/4 ETAPAS ({Math.round((completedCount / 4) * 100)}%)
+            <span className="text-xs font-semibold text-[#59645C] bg-white border border-[#E1E7E1] px-3 py-1 rounded-xl shadow-xs">
+              {completedCount}/4 etapas completadas ({Math.round((completedCount / 4) * 100)}%)
             </span>
 
             <button
               onClick={onResetAllProgress}
-              className="min-h-[38px] px-2.5 py-1 text-xs text-[#666666] hover:text-[#171717] font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="min-h-[38px] px-3 py-1 text-xs text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8] rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
               title="Reiniciar progreso del taller de clases"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">REINICIAR</span>
+              <span className="hidden sm:inline font-medium">Reiniciar</span>
             </button>
           </div>
         </div>
 
         {/* Stages Tab Bar */}
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
           {stages.map((st) => {
             const isActive = currentStage === st.id;
             const isDone = progress.stageCompleted[st.id];
@@ -97,18 +97,18 @@ export const FocusedWorkshopView: React.FC<FocusedWorkshopViewProps> = ({
               <button
                 key={st.id}
                 onClick={() => onSelectStage(st.id)}
-                className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 text-xs font-mono transition-all whitespace-nowrap cursor-pointer border ${
+                className={`min-h-[40px] flex items-center gap-2 px-4 py-2 text-xs rounded-xl transition-all whitespace-nowrap cursor-pointer border ${
                   isActive
-                    ? 'bg-[#171717] text-[#F7F7F2] border-[#171717] font-bold'
+                    ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
                     : isDone
-                    ? 'bg-[#FFFFFF] hover:bg-[#F7F7F2] text-[#171717] border-[#E3E3DD]'
-                    : 'bg-[#F7F7F2] hover:bg-[#FFFFFF] text-[#666666] border-[#E3E3DD]'
+                    ? 'bg-[#E8EEE8] hover:bg-[#d8e3d8] text-[#232A24] border-[#E1E7E1] font-medium'
+                    : 'bg-[#FFFFFF] hover:bg-[#E8EEE8] text-[#59645C] border-[#E1E7E1]'
                 }`}
               >
                 <span>{st.label}</span>
                 {isDone && (
                   <Check
-                    className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#E0A52D]' : 'text-[#2779BD]'}`}
+                    className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#E6B65A]' : 'text-[#407B5D]'}`}
                     strokeWidth={2.5}
                   />
                 )}
@@ -120,18 +120,20 @@ export const FocusedWorkshopView: React.FC<FocusedWorkshopViewProps> = ({
 
       {/* Completion Banner */}
       {allStagesCompleted && (
-        <div className="p-4 border border-[#E3E3DD] bg-[#FFFFFF] flex items-center justify-between text-xs text-[#171717] font-mono">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-[#2779BD]" />
-            <span className="font-bold text-[#171717]">
-              TALLER DE CLASES COMPLETADO
+        <div className="p-4.5 border border-[#407B5D] bg-[#E8EEE8] rounded-2xl flex items-center justify-between text-xs text-[#232A24] shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+            <span className="font-bold text-[#232A24] text-sm">
+              ¡Taller de clases completado!
             </span>
-            <span className="text-[#666666]">·</span>
-            <span className="text-[#666666] hidden sm:inline">
+            <span className="text-[#59645C]">·</span>
+            <span className="text-[#59645C] hidden sm:inline">
               Has dominado declaración, campos, sintaxis y diseño en Processing Java
             </span>
           </div>
-          <span className="font-mono text-[#2779BD] font-bold text-xs shrink-0">4/4 ETAPAS</span>
+          <span className="bg-[#407B5D] text-white font-bold text-xs px-2.5 py-1 rounded-lg shrink-0 shadow-xs">
+            4/4 Etapas
+          </span>
         </div>
       )}
 

@@ -55,45 +55,45 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
   return (
     <div className="space-y-8 animate-in fade-in duration-150">
       {/* Top Breadcrumb & Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E3E3DD]">
-        <div className="flex items-center gap-2 text-xs font-mono text-[#666666]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E1E7E1]">
+        <div className="flex items-center gap-2 text-xs text-[#59645C]">
           {onBackToHome && (
             <>
               <button
                 onClick={onBackToHome}
-                className="hover:text-[#171717] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2.5 py-1 bg-[#FFFFFF] border border-[#E3E3DD] text-[#171717]"
+                className="hover:text-[#232A24] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-3 py-1.5 bg-[#FFFFFF] border border-[#E1E7E1] rounded-xl text-[#232A24] shadow-xs cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Inicio</span>
               </button>
-              <span className="text-[#E3E3DD]">/</span>
+              <span className="text-[#E1E7E1]">/</span>
             </>
           )}
           <button
             onClick={onOpenCatalogue}
-            className="hover:text-[#171717] transition-colors flex items-center gap-1"
+            className="hover:text-[#232A24] transition-colors flex items-center gap-1 cursor-pointer font-medium"
           >
-            <BookOpen className="w-3.5 h-3.5" />
+            <BookOpen className="w-3.5 h-3.5 text-[#407B5D]" />
             <span>Temario</span>
           </button>
-          <span className="text-[#E3E3DD]">/</span>
-          <span className="text-[#666666]">{topic.category}</span>
-          <span className="text-[#E3E3DD]">/</span>
-          <span className="text-[#171717] font-bold">
+          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-[#59645C]">{topic.category}</span>
+          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-[#232A24] font-bold">
             Tema 0{topic.number}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-xs">
+        <div className="flex items-center gap-2 text-xs">
           <button
             onClick={onOpenCatalogue}
-            className="min-h-[38px] px-3 py-1.5 border border-[#E3E3DD] bg-[#FFFFFF] hover:bg-[#F7F7F2] text-[#171717] transition-colors cursor-pointer"
+            className="min-h-[38px] px-3.5 py-1.5 border border-[#E1E7E1] bg-[#FFFFFF] hover:bg-[#E8EEE8] text-[#232A24] rounded-xl transition-colors cursor-pointer font-medium shadow-xs"
           >
             Ver todos los temas
           </button>
           <button
             onClick={() => onNavigateTopic('classes')}
-            className="min-h-[38px] px-3.5 py-1.5 bg-[#171717] hover:bg-[#2779BD] text-[#F7F7F2] transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
+            className="min-h-[38px] px-4 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer font-semibold shadow-xs"
           >
             <span>Taller de Clases (POO)</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -103,22 +103,22 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
 
       {/* Hero Header */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2.5 font-mono text-xs">
-          <span className="text-[#171717] font-bold bg-[#FFFFFF] border border-[#E3E3DD] px-2 py-0.5">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          <span className="text-[#407B5D] font-bold bg-[#E8EEE8] px-2.5 py-0.5 rounded-full">
             MÓDULO 0{topic.number}
           </span>
-          <span className="text-[#666666] bg-[#FFFFFF] border border-[#E3E3DD] px-2 py-0.5">
+          <span className="text-[#59645C] bg-[#FFFFFF] border border-[#E1E7E1] px-2.5 py-0.5 rounded-full font-medium">
             {topic.badge}
           </span>
-          <span className="text-[#E3E3DD]">·</span>
-          <span className="text-[#666666]">{topic.estimatedTime} de estudio</span>
+          <span className="text-[#E1E7E1]">·</span>
+          <span className="text-[#59645C] font-medium">{topic.estimatedTime} de estudio</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#171717] font-sans">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#232A24]">
           {topic.title}
         </h1>
 
-        <p className="text-sm sm:text-base text-[#666666] max-w-3xl leading-relaxed font-sans">
+        <p className="text-sm sm:text-base text-[#59645C] max-w-3xl leading-relaxed">
           {topic.summary}
         </p>
       </div>
@@ -126,8 +126,8 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
       {/* Main 2-Column Concept Viewer */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Concept Selector Navigation (4 cols) */}
-        <div className="lg:col-span-4 space-y-4 font-mono">
-          <div className="text-xs uppercase tracking-wider text-[#666666] font-bold">
+        <div className="lg:col-span-4 space-y-4">
+          <div className="text-xs uppercase tracking-wider text-[#59645C] font-bold">
             Conceptos clave ({topic.concepts.length})
           </div>
 
@@ -139,10 +139,10 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
                 <button
                   key={concept.id}
                   onClick={() => setActiveConceptIdx(idx)}
-                  className={`w-full p-4 border text-left transition-all flex items-start justify-between gap-3 cursor-pointer ${
+                  className={`w-full p-4 rounded-2xl border text-left transition-all flex items-start justify-between gap-3 cursor-pointer ${
                     isActive
-                      ? 'bg-[#171717] text-[#F7F7F2] border-[#171717]'
-                      : 'bg-[#FFFFFF] hover:border-[#171717] border-[#E3E3DD] text-[#171717]'
+                      ? 'bg-[#407B5D] text-white border-[#407B5D] shadow-xs'
+                      : 'bg-[#FFFFFF] hover:bg-[#E8EEE8] border-[#E1E7E1] text-[#232A24]'
                   }`}
                 >
                   <div className="space-y-1 min-w-0">
@@ -150,16 +150,16 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
                       {concept.title}
                     </div>
                     <div
-                      className={`text-xs line-clamp-2 leading-relaxed font-sans ${
-                        isActive ? 'text-[#E3E3DD]' : 'text-[#666666]'
+                      className={`text-xs line-clamp-2 leading-relaxed ${
+                        isActive ? 'text-white/85' : 'text-[#59645C]'
                       }`}
                     >
                       {concept.summary}
                     </div>
                   </div>
                   <ChevronRight
-                    className={`w-4 h-4 shrink-0 transition-transform ${
-                      isActive ? 'text-[#E0A52D] translate-x-0.5' : 'text-[#666666]'
+                    className={`w-4 h-4 shrink-0 mt-0.5 transition-transform ${
+                      isActive ? 'text-[#E6B65A] translate-x-0.5' : 'text-[#59645C]'
                     }`}
                   />
                 </button>
@@ -168,23 +168,23 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
           </div>
 
           {/* Quick Didactic Tip for the concept */}
-          <div className="p-4 bg-[#FFFFFF] border border-[#E3E3DD] space-y-1.5 text-xs text-[#171717]">
-            <div className="flex items-center gap-1.5 font-bold">
-              <Info className="w-4 h-4 text-[#2779BD] shrink-0" />
+          <div className="p-4 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-1.5 text-xs text-[#232A24] shadow-xs">
+            <div className="flex items-center gap-1.5 font-bold text-[#407B5D]">
+              <Info className="w-4 h-4 shrink-0" />
               <span>Principio estructural</span>
             </div>
-            <p className="leading-relaxed text-[12px] text-[#666666] font-sans">
+            <p className="leading-relaxed text-[12px] text-[#59645C]">
               {activeConcept.didacticTip}
             </p>
           </div>
 
           {activeConcept.commonMistake && (
-            <div className="p-4 bg-[#FFFFFF] border-l-4 border-l-amber-500 border border-[#E3E3DD] space-y-1.5 text-xs text-[#171717]">
-              <div className="flex items-center gap-1.5 font-bold text-amber-800">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <div className="p-4 bg-[#FFFFFF] border-l-4 border-l-[#E6B65A] border border-[#E1E7E1] rounded-2xl space-y-1.5 text-xs text-[#232A24] shadow-xs">
+              <div className="flex items-center gap-1.5 font-bold text-[#8A6318]">
+                <AlertCircle className="w-4 h-4 text-[#E6B65A] shrink-0" />
                 <span>Error frecuente</span>
               </div>
-              <p className="leading-relaxed text-[12px] text-[#666666] font-sans">
+              <p className="leading-relaxed text-[12px] text-[#59645C]">
                 {activeConcept.commonMistake}
               </p>
             </div>
@@ -194,28 +194,28 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
         {/* Right Column: Code and In-depth didactic card (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           {/* Explanation Card */}
-          <div className="bg-[#FFFFFF] border border-[#E3E3DD] p-5 sm:p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E3E3DD] pb-3 font-mono">
-              <h2 className="text-base sm:text-lg font-semibold text-[#171717] font-sans">
+          <div className="bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-3">
+              <h2 className="text-base sm:text-lg font-bold text-[#232A24]">
                 {activeConcept.title}
               </h2>
-              <span className="text-xs text-[#666666]">
+              <span className="text-xs text-[#59645C] font-mono">
                 Concepto 0{activeConceptIdx + 1}/0{topic.concepts.length}
               </span>
             </div>
 
-            <p className="text-sm text-[#666666] leading-relaxed font-sans">
+            <p className="text-sm text-[#59645C] leading-relaxed">
               {activeConcept.explanation}
             </p>
           </div>
 
           {/* Processing Java Code Example */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono text-[#666666]">
-              <span className="font-bold uppercase tracking-wider text-[#171717]">
+            <div className="flex items-center justify-between text-xs text-[#59645C]">
+              <span className="font-bold uppercase tracking-wider text-[#232A24]">
                 Código fuente de ejemplo
               </span>
-              <span>Processing Java</span>
+              <span className="font-mono text-[11px]">Processing Java</span>
             </div>
 
             <ProcessingCodeBlock
@@ -227,17 +227,17 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
 
           {/* Interactive Challenge if present */}
           {topic.quickChallenge && (
-            <div className="p-5 sm:p-6 bg-[#FFFFFF] border border-[#E3E3DD] space-y-4">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#171717] uppercase tracking-wider border-b border-[#E3E3DD] pb-2">
-                <HelpCircle className="w-4 h-4 text-[#2779BD]" />
+            <div className="p-5 sm:p-6 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#232A24] uppercase tracking-wider border-b border-[#E1E7E1] pb-2">
+                <HelpCircle className="w-4 h-4 text-[#407B5D]" />
                 <span>Comprobación de comprensión</span>
               </div>
 
-              <p className="text-sm font-medium text-[#171717] font-sans">
+              <p className="text-sm font-semibold text-[#232A24]">
                 {topic.quickChallenge.question}
               </p>
 
-              <div className="space-y-2 font-sans">
+              <div className="space-y-2">
                 {topic.quickChallenge.options.map((opt, oIdx) => {
                   const isSelected = selectedOptionIdx === oIdx;
 
@@ -245,15 +245,15 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
                     <button
                       key={oIdx}
                       onClick={() => handleSelectOption(oIdx)}
-                      className={`w-full p-3.5 border text-left text-xs transition-colors flex items-start gap-3 cursor-pointer ${
+                      className={`w-full p-3.5 rounded-xl border text-left text-xs transition-colors flex items-start gap-3 cursor-pointer ${
                         isSelected
                           ? opt.isCorrect
-                            ? 'bg-[#171717] text-[#F7F7F2] border-[#171717]'
-                            : 'bg-[#FFFFFF] text-[#171717] border-[#2779BD] ring-1 ring-[#2779BD]'
-                          : 'bg-[#FFFFFF] hover:border-[#171717] border-[#E3E3DD] text-[#171717]'
+                            ? 'bg-[#E8EEE8] text-[#232A24] border-[#407B5D] font-medium'
+                            : 'bg-[#FFF9EE] text-[#232A24] border-[#E6B65A]'
+                          : 'bg-[#FFFFFF] hover:bg-[#E8EEE8] border-[#E1E7E1] text-[#232A24]'
                       }`}
                     >
-                      <span className="w-5 h-5 border border-current flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-mono font-bold">
+                      <span className="w-5 h-5 rounded-md border border-current flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-mono font-bold">
                         {String.fromCharCode(65 + oIdx)}
                       </span>
                       <span className="leading-relaxed">{opt.text}</span>
@@ -264,36 +264,36 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
 
               {showAnswerFeedback && selectedOptionIdx !== null && (
                 <div
-                  className={`p-3.5 border-l-4 text-xs leading-relaxed font-sans ${
+                  className={`p-4 rounded-xl border-l-4 text-xs leading-relaxed ${
                     topic.quickChallenge.options[selectedOptionIdx].isCorrect
-                      ? 'bg-[#FFFFFF] border-l-[#2779BD] border border-[#E3E3DD] text-[#171717]'
-                      : 'bg-[#FFFFFF] border-l-amber-500 border border-[#E3E3DD] text-[#171717]'
+                      ? 'bg-[#E8EEE8] border-l-[#407B5D] border border-[#E1E7E1] text-[#232A24]'
+                      : 'bg-[#FFF9EE] border-l-[#E6B65A] border border-[#E1E7E1] text-[#232A24]'
                   }`}
                 >
-                  <div className="font-semibold mb-1 flex items-center gap-1.5 font-mono">
+                  <div className="font-bold mb-1 flex items-center gap-1.5">
                     {topic.quickChallenge.options[selectedOptionIdx].isCorrect ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-[#2779BD]" />
-                        <span className="text-[#2779BD] font-bold">¡CORRECTO!</span>
+                        <Check className="w-3.5 h-3.5 text-[#407B5D]" />
+                        <span className="text-[#407B5D]">¡Correcto! Comprensión afianzada.</span>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                        <span className="text-amber-800 font-bold">REVISA ESTE CONCEPTO:</span>
+                        <AlertCircle className="w-3.5 h-3.5 text-[#8A6318]" />
+                        <span className="text-[#8A6318]">Revisa este concepto:</span>
                       </>
                     )}
                   </div>
-                  <p className="text-[#666666]">{topic.quickChallenge.options[selectedOptionIdx].feedback}</p>
+                  <p className="text-[#59645C]">{topic.quickChallenge.options[selectedOptionIdx].feedback}</p>
                 </div>
               )}
             </div>
           )}
 
           {/* Navigation to Next Topic */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#E3E3DD] font-mono text-xs">
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#E1E7E1] text-xs">
             <button
               onClick={onOpenCatalogue}
-              className="text-[#666666] hover:text-[#171717] flex items-center gap-1.5 cursor-pointer"
+              className="text-[#59645C] hover:text-[#232A24] flex items-center gap-1.5 cursor-pointer font-medium"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Ver todos los temas</span>
@@ -301,7 +301,7 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
 
             <button
               onClick={() => onNavigateTopic('classes')}
-              className="min-h-[44px] px-5 py-2.5 bg-[#171717] hover:bg-[#2779BD] text-[#F7F7F2] transition-colors flex items-center gap-2 cursor-pointer font-medium"
+              className="min-h-[44px] px-5 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white rounded-xl transition-colors flex items-center gap-2 cursor-pointer font-semibold shadow-xs"
             >
               <span>Explorar Taller de Anatomía de una Clase (POO)</span>
               <ArrowRight className="w-4 h-4" />

@@ -1041,33 +1041,33 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
   return (
     <div className="space-y-8 animate-in fade-in duration-150">
       {/* Top Breadcrumb Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E1E7E1]">
+        <div className="flex items-center gap-2 text-xs text-[#59645C]">
           <button
             onClick={onNavigateHome}
-            className="hover:text-zinc-900 transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-900 cursor-pointer"
+            className="hover:text-[#232A24] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-3 py-1.5 rounded-xl bg-white hover:bg-[#E8EEE8] text-[#232A24] border border-[#E1E7E1] cursor-pointer shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Inicio</span>
           </button>
-          <span>/</span>
+          <span className="text-[#E1E7E1]">/</span>
           <button
             onClick={onOpenCatalogue}
-            className="hover:text-zinc-900 transition-colors font-medium flex items-center gap-1 cursor-pointer"
+            className="hover:text-[#232A24] transition-colors font-medium flex items-center gap-1 cursor-pointer"
           >
-            <BookOpen className="w-3.5 h-3.5" />
+            <BookOpen className="w-3.5 h-3.5 text-[#407B5D]" />
             <span>Temario</span>
           </button>
-          <span>/</span>
-          <span className="text-[#626262]">Programación Orientada a Objetos</span>
-          <span>/</span>
-          <span className="text-[#141414] font-semibold font-mono">Tema 07 · Sesión Completa</span>
+          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-[#59645C]">Programación Orientada a Objetos</span>
+          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-[#232A24] font-bold">Tema 07 · Sesión Completa</span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigateTopic('classes')}
-            className="min-h-[38px] px-3.5 py-1.5 border border-[#DEDDD7] bg-[#FFFFFF] hover:bg-[#F7F6F1] text-xs font-mono text-[#141414] transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[38px] px-4 py-2 border border-[#E1E7E1] bg-[#FFFFFF] hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <span>Taller previo: Anatomía de Clase (Tema 6)</span>
           </button>
@@ -1076,63 +1076,63 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
 
       {/* Hero Section */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#626262] font-mono">
-          <span className="text-xs text-[#141414] font-semibold bg-[#FFFFFF] border border-[#DEDDD7] px-2 py-0.5">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#59645C]">
+          <span className="text-xs text-[#407B5D] font-bold bg-[#E8EEE8] px-2.5 py-0.5 rounded-full">
             Módulo Canónico 07
           </span>
-          <span className="text-[#DEDDD7]">/</span>
-          <span className="text-[#626262] bg-[#FFFFFF] border border-[#DEDDD7] px-2 py-0.5">
+          <span className="text-[#E1E7E1]">·</span>
+          <span className="text-[#59645C] bg-[#FFFFFF] border border-[#E1E7E1] px-2.5 py-0.5 rounded-full font-mono text-[11px]">
             Gato[] y ArrayList&lt;Gato&gt;
           </span>
-          <span className="text-[#DEDDD7]">/</span>
+          <span className="text-[#E1E7E1]">·</span>
           <span>Estudio & Laboratorio Interactivo</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#141414] font-sans">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#232A24]">
           Arreglos y Colecciones de Objetos
         </h1>
 
-        <p className="text-sm sm:text-base text-[#626262] max-w-3xl leading-relaxed font-sans">
+        <p className="text-sm sm:text-base text-[#59645C] max-w-3xl leading-relaxed">
           Diseña la clase con sus campos, constructor y métodos, programa reglas lógicas con{' '}
-          <code className="text-xs bg-[#FFFFFF] border border-[#DEDDD7] px-1 py-0.5 font-mono text-[#141414]">if</code>, conecta eventos de{' '}
-          <code className="text-xs bg-[#FFFFFF] border border-[#DEDDD7] px-1 py-0.5 font-mono text-[#141414]">mousePressed()</code> y{' '}
-          <code className="text-xs bg-[#FFFFFF] border border-[#DEDDD7] px-1 py-0.5 font-mono text-[#141414]">keyPressed()</code>, y alimenta el
+          <code className="text-xs bg-[#FFFFFF] border border-[#E1E7E1] px-1.5 py-0.5 rounded-md font-mono text-[#232A24]">if</code>, conecta eventos de{' '}
+          <code className="text-xs bg-[#FFFFFF] border border-[#E1E7E1] px-1.5 py-0.5 rounded-md font-mono text-[#232A24]">mousePressed()</code> y{' '}
+          <code className="text-xs bg-[#FFFFFF] border border-[#E1E7E1] px-1.5 py-0.5 rounded-md font-mono text-[#232A24]">keyPressed()</code>, y alimenta el
           arreglo para simular enjambres vivos en Processing.
         </p>
       </div>
 
       {/* Segmented Tab Navigation Bar */}
-      <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#DEDDD7] max-w-fit overflow-x-auto font-mono text-xs">
+      <div className="flex items-center gap-1.5 p-1.5 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl max-w-full overflow-x-auto text-xs shadow-xs">
         <button
           onClick={() => setActiveTab('builder')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'builder'
-              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
+              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
           }`}
         >
-          <Sliders className="w-4 h-4 text-[#2868D9]" />
+          <Sliders className={`w-4 h-4 ${activeTab === 'builder' ? 'text-white' : 'text-[#407B5D]'}`} />
           <span>Diseñar Clase & Eventos</span>
         </button>
 
         <button
           onClick={() => setActiveTab('lab')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'lab'
-              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
+              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-[#D9AA3D]" />
+          <Sparkles className={`w-4 h-4 ${activeTab === 'lab' ? 'text-[#E6B65A]' : 'text-[#407B5D]'}`} />
           <span>Laboratorio de Enjambres</span>
         </button>
 
         <button
           onClick={() => setActiveTab('memory')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'memory'
-              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
+              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
           }`}
         >
           <Cpu className="w-4 h-4" />
@@ -1141,10 +1141,10 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
 
         <button
           onClick={() => setActiveTab('guide')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'guide'
-              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
+              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
           }`}
         >
           <Code2 className="w-4 h-4" />
@@ -1153,10 +1153,10 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
 
         <button
           onClick={() => setActiveTab('challenges')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs border transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'challenges'
-              ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-              : 'text-[#626262] hover:text-[#141414] border-transparent hover:border-[#DEDDD7]'
+              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
           }`}
         >
           <HelpCircle className="w-4 h-4" />

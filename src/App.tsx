@@ -222,7 +222,7 @@ export default function App() {
     TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5];
 
   return (
-    <div className="min-h-screen bg-[#F7F6F1] text-[#141414] flex flex-col font-sans selection:bg-[#D9AA3D] selection:text-[#141414]">
+    <div className="min-h-screen bg-[#F7F8F4] text-[#232A24] flex flex-col font-sans selection:bg-[#E8EEE8] selection:text-[#232A24]">
       <Header
         currentView={activeView}
         onNavigateHome={() => setActiveView('home')}
@@ -316,35 +316,35 @@ export default function App() {
         currentUser={currentUser}
       />
 
-      {/* Editorial Footer inspired by Generative Design */}
-      <footer className="border-t border-[#DEDDD7] py-8 text-xs text-[#626262] bg-[#FFFFFF]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
+      {/* Friendly and clean footer */}
+      <footer className="border-t border-[#E1E7E1] py-8 text-xs text-[#59645C] bg-[#FFFFFF]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-[#141414]">Código Creativo</span>
-            <span className="text-[#DEDDD7]">/</span>
+            <span className="font-bold text-[#232A24]">Código Creativo</span>
+            <span className="text-[#E1E7E1]">/</span>
             <span>CENTRO</span>
-            <span className="text-[#DEDDD7]">/</span>
-            <span className="text-[#626262]">Processing Java 4.3</span>
+            <span className="text-[#E1E7E1]">/</span>
+            <span className="font-mono text-[11px] text-[#59645C]">Processing Java 4.3</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] text-[#626262]">
+          <div className="flex items-center gap-4 text-xs font-medium text-[#59645C]">
             <button
               onClick={() => setActiveView('home')}
-              className="text-[#626262] hover:text-[#141414] cursor-pointer"
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Inicio
             </button>
-            <span className="text-[#DEDDD7]">·</span>
+            <span className="text-[#E1E7E1]">·</span>
             <button
               onClick={() => setIsCatalogueOpen(true)}
-              className="text-[#626262] hover:text-[#141414] cursor-pointer"
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Temario ({TOPICS_DATA.length})
             </button>
-            <span className="text-[#DEDDD7]">·</span>
+            <span className="text-[#E1E7E1]">·</span>
             <button
               onClick={() => setActiveView('oop-lab')}
-              className="text-[#626262] hover:text-[#2868D9] font-medium cursor-pointer"
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Laboratorio POO
             </button>

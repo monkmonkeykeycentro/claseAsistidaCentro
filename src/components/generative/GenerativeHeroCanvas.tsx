@@ -140,18 +140,18 @@ export const GenerativeHeroCanvas: React.FC = () => {
   };
 
   return (
-    <div ref={containerRef} className="bg-[#FFFFFF] border border-[#DEDDD7] flex flex-col font-mono text-xs">
+    <div ref={containerRef} className="bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl overflow-hidden flex flex-col text-xs shadow-xs">
       {/* Top Header / Mode Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#FFFFFF] border-b border-[#DEDDD7]">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#FFFFFF] border-b border-[#E1E7E1]">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-[#2868D9] inline-block" />
-          <span className="font-bold text-[#141414]">ESTUDIO GENERATIVO</span>
-          <span className="text-[#DEDDD7]">/</span>
-          <span className="text-[#626262]">FIG. 01 · Reglas en vivo</span>
+          <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
+          <span className="font-bold text-[#232A24]">Estudio Generativo</span>
+          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-xs text-[#59645C] font-medium">Fig. 01 · Reglas interactivas</span>
         </div>
 
         {/* Algorithm Tabs */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {[
             { id: 'grid-modules', label: '01. Módulos' },
             { id: 'wave-field', label: '02. Ondas' },
@@ -161,10 +161,10 @@ export const GenerativeHeroCanvas: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setAlgorithm(tab.id as HeroAlgorithm)}
-              className={`min-h-[28px] px-2.5 py-0.5 border text-[11px] transition-colors cursor-pointer ${
+              className={`min-h-[30px] px-3 py-1 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                 algorithm === tab.id
-                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-                  : 'bg-[#FFFFFF] text-[#626262] border-[#DEDDD7] hover:text-[#141414]'
+                  ? 'bg-[#407B5D] text-white border-[#407B5D] shadow-xs'
+                  : 'bg-[#FFFFFF] text-[#59645C] border-[#E1E7E1] hover:bg-[#E8EEE8]/40 hover:text-[#232A24]'
               }`}
             >
               {tab.label}
@@ -186,24 +186,24 @@ export const GenerativeHeroCanvas: React.FC = () => {
       </div>
 
       {/* Control Strip */}
-      <div className="px-4 py-3 bg-[#F7F6F1] border-t border-[#DEDDD7] flex flex-wrap items-center justify-between gap-3">
+      <div className="px-4 py-3 bg-[#F7F8F4] border-t border-[#E1E7E1] flex flex-wrap items-center justify-between gap-3">
         {/* Sliders: Density & Speed */}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#626262] uppercase">Densidad:</span>
+            <span className="text-xs font-medium text-[#59645C]">Densidad:</span>
             <input
               type="range"
               min={6}
               max={16}
               value={density}
               onChange={(e) => setDensity(Number(e.target.value))}
-              className="w-20 accent-[#2868D9] cursor-pointer"
+              className="w-20 accent-[#407B5D] cursor-pointer"
             />
-            <span className="text-[11px] font-bold text-[#141414] tabular-nums">{density}</span>
+            <span className="text-xs font-bold text-[#232A24] tabular-nums font-mono">{density}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#626262] uppercase">Velocidad:</span>
+            <span className="text-xs font-medium text-[#59645C]">Velocidad:</span>
             <input
               type="range"
               min={0.2}
@@ -211,9 +211,9 @@ export const GenerativeHeroCanvas: React.FC = () => {
               step={0.1}
               value={speed}
               onChange={(e) => setSpeed(Number(e.target.value))}
-              className="w-16 accent-[#2868D9] cursor-pointer"
+              className="w-16 accent-[#407B5D] cursor-pointer"
             />
-            <span className="text-[11px] font-bold text-[#141414] tabular-nums">{speed.toFixed(1)}x</span>
+            <span className="text-xs font-bold text-[#232A24] tabular-nums font-mono">{speed.toFixed(1)}x</span>
           </div>
         </div>
 
@@ -221,19 +221,19 @@ export const GenerativeHeroCanvas: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="min-h-[30px] px-2.5 py-1 bg-[#FFFFFF] border border-[#DEDDD7] hover:bg-[#EFEFEA] text-[#141414] flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="min-h-[32px] px-3 py-1 bg-[#FFFFFF] border border-[#E1E7E1] hover:bg-[#E8EEE8]/40 text-[#232A24] font-medium rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             title={isPlaying ? 'Pausar animación' : 'Reanudar animación'}
           >
-            {isPlaying ? <Pause className="w-3 h-3 text-[#D9AA3D]" /> : <Play className="w-3 h-3 text-[#2868D9]" />}
+            {isPlaying ? <Pause className="w-3.5 h-3.5 text-[#E6B65A]" /> : <Play className="w-3.5 h-3.5 text-[#407B5D]" />}
             <span>{isPlaying ? 'Pausar' : 'Reanudar'}</span>
           </button>
 
           <button
             onClick={handleRandomizeSeed}
-            className="min-h-[30px] px-2.5 py-1 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="min-h-[32px] px-3 py-1 bg-[#407B5D] hover:bg-[#33654C] text-white font-semibold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-98"
             title="Cambiar semilla aleatoria reproducible"
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className="w-3.5 h-3.5" />
             <span>Semilla #{seed}</span>
           </button>
         </div>

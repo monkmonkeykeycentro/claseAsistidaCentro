@@ -13,117 +13,134 @@ import {
   RotateCcw,
   Sparkles,
   Layers,
-  Sliders,
-  Code2,
+  Play,
+  Heart,
 } from 'lucide-react';
 
 interface HomeViewProps {
   onOpenWorkshop: (stage?: StageId) => void;
-  onOpenOopLab: () => void;
+  onOpenOopLab?: () => void;
+  onNavigateOopLab?: () => void;
   onSelectTopic: (topicId: string) => void;
-  progress: UserProgress;
+  progress?: UserProgress;
+  classesProgress?: UserProgress;
   currentUser: AppUser | null;
-  onOpenAuth: () => void;
-  onResetProgress: () => void;
+  onOpenAuth?: () => void;
+  onResetProgress?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onOpenWorkshop,
   onOpenOopLab,
+  onNavigateOopLab,
   onSelectTopic,
   progress,
+  classesProgress,
   currentUser,
   onOpenAuth,
   onResetProgress,
 }) => {
-  const completedStagesCount = Object.values(progress.stageCompleted).filter(Boolean).length;
+  const activeProgress = progress || classesProgress || {
+    stageCompleted: { 1: false, 2: false, 3: false, 4: false },
+    stage3CompletedExercises: [],
+    stage2Placements: {},
+    stage4BuilderCustomized: false,
+  };
+
+  const handleOpenOop = onNavigateOopLab || onOpenOopLab || (() => {});
+
+  const completedStagesCount = Object.values(activeProgress.stageCompleted).filter(Boolean).length;
   const workshopPercentage = Math.round((completedStagesCount / 4) * 100);
 
   return (
-    <div className="space-y-14 sm:space-y-18 animate-in fade-in duration-200">
-      {/* 1. Hero Editorial Section — "Una publicación editorial programable" */}
+    <div className="space-y-12 sm:space-y-16 animate-in fade-in duration-200">
+      {/* 1. Friendly Hero Section — Learning & Creative Coding */}
       <section className="space-y-6 pt-2">
-        {/* Meta Utility Ribbon */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DEDDD7] pb-3 text-xs font-mono text-[#626262]">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-[#141414] tracking-wider uppercase">CENTRO</span>
-            <span className="text-[#DEDDD7]">/</span>
+        {/* Soft Ribbon Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3 text-xs text-[#59645C]">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="font-bold text-[#232A24] tracking-wide">CENTRO</span>
+            <span className="text-[#E1E7E1]">/</span>
             <span>Código Creativo</span>
-            <span className="text-[#DEDDD7]">/</span>
-            <span className="text-[#2868D9] font-medium">Processing Java</span>
+            <span className="text-[#E1E7E1]">/</span>
+            <span className="text-[#407B5D] font-semibold bg-[#E8EEE8] px-2 py-0.5 rounded-md">
+              Processing Java
+            </span>
           </div>
 
-          <div className="flex items-center gap-3 text-[11px]">
-            <span className="text-[#141414] font-medium">Código → Sistema → Regla → Variación → Forma</span>
-            <span className="text-[#DEDDD7]">·</span>
-            <span>60 FPS</span>
+          <div className="flex items-center gap-2 text-xs font-medium">
+            <span className="w-2 h-2 rounded-full bg-[#407B5D]" />
+            <span className="text-[#59645C]">Plataforma de aprendizaje accesible</span>
           </div>
         </div>
 
-        {/* 2-Zone Grid: Left Editorial Area + Right Generative Hero Canvas */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT: Área Editorial */}
+        {/* 2-Zone Grid: Left Friendly Intro + Right Generative Hero Canvas */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* LEFT: Friendly Editorial Area */}
           <div className="lg:col-span-6 space-y-5">
-            <div className="space-y-2">
-              <span className="text-xs font-mono text-[#2868D9] uppercase tracking-widest font-semibold block">
-                FIG. 00 · PUBLICACIÓN EDITORIAL PROGRAMABLE
+            <div className="space-y-2.5">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full">
+                <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
+                <span>Laboratorio de Código Creativo</span>
               </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[#141414] font-sans leading-[1.1]">
-                Programar también es crear.
+
+              <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-[#232A24] leading-[1.15]">
+                Aprende a programar creando arte y sistemas visuales.
               </h1>
-              <p className="text-base sm:text-lg text-[#626262] leading-relaxed font-sans pt-1">
-                Explora el código como herramienta para construir formas, sistemas, imágenes e interacciones. Cada instrucción algorítmica genera un eco geométrico verificable en el lienzo.
+
+              <p className="text-base sm:text-lg text-[#59645C] leading-relaxed pt-1">
+                Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en <strong>Processing Java</strong> y ves su resultado interactivo de inmediato.
               </p>
             </div>
 
-            {/* Generative Principle Chain */}
-            <div className="p-3.5 bg-[#FFFFFF] border border-[#DEDDD7] space-y-2 font-mono text-xs">
-              <span className="text-[10px] uppercase tracking-wider text-[#626262] block font-bold">
-                Metodología Generativa
+            {/* Generative Principle Chain — Friendly Rounded Badges */}
+            <div className="p-4 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
+              <span className="text-xs font-bold text-[#232A24] block">
+                ¿Cómo funciona el pensamiento generativo?
               </span>
-              <div className="flex items-center gap-2 flex-wrap text-[#141414] text-[11px]">
-                <span className="px-2 py-0.5 bg-[#F7F6F1] border border-[#DEDDD7]">01. Código</span>
-                <span className="text-[#DEDDD7]">→</span>
-                <span className="px-2 py-0.5 bg-[#F7F6F1] border border-[#DEDDD7]">02. Sistema</span>
-                <span className="text-[#DEDDD7]">→</span>
-                <span className="px-2 py-0.5 bg-[#F7F6F1] border border-[#DEDDD7]">03. Regla</span>
-                <span className="text-[#DEDDD7]">→</span>
-                <span className="px-2 py-0.5 bg-[#F7F6F1] border border-[#DEDDD7]">04. Variación</span>
-                <span className="text-[#DEDDD7]">→</span>
-                <span className="px-2 py-0.5 bg-[#F7F6F1] border border-[#DEDDD7]">05. Forma</span>
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">1. Código</span>
+                <span className="text-[#59645C] font-semibold">→</span>
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">2. Sistema</span>
+                <span className="text-[#59645C] font-semibold">→</span>
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">3. Regla</span>
+                <span className="text-[#59645C] font-semibold">→</span>
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">4. Variación</span>
+                <span className="text-[#59645C] font-semibold">→</span>
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">5. Forma</span>
               </div>
             </div>
 
             {/* CTAs */}
-            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 font-mono text-xs">
+            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
-                onClick={onOpenOopLab}
-                className="min-h-[44px] px-6 py-2.5 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                onClick={handleOpenOop}
+                className="min-h-[44px] px-6 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs active:scale-98 cursor-pointer"
               >
                 <span>Entrar al Laboratorio POO</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-4 h-4" />
               </button>
 
               <button
                 onClick={() => onOpenWorkshop()}
-                className="min-h-[44px] px-5 py-2.5 border border-[#141414] hover:bg-[#141414] hover:text-[#F7F6F1] text-[#141414] font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="min-h-[44px] px-5 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8]/40 text-[#232A24] font-semibold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
               >
                 <span>Taller de Anatomía de Clases</span>
               </button>
             </div>
 
-            {/* User session status */}
-            <div className="pt-2 flex items-center justify-between text-xs font-mono text-[#626262] border-t border-[#DEDDD7]">
-              <div className="flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-[#626262]" />
+            {/* Student session bar */}
+            <div className="pt-2 flex items-center justify-between text-xs text-[#59645C] border-t border-[#E1E7E1]">
+              <div className="flex items-center gap-2 font-medium">
+                <User className="w-4 h-4 text-[#407B5D]" />
                 <span>
-                  {currentUser ? `${currentUser.displayName} (${currentUser.email})` : 'Modo Invitado local'}
+                  {currentUser ? `${currentUser.displayName} (${currentUser.email})` : 'Modo Invitado (progreso guardado localmente)'}
                 </span>
               </div>
-              {!currentUser && (
+              {!currentUser && onOpenAuth && (
                 <button
                   onClick={onOpenAuth}
-                  className="text-[#2868D9] hover:underline cursor-pointer"
+                  className="text-[#407B5D] hover:underline font-semibold cursor-pointer"
                 >
                   Conectar cuenta CENTRO
                 </button>
@@ -131,54 +148,55 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
 
-          {/* RIGHT: Live Interactive Generative Canvas (Section 9) */}
+          {/* RIGHT: Live Interactive Generative Canvas */}
           <div className="lg:col-span-6">
-            <GenerativeHeroCanvas />
+            <div className="rounded-2xl overflow-hidden border border-[#E1E7E1] shadow-xs bg-white">
+              <GenerativeHeroCanvas />
+            </div>
           </div>
         </div>
       </section>
 
       {/* 2. Interactive Experimentation Modules (Laboratorio de Objetos & Taller) */}
       <section className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#DEDDD7] pb-2">
-          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#626262]">
-            <span className="text-[#141414] font-bold">[01]</span>
-            <span>Entornos de Experimentación Interactiva</span>
+        <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-2">
+          <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
+            <span className="w-2 h-2 rounded-full bg-[#407B5D]" />
+            <span>Módulos de Práctica y Laboratorios Interactivos</span>
           </div>
 
-          {completedStagesCount > 0 && (
+          {completedStagesCount > 0 && onResetProgress && (
             <button
               onClick={onResetProgress}
-              className="text-xs font-mono text-[#626262] hover:text-[#141414] flex items-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
+              className="text-xs text-[#59645C] hover:text-[#232A24] flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <RotateCcw className="w-3 h-3" />
-              <span>Reiniciar taller</span>
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reiniciar avance</span>
             </button>
           )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Card A: Laboratorio de Objetos (Pelota & Burbuja) */}
-          <div className="bg-[#FFFFFF] border border-[#DEDDD7] hover:border-[#141414] transition-colors p-6 sm:p-7 flex flex-col justify-between space-y-6">
+          <div className="bg-[#FFFFFF] border border-[#E1E7E1] hover:border-[#407B5D]/60 transition-all rounded-2xl p-6 sm:p-7 flex flex-col justify-between space-y-6 shadow-xs hover:shadow-md">
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 bg-[#2868D9] inline-block" />
-                  <span className="font-bold text-[#141414]">LABORATORIO POO</span>
-                </div>
-                <span>Módulo 1 & 2 · Processing Java</span>
+              <div className="flex items-center justify-between text-xs text-[#59645C]">
+                <span className="bg-[#E8EEE8] text-[#407B5D] font-bold px-2.5 py-0.5 rounded-full">
+                  LABORATORIO INTERACTIVO
+                </span>
+                <span className="font-medium">Módulo 1 & 2 · Processing Java</span>
               </div>
 
-              <h2 className="text-2xl font-semibold text-[#141414] tracking-tight font-sans">
+              <h2 className="text-2xl font-bold text-[#232A24] tracking-tight">
                 Laboratorio de Objetos: Pelota, Burbuja y Arreglos
               </h2>
 
-              <p className="text-sm text-[#626262] leading-relaxed font-sans">
-                Aprende Programación Orientada a Objetos en Processing Java mediante la construcción progresiva: campos cartesianos, constructor con argumentos, 7 métodos de estado, oscilación orgánica bidimensional con ruido Perlin (<code className="font-mono text-xs text-[#2868D9]">noise()</code>) y control colectivo sobre arreglos dinámicos.
+              <p className="text-sm text-[#59645C] leading-relaxed">
+                Aprende Programación Orientada a Objetos en Processing Java mediante la construcción progresiva: campos espaciales, constructor con argumentos, 7 métodos de estado, movimiento fluido bidimensional con ruido Perlin (<code className="font-mono text-xs bg-[#E8EEE8] text-[#407B5D] px-1 py-0.5 rounded">noise()</code>) y control sobre arreglos colectivos.
               </p>
 
-              {/* Live generative illustration thumbnail */}
-              <div className="border border-[#DEDDD7] p-2 bg-[#F7F6F1] flex items-center justify-center">
+              {/* Generative illustration thumbnail */}
+              <div className="border border-[#E1E7E1] p-3 bg-[#F7F8F4] rounded-xl flex items-center justify-center">
                 <GenerativeArtwork
                   topicNumber={6}
                   width={340}
@@ -188,29 +206,29 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-1 text-xs font-mono text-[#141414]">
-                <div className="p-2.5 bg-[#F7F6F1] border border-[#DEDDD7]">
-                  <span className="text-[10px] text-[#626262] block">MÓDULO 1</span>
+              <div className="grid grid-cols-3 gap-2.5 pt-1 text-xs text-[#232A24]">
+                <div className="p-2.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">MÓDULO 1</span>
                   <span className="font-bold">Pelota</span>
                 </div>
-                <div className="p-2.5 bg-[#F7F6F1] border border-[#DEDDD7]">
-                  <span className="text-[10px] text-[#626262] block">MÓDULO 2</span>
+                <div className="p-2.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">MÓDULO 2</span>
                   <span className="font-bold">Burbuja</span>
                 </div>
-                <div className="p-2.5 bg-[#F7F6F1] border border-[#DEDDD7]">
-                  <span className="text-[10px] text-[#626262] block">COLECCIÓN</span>
+                <div className="p-2.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">COLECCIÓN</span>
                   <span className="font-bold">Arreglos[]</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[#DEDDD7] flex items-center justify-between">
-              <span className="text-xs font-mono text-[#626262]">
-                Lienzo interactivo 60 FPS
+            <div className="pt-4 border-t border-[#E1E7E1] flex items-center justify-between">
+              <span className="text-xs font-medium text-[#59645C]">
+                Lienzo a 60 FPS con telemetría
               </span>
               <button
-                onClick={onOpenOopLab}
-                className="min-h-[44px] px-5 py-2.5 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] text-xs font-mono font-medium flex items-center gap-2 transition-colors cursor-pointer"
+                onClick={handleOpenOop}
+                className="min-h-[40px] px-5 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs active:scale-98 cursor-pointer"
               >
                 <span>Entrar al Laboratorio</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -219,54 +237,53 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Card B: Taller Guiado de Estructura de Clases */}
-          <div className="bg-[#FFFFFF] border border-[#DEDDD7] hover:border-[#141414] transition-colors p-6 sm:p-7 flex flex-col justify-between space-y-6">
+          <div className="bg-[#FFFFFF] border border-[#E1E7E1] hover:border-[#407B5D]/60 transition-all rounded-2xl p-6 sm:p-7 flex flex-col justify-between space-y-6 shadow-xs hover:shadow-md">
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 bg-[#D9AA3D] inline-block" />
-                  <span className="font-bold text-[#141414]">TALLER CONCEPTUAL</span>
-                </div>
-                <span>Tema 06 · POO</span>
+              <div className="flex items-center justify-between text-xs text-[#59645C]">
+                <span className="bg-[#FFF4DC] text-[#9A6700] font-bold px-2.5 py-0.5 rounded-full">
+                  TALLER CONCEPTUAL
+                </span>
+                <span className="font-medium">Tema 06 · Anatomía POO</span>
               </div>
 
-              <h2 className="text-2xl font-semibold text-[#141414] tracking-tight font-sans">
+              <h2 className="text-2xl font-bold text-[#232A24] tracking-tight">
                 Anatomía y Estructura de una Clase en Processing
               </h2>
 
-              <p className="text-sm text-[#626262] leading-relaxed font-sans">
-                Recorrido analítico en 4 etapas para comprender las partes anatómicas de una clase: declaración del molde, asignación de campos en memoria, inicialización del constructor y firma de métodos.
+              <p className="text-sm text-[#59645C] leading-relaxed">
+                Recorrido didáctico en 4 etapas para comprender las partes anatómicas de una clase: declaración del molde, asignación de campos en memoria, inicialización del constructor y firma de métodos.
               </p>
 
               {/* 4 Steps Checklist */}
-              <div className="grid grid-cols-2 gap-2 pt-2">
+              <div className="grid grid-cols-2 gap-2.5 pt-2">
                 {[
-                  { step: '01', title: 'Estructura', done: progress.stageCompleted[1] },
-                  { step: '02', title: 'Ubicar partes', done: progress.stageCompleted[2] },
-                  { step: '03', title: 'Sintaxis', done: progress.stageCompleted[3] },
-                  { step: '04', title: 'Construir', done: progress.stageCompleted[4] },
+                  { step: '01', title: 'Estructura', done: activeProgress.stageCompleted[1] },
+                  { step: '02', title: 'Ubicar partes', done: activeProgress.stageCompleted[2] },
+                  { step: '03', title: 'Sintaxis', done: activeProgress.stageCompleted[3] },
+                  { step: '04', title: 'Construir', done: activeProgress.stageCompleted[4] },
                 ].map((s) => (
                   <div
                     key={s.step}
-                    className={`p-2.5 border text-xs font-mono flex items-center justify-between ${
+                    className={`p-3 border rounded-xl text-xs flex items-center justify-between transition-colors ${
                       s.done
-                        ? 'border-[#141414] bg-[#F7F6F1] text-[#141414]'
-                        : 'border-[#DEDDD7] bg-[#FFFFFF] text-[#626262]'
+                        ? 'border-[#407B5D] bg-[#E8EEE8] text-[#407B5D] font-bold'
+                        : 'border-[#E1E7E1] bg-[#FFFFFF] text-[#59645C]'
                     }`}
                   >
-                    <span className="font-bold">{s.step}. {s.title}</span>
-                    {s.done && <Check className="w-3.5 h-3.5 text-[#141414]" strokeWidth={2.5} />}
+                    <span>{s.step}. {s.title}</span>
+                    {s.done && <Check className="w-4 h-4 text-[#407B5D]" strokeWidth={2.5} />}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[#DEDDD7] flex items-center justify-between">
-              <span className="text-xs font-mono text-[#626262]">
-                4 etapas interactivas
+            <div className="pt-4 border-t border-[#E1E7E1] flex items-center justify-between">
+              <span className="text-xs font-medium text-[#59645C]">
+                {completedStagesCount === 4 ? 'Taller completado al 100%' : `${workshopPercentage}% completado`}
               </span>
               <button
                 onClick={() => onOpenWorkshop()}
-                className="min-h-[44px] px-5 py-2.5 border border-[#141414] hover:bg-[#141414] hover:text-[#F7F6F1] text-[#141414] text-xs font-mono font-medium flex items-center gap-2 transition-colors cursor-pointer"
+                className="min-h-[40px] px-5 py-2 border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8]/40 text-[#232A24] text-xs font-bold rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
               >
                 <span>{completedStagesCount > 0 ? 'Continuar Taller' : 'Iniciar Taller'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -276,7 +293,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 3. Systematic Variation Series (Section 3.3 & Section 8 - Familia E) */}
+      {/* 3. Systematic Variation Series */}
       <section className="space-y-4">
         <VariationSeries
           title="Serie de Variaciones Generativas: Familia de Repetición y Módulos"
@@ -285,14 +302,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
         />
       </section>
 
-      {/* 4. Complete Curriculum Topics Section with Generative Graphic Identity (Section 11) */}
+      {/* 4. Complete Curriculum Topics Section with Generative Graphic Identity */}
       <section className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#DEDDD7] pb-2">
-          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#626262]">
-            <span className="text-[#141414] font-bold">[02]</span>
-            <span>Temario Curricular con Identidad Generativa</span>
+        <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-2">
+          <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
+            <span className="w-2 h-2 rounded-full bg-[#E6B65A]" />
+            <span>Temario Curricular Completo</span>
           </div>
-          <span className="text-xs font-mono text-[#626262]">7 temas con modelos visuales</span>
+          <span className="text-xs text-[#59645C] font-medium">7 temas con modelos visuales</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -302,60 +319,60 @@ export const HomeView: React.FC<HomeViewProps> = ({
             return (
               <div
                 key={topic.id}
-                className="bg-[#FFFFFF] border border-[#DEDDD7] hover:border-[#141414] transition-colors p-5 flex flex-col justify-between space-y-4"
+                className="bg-[#FFFFFF] border border-[#E1E7E1] hover:border-[#407B5D]/60 transition-all rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xs hover:shadow-md"
               >
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
-                    <span className="font-bold text-[#141414]">
+                  <div className="flex items-center justify-between text-xs text-[#59645C]">
+                    <span className="font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded-md">
                       TEMA 0{topic.number}
                     </span>
-                    <span>{topic.estimatedTime}</span>
+                    <span className="font-medium">{topic.estimatedTime}</span>
                   </div>
 
                   {/* Generative Diagram Thumbnail connected to topic concept */}
-                  <div className="border border-[#DEDDD7] bg-[#F7F6F1] flex items-center justify-center p-1">
+                  <div className="border border-[#E1E7E1] bg-[#F7F8F4] rounded-xl flex items-center justify-center p-1.5">
                     <GenerativeArtwork
                       topicNumber={topic.number}
                       width={280}
-                      height={130}
+                      height={125}
                       interactive={true}
                     />
                   </div>
 
-                  <h3 className="text-base font-semibold text-[#141414] line-clamp-1 font-sans">
+                  <h3 className="text-base font-bold text-[#232A24] line-clamp-1">
                     {topic.title}
                   </h3>
 
-                  <p className="text-xs text-[#626262] line-clamp-2 leading-relaxed font-sans">
+                  <p className="text-xs text-[#59645C] line-clamp-2 leading-relaxed">
                     {topic.summary}
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-[#DEDDD7] flex items-center justify-between">
-                  <span className="text-[11px] text-[#626262] font-mono">
+                <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
+                  <span className="text-xs text-[#59645C] font-medium">
                     {topic.category}
                   </span>
 
                   {isClasses ? (
                     <button
                       onClick={() => onOpenWorkshop()}
-                      className="min-h-[36px] px-3 py-1 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="min-h-[36px] px-3.5 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                     >
                       <span>Taller POO</span>
-                      <ArrowRight className="w-3 h-3" />
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   ) : topic.id === 'object-arrays' ? (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => onOpenOopLab()}
-                        className="min-h-[36px] px-2.5 py-1 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] text-xs font-mono font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                        onClick={handleOpenOop}
+                        className="min-h-[36px] px-3 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                       >
-                        <Sparkles className="w-3 h-3 text-[#D9AA3D]" />
+                        <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
                         <span>Laboratorio</span>
                       </button>
                       <button
                         onClick={() => onSelectTopic('object-arrays')}
-                        className="min-h-[36px] px-2 py-1 border border-[#DEDDD7] hover:bg-[#F7F6F1] text-[#141414] text-xs font-mono transition-colors cursor-pointer"
+                        className="min-h-[36px] px-2.5 py-1.5 border border-[#E1E7E1] hover:bg-[#E8EEE8]/40 text-[#232A24] text-xs font-semibold rounded-xl transition-all cursor-pointer"
                       >
                         Teoría
                       </button>
@@ -363,10 +380,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   ) : (
                     <button
                       onClick={() => onSelectTopic(topic.id)}
-                      className="min-h-[36px] px-3 py-1 border border-[#DEDDD7] hover:border-[#141414] hover:bg-[#F7F6F1] text-[#141414] text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="min-h-[36px] px-3.5 py-1.5 border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/30 text-[#232A24] text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <span>Ver tema</span>
-                      <ArrowRight className="w-3 h-3 text-[#626262]" />
+                      <ArrowRight className="w-3.5 h-3.5 text-[#59645C]" />
                     </button>
                   )}
                 </div>
@@ -376,14 +393,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 5. Editorial Creative Coding Philosophy Note */}
-      <section className="p-6 bg-[#FFFFFF] border border-[#DEDDD7] space-y-2">
-        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#141414] font-bold">
-          <span>[03]</span>
+      {/* 5. Friendly Creative Coding Philosophy Note */}
+      <section className="p-6 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
+        <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
+          <Heart className="w-4 h-4 text-[#407B5D]" />
           <span>Filosofía de Código Creativo · Generative Design</span>
         </div>
-        <p className="text-xs text-[#626262] leading-relaxed font-sans max-w-3xl">
-          Inspirado en los principios de <em>Generative Design: Visualize, Program, and Create with Processing</em>, este laboratorio aborda la programación como un lenguaje constructivo y plástico. La complejidad visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y encapsulamiento orientado a objetos.
+        <p className="text-xs sm:text-sm text-[#59645C] leading-relaxed max-w-3xl">
+          Inspirado en los principios de <em>Generative Design</em>, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.
         </p>
       </section>
     </div>

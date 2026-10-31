@@ -356,42 +356,42 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Top Breadcrumb & Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DEDDD7]">
-        <div className="flex items-center gap-2 text-xs font-mono text-[#626262]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E1E7E1]">
+        <div className="flex items-center gap-2 text-xs text-[#59645C] font-medium">
           <button
             onClick={onBackToHome}
-            className="hover:text-[#141414] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-2.5 py-1 bg-[#FFFFFF] border border-[#DEDDD7] text-[#141414] cursor-pointer"
+            className="hover:text-[#232A24] transition-colors font-semibold flex items-center gap-1.5 min-h-[38px] px-3 py-1 bg-[#FFFFFF] border border-[#E1E7E1] rounded-xl text-[#232A24] cursor-pointer shadow-2xs hover:bg-[#E8EEE8]/40"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Inicio</span>
           </button>
-          <span className="text-[#DEDDD7]">/</span>
+          <span className="text-[#E1E7E1]">/</span>
           <button
             onClick={onOpenCatalogue}
-            className="hover:text-[#141414] transition-colors flex items-center gap-1 cursor-pointer"
+            className="hover:text-[#407B5D] transition-colors flex items-center gap-1 cursor-pointer font-medium"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Temario</span>
           </button>
-          <span className="text-[#DEDDD7]">/</span>
-          <span className="text-[#141414] font-bold">Laboratorio POO</span>
+          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-[#232A24] font-bold">Laboratorio POO</span>
         </div>
 
         {/* Module Switcher (Módulo 1: Pelota, Módulo 2: Burbuja, Constructor Creativo) */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#DEDDD7] font-mono text-xs">
+          <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl shadow-2xs">
             <button
               onClick={() => {
                 setActiveModuleId('pelota');
                 setSelectedInstanceIndex(0);
               }}
-              className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              className={`min-h-[34px] px-3.5 py-1 text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'pelota'
-                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
+                  ? 'bg-[#407B5D] text-white font-bold shadow-xs'
+                  : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/40'
               }`}
             >
-              <Circle className="w-3.5 h-3.5 text-[#D9AA3D]" />
+              <Circle className="w-3.5 h-3.5 text-[#E6B65A]" />
               <span>Módulo 1: Pelota</span>
             </button>
 
@@ -400,13 +400,13 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
                 setActiveModuleId('burbuja');
                 setSelectedInstanceIndex(0);
               }}
-              className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              className={`min-h-[34px] px-3.5 py-1 text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'burbuja'
-                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
+                  ? 'bg-[#407B5D] text-white font-bold shadow-xs'
+                  : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/40'
               }`}
             >
-              <Droplets className="w-3.5 h-3.5 text-[#2868D9]" />
+              <Droplets className="w-3.5 h-3.5 text-sky-400" />
               <span>Módulo 2: Burbuja</span>
             </button>
 
@@ -414,13 +414,13 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
               onClick={() => {
                 setActiveModuleId('builder');
               }}
-              className={`min-h-[34px] px-3.5 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              className={`min-h-[34px] px-3.5 py-1 text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeModuleId === 'builder'
-                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
+                  ? 'bg-[#407B5D] text-white font-bold shadow-xs'
+                  : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/40'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#D9AA3D]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
               <span>Constructor & Eventos</span>
             </button>
           </div>
@@ -428,7 +428,7 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
           {activeModuleId !== 'builder' && (
             <button
               onClick={handleResetModule}
-              className="min-h-[36px] p-2 border border-[#DEDDD7] bg-[#FFFFFF] hover:bg-[#F7F6F1] text-[#626262] hover:text-[#141414] transition-colors cursor-pointer"
+              className="min-h-[36px] p-2 border border-[#E1E7E1] bg-[#FFFFFF] hover:bg-[#E8EEE8]/40 rounded-xl text-[#59645C] hover:text-[#232A24] transition-all cursor-pointer shadow-2xs"
               title="Reiniciar módulo a etapa 1"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -444,21 +444,21 @@ export const OopLabView: React.FC<OopLabViewProps> = ({
         <>
           {/* Hero Header */}
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-[#626262] font-mono">
-              <span className="font-bold text-[#141414] bg-[#FFFFFF] border border-[#DEDDD7] px-2 py-0.5">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#59645C]">
+              <span className="font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-0.5 rounded-md">
                 {currentModule.moduleName}
               </span>
-              <span className="text-[#DEDDD7]">/</span>
-              <span>Progresión: Observar → Describir → Construir → Experimentar → Aplicar</span>
+              <span className="text-[#E1E7E1]">/</span>
+              <span className="font-medium">Progresión: Observar → Describir → Construir → Experimentar → Aplicar</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#141414] font-sans">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#232A24]">
               Laboratorio de Objetos: Construcción Progresiva en Processing Java
             </h1>
 
-            <p className="text-xs sm:text-sm text-[#626262] max-w-4xl leading-relaxed font-sans">
+            <p className="text-sm text-[#59645C] max-w-4xl leading-relaxed">
               {isPelota
-                ? 'Comprende la relación entre memoria y comportamiento visual: desde declarar campos cartesianos (x, y, diametro) y su constructor, hasta programar 7 métodos con física 2D, flotación armónica con ruido Perlin (noise) y gobierno de arreglos Pelota[].'
+                ? 'Comprende la relación entre memoria y comportamiento visual: desde declarar campos cartesianos (x, y, diametro) y su constructor, hasta programar 7 métodos con física 2D, movimiento suave con ruido Perlin (noise) y gobierno de arreglos Pelota[].'
                 : 'Aplica los fundamentos aprendidos modelando la clase Burbuja: cinemática ascendente, canal alfa de opacidad, expansión elástica de diámetro y dispersión colectiva en un arreglo Burbuja[].'}
             </p>
           </div>

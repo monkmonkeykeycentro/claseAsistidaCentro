@@ -49,7 +49,7 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
   const [selectedMethodId, setSelectedMethodId] = useState<string>('cambiarTamano');
   const [paramInputs, setParamInputs] = useState<Record<string, number | string>>({
     nuevoDiametro: 75,
-    nuevoColor: '#006699',
+    nuevoColor: '#407B5D',
     nuevaVelocidad: 4.5,
     nuevaVX: 4.0,
     nuevaVY: 2.5,
@@ -98,29 +98,19 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
         ? `Desplazamiento 2D: x += ${selectedInstance.velocidadX?.toFixed(1) ?? selectedInstance.velocidad}, y += ${selectedInstance.velocidadY?.toFixed(1) ?? '0.0'}`
         : `Desplazamiento horizontal`;
     } else if (activeMethod.id === 'subir') {
-      effectText = `Ascendió ${selectedInstance.velocidad} px en el eje Y hacia la superficie`;
+      effectText = `Ascenso vertical hacia la superficie: y -= ${selectedInstance.velocidad}`;
     } else if (activeMethod.id === 'rebotar') {
-      effectText = `Evaluó límites del lienzo e invirtió velocidades de choque (*= -1)`;
+      effectText = isPelota
+        ? `Inversión cinemática en límites`
+        : `Reaparición cíclica en el fondo del lienzo`;
     } else if (activeMethod.id === 'flotar') {
-      const paso = Number(paramInputs.pasoRuido ?? 0.015);
-      const amp = Number(paramInputs.intensidad ?? paramInputs.balanceo ?? 3.5);
       effectText = isPelota
-        ? `Deriva 2D con ruido Perlin desacoplado: tX += ${paso}, tY += ${paso}, amplitud = ${amp}px`
-        : `Vaivén subacuático con noise(tX, tY): paso = ${paso}, balanceo = ${amp}px`;
+        ? `Flotación Perlin: x=noise(tX), y=noise(tY) con semillas independientes`
+        : `Deriva ondulante marina con Perlin noise 2D independiente`;
     } else if (activeMethod.id === 'cambiarTamano') {
-      effectText = `Diámetro actualizado a ${paramInputs.nuevoDiametro} px`;
+      effectText = `Diámetro ajustado a ${paramInputs.nuevoDiametro} px`;
     } else if (activeMethod.id === 'cambiarColor') {
-      effectText = `Color actualizado a ${paramInputs.nuevoColor}`;
-    } else if (activeMethod.id === 'invertirDireccion') {
-      effectText = `Dirección invertida: velocidadX y velocidadY multiplicadas por -1`;
-    } else if (activeMethod.id === 'cambiarVelocidad') {
-      effectText = isPelota
-        ? `Velocidades 2D fijadas a: vx = ${paramInputs.nuevaVX}, vy = ${paramInputs.nuevaVY}`
-        : `Velocidad actualizada a ${paramInputs.nuevaVelocidad} px/frame`;
-    } else if (activeMethod.id === 'reiniciar') {
-      effectText = `Reubicado en coordenadas (${paramInputs.nuevaX}, ${paramInputs.nuevaY})`;
-    } else if (activeMethod.id === 'crecer') {
-      effectText = `Diámetro incrementado en +${paramInputs.incremento} px`;
+      effectText = `Color mutado a ${paramInputs.nuevoColor}`;
     } else if (activeMethod.id === 'cambiarTransparencia') {
       effectText = `Opacidad alfa actualizada a ${paramInputs.valor} / 255`;
     }
@@ -129,30 +119,30 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
   };
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#DEDDD7] p-5 sm:p-6 space-y-6 flex flex-col justify-between">
+    <div className="bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl p-5 sm:p-6 space-y-6 flex flex-col justify-between shadow-xs">
       {/* 1. Header & Animation Mode Toggle */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DEDDD7] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3">
           <div>
-            <h3 className="font-semibold text-sm sm:text-base text-[#141414] flex items-center gap-2 font-mono uppercase">
-              <Sliders className="w-4 h-4 text-[#2868D9]" />
+            <h3 className="font-bold text-base text-[#232A24] flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-[#407B5D]" />
               <span>Explorador de Métodos & Memoria</span>
             </h3>
-            <p className="text-xs text-[#626262] font-mono mt-0.5">
-              Instancia activa: <strong className="text-[#141414]">{instancePrefix}</strong>
+            <p className="text-xs text-[#59645C] mt-0.5">
+              Instancia seleccionada: <strong className="text-[#232A24] font-mono">{instancePrefix}</strong>
             </p>
           </div>
 
           {/* Mode Switch: Paso a paso vs Animación continua */}
-          <div className="flex items-center gap-1 p-1 bg-[#FFFFFF] border border-[#DEDDD7] font-mono text-xs">
+          <div className="flex items-center gap-1 p-1 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs">
             <button
               onClick={() => {
                 if (isContinuousAnimation) onToggleContinuous();
               }}
-              className={`px-3 py-1 text-xs border transition-colors cursor-pointer ${
+              className={`px-3 py-1 text-xs rounded-lg transition-all cursor-pointer ${
                 !isContinuousAnimation
-                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
+                  ? 'bg-[#407B5D] text-white font-bold shadow-xs'
+                  : 'text-[#59645C] hover:text-[#232A24]'
               }`}
             >
               Paso a paso
@@ -161,68 +151,68 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
               onClick={() => {
                 if (!isContinuousAnimation) onToggleContinuous();
               }}
-              className={`px-3 py-1 text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1 text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 isContinuousAnimation
-                  ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-                  : 'bg-transparent text-[#626262] border-transparent hover:text-[#141414]'
+                  ? 'bg-[#407B5D] text-white font-bold shadow-xs'
+                  : 'text-[#59645C] hover:text-[#232A24]'
               }`}
             >
-              {isContinuousAnimation ? <Pause className="w-3 h-3 text-[#D9AA3D]" /> : <Play className="w-3 h-3" />}
+              {isContinuousAnimation ? <Pause className="w-3.5 h-3.5 text-[#E6B65A]" /> : <Play className="w-3.5 h-3.5" />}
               <span>Animación draw()</span>
             </button>
           </div>
         </div>
 
         {/* 2. Live Field State Inspector for the selected instance */}
-        <div className="p-3 bg-[#F7F6F1] border border-[#DEDDD7] space-y-2">
-          <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
-            <span className="font-bold text-[#141414]">CAMPOS EN MEMORIA DE {instancePrefix}:</span>
-            <span className="text-[10px]">60 fps</span>
+        <div className="p-3.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-2.5">
+          <div className="flex items-center justify-between text-xs text-[#59645C]">
+            <span className="font-bold text-[#232A24]">Campos en memoria Heap ({instancePrefix}):</span>
+            <span className="font-mono text-[11px]">60 FPS</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs font-mono">
-            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
-              <span className="text-[10px] text-[#626262] block">x (pos)</span>
-              <span className="font-bold text-[#141414] tabular-nums">
+            <div className="bg-[#FFFFFF] p-2.5 border border-[#E1E7E1] rounded-lg">
+              <span className="text-[10px] text-[#59645C] block font-sans">x (pos)</span>
+              <span className="font-bold text-[#232A24] tabular-nums">
                 {Math.round(selectedInstance.x)}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
-              <span className="text-[10px] text-[#626262] block">y (pos)</span>
-              <span className="font-bold text-[#141414] tabular-nums">
+            <div className="bg-[#FFFFFF] p-2.5 border border-[#E1E7E1] rounded-lg">
+              <span className="text-[10px] text-[#59645C] block font-sans">y (pos)</span>
+              <span className="font-bold text-[#232A24] tabular-nums">
                 {Math.round(selectedInstance.y)}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
-              <span className="text-[10px] text-[#626262] block">diametro</span>
-              <span className="font-bold text-[#141414] tabular-nums">
+            <div className="bg-[#FFFFFF] p-2.5 border border-[#E1E7E1] rounded-lg">
+              <span className="text-[10px] text-[#59645C] block font-sans">diametro</span>
+              <span className="font-bold text-[#232A24] tabular-nums">
                 {Math.round(selectedInstance.diametro)}px
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
-              <span className="text-[10px] text-[#626262] block">
+            <div className="bg-[#FFFFFF] p-2.5 border border-[#E1E7E1] rounded-lg">
+              <span className="text-[10px] text-[#59645C] block font-sans">
                 {isPelota ? 'vel (vx, vy)' : 'velocidad'}
               </span>
-              <span className="font-bold text-[#141414] tabular-nums truncate block">
+              <span className="font-bold text-[#232A24] tabular-nums truncate block">
                 {isPelota
                   ? `${(selectedInstance.velocidadX ?? selectedInstance.velocidad).toFixed(1)}, ${(selectedInstance.velocidadY ?? 0).toFixed(1)}`
                   : (selectedInstance.velocidad > 0 ? `+${selectedInstance.velocidad}` : selectedInstance.velocidad)}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
-              <span className="text-[10px] text-[#626262] block flex items-center justify-between">
+            <div className="bg-[#FFFFFF] p-2.5 border border-[#E1E7E1] rounded-lg">
+              <span className="text-[10px] text-[#59645C] block font-sans flex items-center justify-between">
                 <span>{isPelota ? 'tono' : 'opacidad'}</span>
                 {selectedInstance.isFloating && (
-                  <span className="text-[9px] bg-[#D9AA3D] text-[#141414] font-bold px-1">~ noise</span>
+                  <span className="text-[9px] bg-[#E8EEE8] text-[#407B5D] font-bold px-1 rounded">~ noise</span>
                 )}
               </span>
-              <span className="font-bold text-[#141414] truncate block">
+              <span className="font-bold text-[#232A24] truncate block">
                 {isPelota ? selectedInstance.colorHex : `${selectedInstance.opacidad ?? 160}/255`}
               </span>
             </div>
-            <div className="bg-[#FFFFFF] p-2 border border-[#DEDDD7]">
-              <span className="text-[10px] text-[#626262] block">semillas (tX, tY)</span>
-              <span className="font-bold text-[#2868D9] tabular-nums truncate block">
+            <div className="bg-[#FFFFFF] p-2.5 border border-[#E1E7E1] rounded-lg">
+              <span className="text-[10px] text-[#59645C] block font-sans">semillas (tX, tY)</span>
+              <span className="font-bold text-[#407B5D] tabular-nums truncate block">
                 {(selectedInstance.tX ?? 0).toFixed(1)}, {(selectedInstance.tY ?? (isPelota ? 500 : 1000)).toFixed(1)}
               </span>
             </div>
@@ -231,27 +221,27 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
 
         {/* 3. Method Selection List */}
         <div className="space-y-2">
-          <div className="text-xs font-mono uppercase tracking-wider text-[#626262] flex items-center justify-between">
+          <div className="text-xs font-semibold text-[#59645C] flex items-center justify-between">
             <span>Métodos disponibles ({methods.length})</span>
-            <span className="text-[11px]">Click para probar</span>
+            <span className="text-xs text-[#59645C]">Haz clic para configurar</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 font-mono text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs">
             {methods.map((m) => {
               const isSelected = m.id === selectedMethodId;
               return (
                 <button
                   key={m.id}
                   onClick={() => setSelectedMethodId(m.id)}
-                  className={`p-2 border text-left transition-colors cursor-pointer ${
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-[#141414] text-[#F7F6F1] border-[#141414] font-bold'
-                      : 'bg-[#FFFFFF] hover:border-[#141414] border-[#DEDDD7] text-[#141414]'
+                      ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+                      : 'bg-[#FFFFFF] hover:border-[#407B5D] hover:bg-[#E8EEE8]/30 border-[#E1E7E1] text-[#232A24]'
                   }`}
                 >
-                  <div className="truncate">{m.name}()</div>
-                  <div className="text-[10px] opacity-70 truncate mt-0.5">
-                    {m.parameters.length > 0 ? `${m.parameters.length} arg` : '0 args'}
+                  <div className="font-mono font-semibold truncate">{m.name}()</div>
+                  <div className={`text-[10px] truncate mt-0.5 ${isSelected ? 'text-white/80' : 'text-[#59645C]'}`}>
+                    {m.parameters.length > 0 ? `${m.parameters.length} parámetro` : 'sin parámetros'}
                   </div>
                 </button>
               );
@@ -260,32 +250,32 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
         </div>
 
         {/* 4. Active Method Controller Card */}
-        <div className="p-4 bg-[#F7F6F1] border border-[#DEDDD7] space-y-3.5">
+        <div className="p-4 sm:p-5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-3.5">
           <div className="space-y-1">
-            <div className="flex items-center justify-between font-mono">
-              <span className="text-xs sm:text-sm font-bold text-[#141414]">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold font-mono text-[#232A24]">
                 {activeMethod.signature}
               </span>
-              <span className="text-[11px] text-[#626262]">
+              <span className="text-xs text-[#59645C] bg-[#E8EEE8] px-2 py-0.5 rounded-md font-medium">
                 Muta: {activeMethod.fieldsModified.join(', ') || 'Ninguno'}
               </span>
             </div>
-            <p className="text-xs text-[#626262] font-sans leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#59645C] leading-relaxed">
               {activeMethod.description}
             </p>
           </div>
 
           {/* Parameters Controls if any */}
           {activeMethod.parameters.length > 0 && (
-            <div className="space-y-3 pt-2 border-t border-[#DEDDD7]">
+            <div className="space-y-3 pt-2.5 border-t border-[#E1E7E1]">
               {activeMethod.parameters.map((param) => {
                 const currentVal = paramInputs[param.name] ?? param.defaultValue;
 
                 return (
-                  <div key={param.name} className="space-y-1.5 text-xs font-mono">
-                    <div className="flex items-center justify-between text-[#141414]">
-                      <span>Parámetro: <code className="font-bold text-[#2868D9]">{param.name}</code></span>
-                      <span className="font-bold tabular-nums">
+                  <div key={param.name} className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-[#232A24]">
+                      <span className="font-medium">Parámetro: <code className="font-bold text-[#407B5D] font-mono">{param.name}</code></span>
+                      <span className="font-bold tabular-nums font-mono">
                         {String(currentVal)}
                       </span>
                     </div>
@@ -296,9 +286,9 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
                           type="color"
                           value={String(currentVal)}
                           onChange={(e) => handleParamChange(param.name, e.target.value)}
-                          className="w-10 h-8 border border-[#DEDDD7] p-0.5 cursor-pointer bg-white"
+                          className="w-10 h-8 border border-[#E1E7E1] rounded-lg p-0.5 cursor-pointer bg-white"
                         />
-                        <span className="font-mono text-xs text-[#626262] uppercase">
+                        <span className="font-mono text-xs text-[#59645C] uppercase">
                           {String(currentVal)}
                         </span>
                       </div>
@@ -310,7 +300,7 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
                         step={param.step ?? 1}
                         value={Number(currentVal)}
                         onChange={(e) => handleParamChange(param.name, Number(e.target.value))}
-                        className="w-full accent-[#2868D9] cursor-pointer"
+                        className="w-full accent-[#407B5D] cursor-pointer"
                       />
                     )}
                   </div>
@@ -320,21 +310,21 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
           )}
 
           {/* Visible Code Call in Processing Java */}
-          <div className="pt-2 border-t border-[#DEDDD7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="pt-2.5 border-t border-[#E1E7E1] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1 flex-1">
-              <span className="text-[10px] text-[#626262] font-mono uppercase block">
+              <span className="text-[11px] text-[#59645C] font-semibold block">
                 Instrucción ejecutable en Processing:
               </span>
-              <code className="px-3 py-2 bg-[#FFFFFF] border border-[#DEDDD7] text-[#141414] font-mono text-xs block overflow-x-auto">
+              <code className="px-3 py-2 bg-[#FFFFFF] border border-[#E1E7E1] rounded-lg text-[#232A24] font-mono text-xs block overflow-x-auto">
                 {buildCallString(activeMethod)}
               </code>
             </div>
 
             <button
               onClick={handleExecute}
-              className="min-h-[42px] px-5 py-2 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] text-xs font-mono font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              className="min-h-[42px] px-5 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-xs active:scale-98"
             >
-              <Play className="w-3.5 h-3.5" />
+              <Play className="w-4 h-4" />
               <span>Ejecutar Método</span>
             </button>
           </div>
@@ -342,16 +332,16 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
       </div>
 
       {/* 5. Chronological Method Call History */}
-      <div className="space-y-2 pt-2 border-t border-[#DEDDD7]">
-        <div className="flex items-center justify-between text-xs font-mono text-[#626262]">
-          <span className="flex items-center gap-1.5 font-bold text-[#141414]">
-            <Terminal className="w-3.5 h-3.5 text-[#2868D9]" />
-            <span>TERMINAL DE EJECUCIÓN ({callHistory.length})</span>
+      <div className="space-y-2 pt-2 border-t border-[#E1E7E1]">
+        <div className="flex items-center justify-between text-xs text-[#59645C]">
+          <span className="flex items-center gap-1.5 font-bold text-[#232A24]">
+            <Terminal className="w-4 h-4 text-[#407B5D]" />
+            <span>Terminal de Ejecución ({callHistory.length})</span>
           </span>
           {callHistory.length > 0 && (
             <button
               onClick={onClearHistory}
-              className="text-[11px] text-[#626262] hover:text-[#141414] underline cursor-pointer"
+              className="text-xs text-[#59645C] hover:text-[#232A24] underline cursor-pointer"
             >
               Limpiar terminal
             </button>
@@ -359,23 +349,23 @@ export const MethodExplorerPanel: React.FC<MethodExplorerPanelProps> = ({
         </div>
 
         {callHistory.length === 0 ? (
-          <p className="text-xs font-mono text-[#626262] italic py-2">
-            Aún no se han ejecutado métodos. Haz clic en "Ejecutar Método" para observar el cambio de estado.
+          <p className="text-xs text-[#59645C] italic py-2">
+            Aún no se han ejecutado métodos. Haz clic en "Ejecutar Método" para observar el cambio de estado en vivo.
           </p>
         ) : (
           <div className="max-h-28 overflow-y-auto space-y-1.5 custom-scrollbar pr-1 font-mono text-xs">
             {callHistory.slice(-5).reverse().map((rec) => (
               <div
                 key={rec.id}
-                className="p-2 bg-[#F7F6F1] border border-[#DEDDD7] flex items-center justify-between"
+                className="p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-lg flex items-center justify-between"
               >
                 <div className="flex items-center gap-2 truncate">
-                  <span className="text-[#141414] font-bold">{rec.callString}</span>
-                  <span className="text-[#626262] text-[11px] truncate">
+                  <span className="text-[#232A24] font-bold">{rec.callString}</span>
+                  <span className="text-[#59645C] text-[11px] truncate">
                     → {rec.effectDescription}
                   </span>
                 </div>
-                <span className="text-[10px] text-[#626262] tabular-nums shrink-0">
+                <span className="text-[10px] text-[#59645C] tabular-nums shrink-0">
                   {rec.timestamp}
                 </span>
               </div>

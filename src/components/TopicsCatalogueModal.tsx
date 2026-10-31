@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TOPICS_DATA } from '../data/topicsData';
-import { BookOpen, Check, ArrowRight, X, Clock, Layers, Sparkles } from 'lucide-react';
+import { BookOpen, Check, ArrowRight, X, Clock, Layers } from 'lucide-react';
 
 interface TopicsCatalogueModalProps {
   isOpen: boolean;
@@ -40,28 +40,28 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-xs">
       <div
-        className="bg-[#F7F7F2] border border-[#E3E3DD] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-150"
+        className="bg-[#F7F8F4] border border-[#E1E7E1] rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-[#E3E3DD] flex items-start justify-between bg-[#FFFFFF]">
+        <div className="p-5 sm:p-6 border-b border-[#E1E7E1] flex items-start justify-between bg-[#FFFFFF] rounded-t-3xl">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-[#666666] uppercase tracking-wider mb-1">
-              <BookOpen className="w-4 h-4 text-[#171717]" />
+            <div className="flex items-center gap-2 text-xs text-[#59645C] uppercase tracking-wider mb-1 font-semibold">
+              <BookOpen className="w-4 h-4 text-[#407B5D]" />
               <span>Programa Curricular · Processing Java</span>
             </div>
-            <h2 className="text-xl font-semibold text-[#171717] tracking-tight font-sans">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#232A24] tracking-tight">
               Temario del Curso
             </h2>
-            <p className="text-xs text-[#666666] mt-0.5 font-sans">
+            <p className="text-xs text-[#59645C] mt-1">
               Explora los módulos estructurados desde los fundamentos visuales hasta POO y arreglos dinámicos.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="min-h-[40px] min-w-[40px] flex items-center justify-center border border-[#E3E3DD] bg-[#FFFFFF] hover:bg-[#F7F7F2] text-[#171717] transition-colors cursor-pointer"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center border border-[#E1E7E1] bg-[#FFFFFF] hover:bg-[#E8EEE8] text-[#232A24] rounded-xl transition-colors cursor-pointer shadow-xs"
             title="Cerrar catálogo"
           >
             <X className="w-4 h-4" />
@@ -69,17 +69,17 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
         </div>
 
         {/* Filter bar */}
-        <div className="px-5 sm:px-6 py-3 border-b border-[#E3E3DD] bg-[#F7F7F2] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="px-5 sm:px-6 py-3 border-b border-[#E1E7E1] bg-[#F7F8F4] flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Categories */}
-          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar w-full sm:w-auto py-1 font-mono text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar w-full sm:w-auto py-1 text-xs">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`min-h-[34px] px-3 py-1 border transition-colors whitespace-nowrap cursor-pointer ${
+                className={`min-h-[34px] px-3.5 py-1.5 rounded-xl border transition-colors whitespace-nowrap cursor-pointer font-medium ${
                   selectedCategory === cat.id
-                    ? 'bg-[#171717] text-[#F7F7F2] border-[#171717] font-bold'
-                    : 'bg-[#FFFFFF] text-[#171717] border-[#E3E3DD] hover:border-[#171717]'
+                    ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
+                    : 'bg-[#FFFFFF] text-[#232A24] border-[#E1E7E1] hover:bg-[#E8EEE8]'
                 }`}
               >
                 {cat.label}
@@ -92,13 +92,13 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar tema, palabra clave..."
-            className="min-h-[36px] w-full sm:w-64 px-3 py-1 text-xs font-mono bg-[#FFFFFF] border border-[#E3E3DD] placeholder:text-[#666666] text-[#171717] focus:outline-none focus:border-[#2779BD]"
+            placeholder="Buscar tema o palabra clave..."
+            className="min-h-[36px] w-full sm:w-64 px-3.5 py-1.5 text-xs bg-[#FFFFFF] border border-[#E1E7E1] rounded-xl placeholder:text-[#59645C] text-[#232A24] focus:outline-none focus:border-[#407B5D] focus:ring-1 focus:ring-[#407B5D]"
           />
         </div>
 
         {/* Topics Grid */}
-        <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar space-y-3.5 flex-1 bg-[#F7F7F2]">
+        <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar space-y-3.5 flex-1 bg-[#F7F8F4]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {filteredTopics.map((topic) => {
               const isCurrent = topic.id === currentTopicId;
@@ -111,63 +111,63 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
                     onSelectTopic(topic.id);
                     onClose();
                   }}
-                  className={`p-4 sm:p-5 border transition-all text-left flex flex-col justify-between cursor-pointer group ${
+                  className={`p-4 sm:p-5 rounded-2xl border transition-all text-left flex flex-col justify-between cursor-pointer group ${
                     isCurrent
-                      ? 'bg-[#FFFFFF] border-[#171717] ring-1 ring-[#171717]'
-                      : 'bg-[#FFFFFF] border-[#E3E3DD] hover:border-[#171717]'
+                      ? 'bg-[#FFFFFF] border-[#407B5D] ring-2 ring-[#407B5D] shadow-xs'
+                      : 'bg-[#FFFFFF] border-[#E1E7E1] hover:border-[#407B5D] hover:shadow-xs'
                   }`}
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between font-mono text-xs text-[#666666]">
-                      <span className="font-bold text-[#171717]">
+                    <div className="flex items-center justify-between text-xs text-[#59645C]">
+                      <span className="font-bold text-[#232A24]">
                         Tema 0{topic.number}
                       </span>
                       <div className="flex items-center gap-1.5">
                         {isClasses && (
-                          <span className="text-[10px] font-bold bg-[#E0A52D] text-[#171717] border border-[#171717] px-1.5 py-0.5">
+                          <span className="text-[10px] font-bold bg-[#FFF2D6] text-[#8A6318] px-2 py-0.5 rounded-full">
                             Taller interactivo
                           </span>
                         )}
                         {topic.id === 'object-arrays' && (
-                          <span className="text-[10px] font-bold bg-[#2779BD] text-[#F7F7F2] px-1.5 py-0.5">
+                          <span className="text-[10px] font-bold bg-[#E8EEE8] text-[#407B5D] px-2 py-0.5 rounded-full">
                             Laboratorio en vivo
                           </span>
                         )}
-                        <span className="text-[10px] bg-[#F7F7F2] border border-[#E3E3DD] px-1.5 py-0.5">
+                        <span className="text-[10px] bg-[#F7F8F4] border border-[#E1E7E1] px-2 py-0.5 rounded-full font-medium">
                           {topic.badge}
                         </span>
                       </div>
                     </div>
 
-                    <h3 className="font-semibold text-sm sm:text-base text-[#171717] group-hover:text-[#2779BD] transition-colors font-sans">
+                    <h3 className="font-bold text-sm sm:text-base text-[#232A24] group-hover:text-[#407B5D] transition-colors">
                       {topic.title}
                     </h3>
 
-                    <p className="text-xs text-[#666666] leading-relaxed line-clamp-2 font-sans">
+                    <p className="text-xs text-[#59645C] leading-relaxed line-clamp-2">
                       {topic.summary}
                     </p>
                   </div>
 
-                  <div className="pt-3 mt-3 border-t border-[#E3E3DD] flex items-center justify-between text-xs font-mono">
-                    <div className="flex items-center gap-3 text-[#666666] text-[11px]">
+                  <div className="pt-3 mt-3 border-t border-[#E1E7E1] flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3 text-[#59645C] text-[11px]">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-[#666666]" />
+                        <Clock className="w-3 h-3 text-[#59645C]" />
                         {topic.estimatedTime}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Layers className="w-3 h-3 text-[#666666]" />
+                        <Layers className="w-3 h-3 text-[#59645C]" />
                         {topic.conceptsCount} {isClasses ? 'etapas' : 'conceptos'}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 font-medium text-xs">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs">
                       {isCurrent ? (
-                        <span className="text-[#171717] flex items-center gap-1 font-bold">
-                          <Check className="w-3.5 h-3.5 text-[#2779BD]" />
+                        <span className="text-[#407B5D] flex items-center gap-1 font-bold">
+                          <Check className="w-3.5 h-3.5 text-[#407B5D]" />
                           Tema activo
                         </span>
                       ) : (
-                        <span className="text-[#666666] group-hover:text-[#171717] flex items-center gap-1">
+                        <span className="text-[#59645C] group-hover:text-[#407B5D] flex items-center gap-1">
                           Estudiar
                           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                         </span>
@@ -181,11 +181,11 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-[#FFFFFF] border-t border-[#E3E3DD] text-xs font-mono text-[#666666] flex items-center justify-between">
-          <span>{TOPICS_DATA.length} módulos disponibles</span>
+        <div className="p-4 bg-[#FFFFFF] border-t border-[#E1E7E1] text-xs text-[#59645C] flex items-center justify-between rounded-b-3xl">
+          <span className="font-medium">{TOPICS_DATA.length} módulos disponibles</span>
           <button
             onClick={onClose}
-            className="min-h-[38px] px-4 py-1.5 bg-[#171717] hover:bg-[#2779BD] text-[#F7F7F2] text-xs font-mono transition-colors cursor-pointer"
+            className="min-h-[38px] px-4 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
           >
             Cerrar catálogo
           </button>

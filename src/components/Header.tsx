@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing,
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-[#F7F6F1]/95 backdrop-blur-xs border-b border-[#DEDDD7]">
+    <header className="sticky top-0 z-40 bg-[#FFFFFF]/90 backdrop-blur-md border-b border-[#E1E7E1] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 h-16">
           {/* Brand: Código Creativo / centro */}
@@ -32,29 +32,29 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-2.5 group text-left min-h-[44px] cursor-pointer"
               title="Laboratorio de Código Creativo — Inicio"
             >
-              <div className="w-7 h-7 border border-[#141414] bg-[#141414] text-[#F7F6F1] flex items-center justify-center font-mono text-xs font-bold transition-colors group-hover:bg-[#2868D9] group-hover:border-[#2868D9]">
+              <div className="w-8 h-8 rounded-xl bg-[#407B5D] text-white flex items-center justify-center font-bold text-xs shadow-xs transition-transform group-hover:scale-105">
                 CC
               </div>
-              <div className="flex items-baseline gap-1.5 font-sans">
-                <span className="font-semibold text-[#141414] text-sm tracking-tight">
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-bold text-[#232A24] text-base tracking-tight">
                   Código Creativo
                 </span>
-                <span className="text-[#DEDDD7] font-light text-sm">/</span>
-                <span className="text-[#626262] font-mono text-xs uppercase tracking-wider">
+                <span className="text-[#E1E7E1] font-light text-sm">/</span>
+                <span className="text-[#59645C] text-xs font-semibold tracking-wide">
                   centro
                 </span>
               </div>
             </button>
           </div>
 
-          {/* Navigation Links — Editorial text style with zero-pill discipline */}
-          <nav className="flex items-center gap-1 sm:gap-4 font-sans text-xs">
+          {/* Navigation Links — Friendly tabs with soft rounded corners */}
+          <nav className="flex items-center gap-1.5 sm:gap-2 text-sm font-medium">
             <button
               onClick={onNavigateHome}
-              className={`min-h-[44px] px-3 py-1.5 transition-colors cursor-pointer relative ${
+              className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 currentView === 'home'
-                  ? 'text-[#141414] font-semibold after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[2px] after:bg-[#2868D9]'
-                  : 'text-[#626262] hover:text-[#141414]'
+                  ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
+                  : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
               }`}
             >
               Inicio
@@ -62,23 +62,23 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onNavigateOopLab}
-              className={`min-h-[44px] px-3 py-1.5 transition-colors cursor-pointer flex items-center gap-1.5 relative ${
+              className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                 currentView === 'oop-lab'
-                  ? 'text-[#141414] font-semibold after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[2px] after:bg-[#2868D9]'
-                  : 'text-[#626262] hover:text-[#141414]'
+                  ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
+                  : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
               }`}
             >
-              <span className="w-1.5 h-1.5 bg-[#2868D9] rounded-none inline-block" />
+              <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
               <span>Laboratorio POO</span>
             </button>
 
             <button
               onClick={onOpenCatalogue}
-              className="min-h-[44px] px-3 py-1.5 text-[#626262] hover:text-[#141414] transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-xl text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <BookOpen className="w-3.5 h-3.5 text-[#626262]" />
+              <BookOpen className="w-4 h-4 text-[#59645C]" />
               <span>Temario</span>
-              <span className="text-[11px] font-mono text-[#626262]">(7)</span>
+              <span className="text-xs font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">7</span>
             </button>
           </nav>
 
@@ -87,38 +87,38 @@ export const Header: React.FC<HeaderProps> = ({
             {currentUser ? (
               <button
                 onClick={onOpenAuth}
-                className="min-h-[44px] flex items-center gap-2 px-2.5 py-1.5 border border-[#DEDDD7] bg-[#FFFFFF] hover:bg-[#F7F6F1] text-xs font-mono text-[#141414] transition-colors cursor-pointer"
+                className="min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#E1E7E1] bg-[#FFFFFF] hover:bg-[#E8EEE8]/50 text-xs font-medium text-[#232A24] transition-all cursor-pointer shadow-2xs"
                 title={`${currentUser.displayName} (${currentUser.email})`}
               >
                 {currentUser.photoURL ? (
                   <img
                     src={currentUser.photoURL}
                     alt={currentUser.displayName || ''}
-                    className="w-5 h-5 rounded-none object-cover border border-[#DEDDD7] shrink-0"
+                    className="w-5 h-5 rounded-full object-cover border border-[#E1E7E1] shrink-0"
                   />
                 ) : (
-                  <div className="w-5 h-5 bg-[#141414] text-[#F7F6F1] text-[10px] flex items-center justify-center font-mono font-bold shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-[#407B5D] text-white text-[10px] flex items-center justify-center font-bold shrink-0">
                     {currentUser.displayName?.charAt(0).toUpperCase() || 'U'}
                   </div>
                 )}
-                <span className="max-w-[70px] sm:max-w-[100px] truncate text-xs font-sans font-medium hidden xs:inline">
+                <span className="max-w-[70px] sm:max-w-[100px] truncate hidden xs:inline">
                   {currentUser.displayName?.split(' ')[0]}
                 </span>
                 {currentUser.isCentroStudent && (
-                  <span className="hidden md:inline text-[9px] font-mono uppercase bg-[#141414] text-[#D9AA3D] px-1 py-0.5 font-bold">
+                  <span className="hidden md:inline text-[10px] uppercase bg-[#E8EEE8] text-[#407B5D] px-1.5 py-0.5 rounded font-bold">
                     CENTRO
                   </span>
                 )}
                 {isSyncing ? (
-                  <Cloud className="w-3.5 h-3.5 text-[#2868D9] animate-pulse shrink-0" />
+                  <Cloud className="w-3.5 h-3.5 text-[#407B5D] animate-pulse shrink-0" />
                 ) : (
-                  <span className="w-2 h-2 bg-[#2868D9] inline-block shrink-0" title="Sincronizado" />
+                  <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block shrink-0" title="Sincronizado" />
                 )}
               </button>
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="min-h-[44px] flex items-center gap-2 px-3 py-1.5 bg-[#141414] hover:bg-[#2868D9] text-[#F7F6F1] text-xs font-mono transition-colors cursor-pointer"
+                className="min-h-[40px] flex items-center gap-2 px-4 py-1.5 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-98"
                 title="Iniciar sesión para guardar tu avance"
               >
                 <User className="w-3.5 h-3.5" />

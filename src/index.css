@@ -3,26 +3,23 @@
 @layer base {
   :root {
     color-scheme: light;
-    --bg-primary: #F7F6F1;
+    --bg-primary: #F7F8F4;
     --surface-work: #FFFFFF;
-    --surface-secondary: #EFEFEA;
-    --text-primary: #141414;
-    --text-secondary: #626262;
-    --border-primary: #DEDDD7;
-    --border-subtle: #EBEAE5;
-    --disabled-gray: #A4A4A0;
-    --accent-blue: #2868D9;
-    --accent-blue-hover: #1D54B3;
-    --accent-yellow: #D9AA3D;
-    --accent-yellow-light: #FBF4E2;
-    --accent-red: #D34E43;
+    --surface-soft: #E8EEE8;
+    --text-primary: #232A24;
+    --text-secondary: #59645C;
+    --border-primary: #E1E7E1;
+    --primary-green: #407B5D;
+    --primary-green-hover: #33654C;
+    --soft-green: #E8EEE8;
+    --accent-warm: #E6B65A;
   }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #F7F6F1;
-    color: #141414;
-    letter-spacing: -0.012em;
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #F7F8F4;
+    color: #232A24;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -34,7 +31,7 @@
 
   /* Accessible and branded focus indicators */
   *:focus-visible {
-    outline: 2px solid #2868D9;
+    outline: 2px solid #407B5D;
     outline-offset: 2px;
   }
 }
