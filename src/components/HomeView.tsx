@@ -68,9 +68,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* Soft Ribbon Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3 text-xs text-[#59645C]">
           <div className="flex items-center gap-2 font-medium">
-            <span className="font-bold text-[#232A24] tracking-wide">CENTRO</span>
-            <span className="text-[#E1E7E1]">/</span>
-            <span>Código Creativo</span>
+            <span className="font-bold text-[#232A24] tracking-wide">Código Creativo</span>
             <span className="text-[#E1E7E1]">/</span>
             <span className="text-[#407B5D] font-semibold bg-[#E8EEE8] px-2 py-0.5 rounded-md">
               Processing Java

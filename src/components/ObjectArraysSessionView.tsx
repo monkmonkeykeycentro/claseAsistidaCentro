@@ -923,7 +923,7 @@ ${
       id: 1,
       title: 'Reto 1: Diagnóstico de NullPointerException',
       description:
-        'Observa este código que un estudiante escribió en el laboratorio de CENTRO. El sketch se congela en la línea 8 con un error rojo en la consola.',
+        'Observa este código que un estudiante escribió en el laboratorio de Código Creativo. El sketch se congela en la línea 8 con un error rojo en la consola.',
       snippet: `Gato[] camada = new Gato[20];
 
 void setup() {

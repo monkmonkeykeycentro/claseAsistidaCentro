@@ -473,8 +473,6 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="font-bold text-[#232A24]">Código Creativo</span>
             <span className="text-[#E1E7E1]">/</span>
-            <span>CENTRO</span>
-            <span className="text-[#E1E7E1]">/</span>
             <span className="font-mono text-[11px] text-[#59645C]">Processing Java 4.3</span>
           </div>
 

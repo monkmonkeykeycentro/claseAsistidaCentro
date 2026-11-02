@@ -23,7 +23,12 @@ interface VideoAsciiSplitCanvasProps {
 
 const DEFAULT_FRASE = 'nT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0Q';
 
-const PROCESSING_JAVA_CODE = `import processing.video.*;
+const PROCESSING_JAVA_CODE = `// ==========================================================
+// EJERCICIO: DISCRETIZACIÓN DE VIDEO A CARACTERES ASCII
+// Video: "Sallie Gardner at a Gallop" (1878) de Eadweard Muybridge
+// ==========================================================
+
+import processing.video.*;
 
 Movie video;
 
@@ -180,6 +185,58 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
     };
   }, []);
 
+  // Ensure video playback starts, loops continuously and handles browser autoplay policies
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || sourceType === 'procedural') return;
+
+    video.defaultMuted = true;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+
+    const startPlayback = () => {
+      video
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.warn('Autoplay waiting for user gesture or muted state:', err);
+          setIsPlaying(false);
+        });
+    };
+
+    const handleEnded = () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+
+    video.addEventListener('canplay', startPlayback);
+    video.addEventListener('loadeddata', startPlayback);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('play', () => setIsPlaying(true));
+    video.addEventListener('pause', () => setIsPlaying(false));
+
+    startPlayback();
+
+    return () => {
+      video.removeEventListener('canplay', startPlayback);
+      video.removeEventListener('loadeddata', startPlayback);
+      video.removeEventListener('ended', handleEnded);
+    };
+  }, [sourceType, customVideoUrl]);
+
+  // Play / Pause toggle
+  const togglePlayPause = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
   // Handle switching to Webcam
   const handleToggleCamera = async () => {
     if (sourceType === 'camera') {
@@ -226,6 +283,9 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
     if (videoRef.current) {
       videoRef.current.srcObject = null;
       videoRef.current.src = url;
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      videoRef.current.loop = true;
       videoRef.current.play().catch(() => {});
     }
   };
@@ -241,6 +301,9 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
     if (videoRef.current) {
       videoRef.current.srcObject = null;
       videoRef.current.src = defaultVideoSrc;
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      videoRef.current.loop = true;
       videoRef.current.play().catch(() => {});
     }
   };
@@ -279,6 +342,12 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
     setIsDragging(true);
     updateDivisionFromPointer(e.clientX);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
+
+    // If video was paused, start playback on first touch/pointer interaction
+    const video = videoRef.current;
+    if (video && video.paused && sourceType !== 'procedural') {
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -394,12 +463,12 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
           offCtx.fill();
         }
 
-        // Large typographic label "CENTRO · PROCESSING"
+        // Large typographic label "PROCESSING"
         offCtx.fillStyle = '#FFFFFF';
         offCtx.font = 'bold 36px monospace';
         offCtx.textAlign = 'center';
         offCtx.textBaseline = 'middle';
-        offCtx.fillText('CENTRO · PROCESAMIENTO', offW / 2, offH * 0.82);
+        offCtx.fillText('PROCESSING', offW / 2, offH * 0.82);
 
         srcWidth = offW;
         srcHeight = offH;
@@ -522,14 +591,14 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
       {/* Top Header / Bar */}
       <div className="px-4 py-3 bg-[#1A221C] border-b border-[#2B382F] flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D] animate-pulse" />
           <span className="font-bold tracking-wide uppercase text-[#E8EEE8] text-[11px]">
             Instalación Interactiva: Video a ASCII en Tiempo Real
           </span>
           <span className="text-[#59645C]">·</span>
-          <span className="font-mono text-[10px] text-[#A4C4B5] bg-[#232E26] px-2 py-0.5 rounded-md">
-            Processing Java → Web Canvas
+          <span className="text-[11px] text-[#E6B65A] font-medium hidden md:inline">
+            Crédito: <em>Sallie Gardner at a Gallop</em> (1878) de Eadweard Muybridge
           </span>
         </div>
 
@@ -640,6 +709,17 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
           ◀ Video Original ({Math.round((1 - divisionRatio) * 100)}%) | Efecto ASCII ({Math.round(divisionRatio * 100)}%) ▶
         </div>
 
+        {/* Centered Play Button Overlay if video is paused */}
+        {!isPlaying && sourceType !== 'procedural' && (
+          <button
+            onClick={togglePlayPause}
+            className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/75 hover:bg-black/90 border border-white/40 text-white flex items-center justify-center cursor-pointer transition-transform hover:scale-105 shadow-2xl backdrop-blur-sm z-10"
+            title="Reproducir video"
+          >
+            <Play className="w-7 h-7 text-white fill-white ml-1" />
+          </button>
+        )}
+
         {/* Drag Hint on Initial Display */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none bg-black/70 backdrop-blur-sm border border-white/15 px-3 py-1 rounded-full text-[11px] text-white/80 flex items-center gap-1.5">
           <span>Arrastra horizontalmente para mover la línea divisoria</span>
@@ -648,8 +728,23 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
       {/* Bottom Controls Bar */}
       <div className="p-3 bg-[#1A221C] border-t border-[#2B382F] flex flex-wrap items-center justify-between gap-3 text-xs">
-        {/* Left: Quick Split Presets */}
-        <div className="flex items-center gap-1.5">
+        {/* Left: Play/Pause & Quick Split Presets */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {sourceType !== 'procedural' && (
+            <button
+              onClick={togglePlayPause}
+              className="min-h-[30px] px-3 py-1 rounded-lg bg-[#232E26] hover:bg-[#2F3D33] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#3A4B3F]"
+              title={isPlaying ? 'Pausar video' : 'Reproducir video en bucle'}
+            >
+              {isPlaying ? (
+                <Pause className="w-3.5 h-3.5 text-[#E6B65A]" />
+              ) : (
+                <Play className="w-3.5 h-3.5 text-[#407B5D]" />
+              )}
+              <span>{isPlaying ? 'Pausar' : 'Reproducir'}</span>
+            </button>
+          )}
+
           <span className="text-[#A4C4B5] text-[11px] mr-1 hidden sm:inline">División:</span>
           {[
             { label: '0% (Todo ASCII)', val: 0 },
@@ -708,6 +803,19 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
         </div>
+      </div>
+
+      {/* Video Credit & Historical Note Bar */}
+      <div className="px-4 py-2.5 bg-[#141A15] border-t border-[#232E26] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-[#A4C4B5]">
+        <div className="flex items-center gap-2">
+          <Film className="w-3.5 h-3.5 text-[#E6B65A] shrink-0" />
+          <span>
+            Crédito de video: <strong className="text-[#E8EEE8] font-semibold italic">Sallie Gardner at a Gallop</strong> (1878) de <strong className="text-[#E8EEE8]">Eadweard Muybridge</strong>.
+          </span>
+        </div>
+        <span className="text-[10px] text-[#A4C4B5] font-mono">
+          Reproducción continua en bucle (loop) · Discretización en tiempo real
+        </span>
       </div>
 
       {/* Expandable Advanced Adjustments Panel */}

@@ -1233,7 +1233,7 @@ export async function exportCurriculumBackup(): Promise<CurriculumExportData> {
   const backup: CurriculumExportData = {
     version: '1.0.0',
     exportedAt: new Date().toISOString(),
-    exportedBy: auth.currentUser?.email || 'admin@centro.edu.mx',
+    exportedBy: auth.currentUser?.email || 'admin@codigocreativo.edu',
     modules,
     lessons,
     sections,

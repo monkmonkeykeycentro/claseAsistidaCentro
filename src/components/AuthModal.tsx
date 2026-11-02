@@ -225,11 +225,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <p className="font-bold text-sm text-[#181818] truncate">
                       {currentUser.displayName}
                     </p>
-                    {currentUser.isCentroStudent && (
-                      <span className="text-[10px] font-mono uppercase bg-[#181818] text-white px-1.5 py-0.5 font-bold">
-                        CENTRO
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-[#767773] font-mono truncate">{currentUser.email}</p>
                 </div>
@@ -242,7 +237,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
                 <p className="text-[11px] text-emerald-800/80 leading-relaxed">
                   Tu progreso en cada etapa del taller y los ejercicios completados se sincronizan
-                  automáticamente con tu cuenta institucional.
+                  automáticamente con tu cuenta.
                 </p>
               </div>
 
@@ -267,9 +262,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   Guarda tu progreso de aprendizaje
                 </h3>
                 <p className="text-xs text-zinc-500 leading-relaxed">
-                  Inicia sesión con tu cuenta institucional de{' '}
-                  <strong className="text-zinc-800 font-semibold">CENTRO (@centro.edu.mx)</strong> o
-                  Google para respaldar tus ejercicios, avances y configuraciones en la nube.
+                  Inicia sesión con tu cuenta de Google para respaldar tus ejercicios, avances y configuraciones en la nube.
                 </p>
               </div>
 
@@ -414,7 +407,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span className="w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-800 font-mono text-[10px] font-bold">
                     2
                   </span>
-                  <span>Soporta cuentas institucionales @centro.edu.mx con 2FA.</span>
+                  <span>Soporta autenticación con Google y 2FA.</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <span className="w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-800 font-mono text-[10px] font-bold">

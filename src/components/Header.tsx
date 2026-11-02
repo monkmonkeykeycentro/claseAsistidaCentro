@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 bg-[#FFFFFF]/90 backdrop-blur-md border-b border-[#E1E7E1] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 h-16">
-          {/* Brand: Código Creativo / centro */}
+          {/* Brand: Código Creativo */}
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={handleLogoClick}
@@ -60,10 +60,6 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-baseline gap-1.5">
                 <span className="font-bold text-[#232A24] text-base tracking-tight">
                   Código Creativo
-                </span>
-                <span className="text-[#E1E7E1] font-light text-sm">/</span>
-                <span className="text-[#59645C] text-xs font-semibold tracking-wide">
-                  centro
                 </span>
               </div>
             </button>
@@ -143,11 +139,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="max-w-[70px] sm:max-w-[100px] truncate hidden xs:inline">
                   {currentUser.displayName?.split(' ')[0]}
                 </span>
-                {currentUser.isCentroStudent && (
-                  <span className="hidden md:inline text-[10px] uppercase bg-[#E8EEE8] text-[#407B5D] px-1.5 py-0.5 rounded font-bold">
-                    CENTRO
-                  </span>
-                )}
                 {isSyncing ? (
                   <Cloud className="w-3.5 h-3.5 text-[#407B5D] animate-pulse shrink-0" />
                 ) : (

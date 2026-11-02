@@ -498,7 +498,7 @@ export const CustomClassArrayBuilder: React.FC<CustomClassArrayBuilderProps> = (
     let sketchCode = `// ==========================================================\n`;
     sketchCode += `// SKETCH PRINCIPAL EN PROCESSING JAVA\n`;
     sketchCode += `// Proyecto: Colección interactiva de objetos "${cName}"\n`;
-    sketchCode += `// Generado en Código Creativo | CENTRO\n`;
+    sketchCode += `// Generado en Código Creativo\n`;
     sketchCode += `// ==========================================================\n\n`;
 
     if (isAL) {

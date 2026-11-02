@@ -413,7 +413,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `respaldo_curriculum_centro_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `respaldo_curriculum_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       showToast('Respaldo descargado exitosamente.');
