@@ -69,7 +69,7 @@ export const DEFAULT_SITE_CONTENT: Record<string, CmsSiteContent> = {
     key: 'hero_headline',
     title: 'Titular Principal (Hero)',
     section: 'portada',
-    content: 'Aprende a programar creando arte y sistemas visuales.',
+    content: 'El código como herramienta de creación y experimentación creativa.',
     updatedAt: new Date().toISOString(),
   },
   hero_subtitle: {
@@ -77,7 +77,7 @@ export const DEFAULT_SITE_CONTENT: Record<string, CmsSiteContent> = {
     title: 'Subtítulo y Párrafo de Bienvenida',
     section: 'portada',
     content:
-      'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.',
+      'Laboratorio de Código Creativo es una herramienta educativa interactiva que, mediante ejemplos visuales, ejercicios progresivos y experimentación, facilita el aprendizaje de la programación y la comprensión de las tecnologías creativas, fomentando la autonomía de los estudiantes para explorar e incorporar estas herramientas en sus propios procesos de creación y producción.',
     updatedAt: new Date().toISOString(),
   },
   hero_badge: {
