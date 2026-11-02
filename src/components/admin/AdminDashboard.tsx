@@ -28,7 +28,7 @@ import {
   seedCmsFromExistingContentIfEmpty,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
-import { AppUser } from '../../services/firebase';
+import { AppUser, signInWithGoogle, isUserAdmin } from '../../services/firebase';
 import {
   Layers,
   BookOpen,
@@ -54,6 +54,9 @@ import {
   ChevronRight,
   ChevronDown,
   Sparkles,
+  Save,
+  RotateCcw,
+  User,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -71,6 +74,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [modules, setModules] = useState<CmsModule[]>([]);
   const [lessons, setLessons] = useState<CmsLesson[]>([]);
   const [siteContent, setSiteContent] = useState<Record<string, CmsSiteContent>>({});
+  const [siteTextDrafts, setSiteTextDrafts] = useState<Record<string, string>>({});
+  const [savingTextKeys, setSavingTextKeys] = useState<Record<string, boolean>>({});
   const [mediaList, setMediaList] = useState<CmsMediaResource[]>([]);
   const [revisions, setRevisions] = useState<CmsRevision[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -116,7 +121,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsLoading(true);
     try {
       // 1. Seed if empty
-      await seedCmsFromExistingContentIfEmpty();
+      await seedCmsFromExistingContentIfEmpty().catch(() => {});
 
       // 2. Load modules & lessons
       const modList = await getCmsModules(true);
@@ -124,7 +129,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setModules(modList);
       setLessons(lesList);
 
-      // Auto-expand first 3 modules
+      // Auto-expand first 4 modules
       const initialExp: Record<string, boolean> = {};
       modList.slice(0, 4).forEach((m) => {
         initialExp[m.id] = true;
@@ -134,6 +139,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       // 3. Load site content
       const texts = await getAllSiteContent();
       setSiteContent(texts);
+      const drafts: Record<string, string> = {};
+      Object.entries(texts).forEach(([k, item]) => {
+        drafts[k] = item.content;
+      });
+      setSiteTextDrafts(drafts);
 
       // 4. Load media & revisions
       const media = await getCmsMediaResources();
@@ -302,18 +312,68 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Site text saving
-  const handleSaveSiteText = async (key: string, content: string) => {
-    const current = siteContent[key];
-    if (!current) return;
-    const updated: CmsSiteContent = {
-      ...current,
-      content,
+  const handleSaveSiteText = async (key: string, content?: string) => {
+    const textToSave = content !== undefined ? content : (siteTextDrafts[key] ?? siteContent[key]?.content ?? '');
+    const current = siteContent[key] || {
+      key,
+      title: key,
+      section: 'general',
+      content: textToSave,
       updatedAt: new Date().toISOString(),
-      updatedBy: currentUser?.email || 'admin',
     };
-    await saveSiteContent(updated, currentUser?.email || undefined);
-    setSiteContent({ ...siteContent, [key]: updated });
-    showToast(`Texto "${current.title}" actualizado con éxito.`);
+
+    setSavingTextKeys((prev) => ({ ...prev, [key]: true }));
+    try {
+      const updated: CmsSiteContent = {
+        ...current,
+        content: textToSave,
+        updatedAt: new Date().toISOString(),
+        updatedBy: currentUser?.email || 'admin',
+      };
+      await saveSiteContent(updated, currentUser?.email || undefined);
+      setSiteContent((prev) => ({ ...prev, [key]: updated }));
+      setSiteTextDrafts((prev) => ({ ...prev, [key]: textToSave }));
+      showToast(`✓ "${updated.title}" guardado correctamente.`);
+    } catch (e) {
+      console.error(e);
+      showToast(`Error al guardar "${current.title}"`);
+    } finally {
+      setSavingTextKeys((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const handleSaveAllSiteTexts = async () => {
+    setIsLoading(true);
+    try {
+      const entries = Object.entries(siteTextDrafts);
+      let count = 0;
+      for (const [k, val] of entries) {
+        const current = siteContent[k];
+        if (current) {
+          const updated: CmsSiteContent = {
+            ...current,
+            content: val,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentUser?.email || 'admin',
+          };
+          await saveSiteContent(updated, currentUser?.email || undefined);
+          setSiteContent((prev) => ({ ...prev, [k]: updated }));
+          count++;
+        }
+      }
+      showToast(`✓ Se guardaron ${count} textos generales en Firestore.`);
+    } catch (err) {
+      console.error(err);
+      showToast('Error al guardar algunos textos.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetSiteText = (key: string) => {
+    const orig = siteContent[key]?.content || '';
+    setSiteTextDrafts((prev) => ({ ...prev, [key]: orig }));
+    showToast(`Borrador de "${siteContent[key]?.title || key}" restaurado.`);
   };
 
   // Media actions
@@ -480,6 +540,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Admin Authorization Status Banner */}
+      {!currentUser ? (
+        <div className="p-4 bg-[#FFF9EE] border border-[#E6C687] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-[#8A6318] shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold text-[#232A24] block">
+                Modo Administrador Activo (Edición en Vivo)
+              </span>
+              <p className="text-[#59645C] text-[11px] leading-relaxed">
+                Los cambios se aplican al instante localmente. Para persistir tus cambios permanentemente en la base de datos de Firebase, inicia sesión con la cuenta de profesor autorizada (<code className="font-mono font-bold text-[#232A24]">jmartineza@centro.edu.mx</code>).
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => signInWithGoogle().then(() => showToast('Iniciando sesión con Google...')).catch((e) => alert(e))}
+            className="min-h-[38px] px-4 py-2 bg-[#8A6318] hover:bg-[#725213] text-white rounded-xl font-semibold text-xs flex items-center gap-2 cursor-pointer shrink-0 transition-colors shadow-xs"
+          >
+            <User className="w-4 h-4" />
+            <span>Acceder con Google</span>
+          </button>
+        </div>
+      ) : isUserAdmin(currentUser) ? (
+        <div className="p-3.5 bg-[#E8EEE8] border border-[#A4C4B5] rounded-2xl flex items-center justify-between text-xs text-[#232A24] shadow-xs">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#407B5D]" />
+            <span>
+              Sesión de Administrador verificada: <strong>{currentUser.email}</strong>. Sincronización continua en Firestore habilitada.
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="p-3.5 bg-[#FFF9EE] border border-[#E6C687] rounded-2xl flex items-center justify-between text-xs text-[#8A6318] shadow-xs">
+          <span>
+            Sesión iniciada como <strong>{currentUser.email}</strong>. Esta cuenta no tiene permisos de administrador (requiere <code>jmartineza@centro.edu.mx</code>). Los cambios se guardarán localmente.
+          </span>
+        </div>
+      )}
 
       {toastMessage && (
         <div className="p-3.5 bg-[#E8EEE8] border border-[#407B5D] text-[#232A24] text-xs font-semibold rounded-xl flex items-center justify-between shadow-xs animate-in fade-in">
@@ -935,43 +1034,147 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB 3: TEXTOS GENERALES (Site Content)                                   */}
           {/* ========================================================================= */}
           {activeTab === 'site_texts' && (
-            <div className="p-6 bg-white border border-[#E1E7E1] rounded-2xl space-y-5 shadow-xs">
-              <div className="border-b border-[#E1E7E1] pb-3">
-                <h3 className="text-base font-bold text-[#232A24]">
-                  Textos Generales de la Plataforma
-                </h3>
-                <p className="text-xs text-[#59645C]">
-                  Modifica los encabezados principales, mensajes de bienvenida y textos del pie de página sin tocar código.
-                </p>
+            <div className="p-6 bg-white border border-[#E1E7E1] rounded-2xl space-y-6 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E1E7E1] pb-4">
+                <div>
+                  <h3 className="text-base font-bold text-[#232A24]">
+                    Textos Generales y Contenido Editorial del Sitio
+                  </h3>
+                  <p className="text-xs text-[#59645C]">
+                    Modifica los encabezados principales, mensajes de bienvenida y textos del pie de página sin tocar código.
+                  </p>
+                </div>
+                <button
+                  onClick={handleSaveAllSiteTexts}
+                  className="min-h-[38px] px-4 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Guardar todos los textos</span>
+                </button>
               </div>
 
-              <div className="space-y-4">
-                {Object.values(siteContent).map((item) => (
-                  <div
-                    key={item.key}
-                    className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-2 text-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-[#232A24] text-xs">
-                        {item.title} ({item.key})
-                      </span>
-                      <span className="text-[10px] text-[#59645C] font-mono">
-                        Última edición: {new Date(item.updatedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    <textarea
-                      rows={item.content.length > 80 ? 3 : 2}
-                      defaultValue={item.content}
-                      onBlur={(e) => handleSaveSiteText(item.key, e.target.value)}
-                      className="w-full p-3 bg-white border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] focus:outline-none focus:border-[#407B5D]"
-                    />
-                    <span className="text-[10px] text-[#59645C]">
-                      💡 Haz clic fuera del campo para guardar los cambios automáticamente.
-                    </span>
+              {/* Grouped by Section */}
+              {[
+                {
+                  sectionTitle: '1. Portada y Hero Principal',
+                  sectionSubtitle: 'Títulos, subtítulos y etiquetas de bienvenida en la página principal',
+                  keys: ['hero_badge', 'hero_headline', 'hero_subtitle'],
+                },
+                {
+                  sectionTitle: '2. Pensamiento Generativo',
+                  sectionSubtitle: 'Pregunta rectora y cadena de principios pedagógicos',
+                  keys: ['generative_question', 'generative_principles'],
+                },
+                {
+                  sectionTitle: '3. Laboratorios y Módulos Prácticos',
+                  sectionSubtitle: 'Tarjetas destacadas del Laboratorio de Objetos y el Taller',
+                  keys: ['oop_lab_title', 'oop_lab_summary', 'workshop_title', 'workshop_summary'],
+                },
+                {
+                  sectionTitle: '4. Filosofía Didáctica',
+                  sectionSubtitle: 'Sección inspirada en Generative Design y pie de página',
+                  keys: ['philosophy_title', 'footer_text'],
+                },
+              ].map((grp, gIdx) => (
+                <div key={gIdx} className="space-y-3 pt-2">
+                  <div className="border-b border-[#E1E7E1] pb-1.5">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-[#407B5D]">
+                      {grp.sectionTitle}
+                    </h4>
+                    <p className="text-[11px] text-[#59645C]">{grp.sectionSubtitle}</p>
                   </div>
-                ))}
-              </div>
+
+                  <div className="space-y-3">
+                    {grp.keys.map((key) => {
+                      const item = siteContent[key] || {
+                        key,
+                        title: key,
+                        section: 'general',
+                        content: '',
+                        updatedAt: new Date().toISOString(),
+                      };
+                      const currentVal = siteTextDrafts[key] ?? item.content;
+                      const isSaving = Boolean(savingTextKeys[key]);
+                      const isDirty = siteTextDrafts[key] !== undefined && siteTextDrafts[key] !== item.content;
+
+                      return (
+                        <div
+                          key={key}
+                          className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-2.5 text-xs shadow-xs"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[#232A24] text-xs">
+                                {item.title}
+                              </span>
+                              <span className="font-mono text-[10px] text-[#59645C] bg-white border border-[#E1E7E1] px-1.5 py-0.5 rounded-md">
+                                {item.key}
+                              </span>
+                              {isDirty && (
+                                <span className="text-[10px] font-semibold text-[#8A6318] bg-[#FFF9EE] border border-[#E6C687] px-1.5 py-0.5 rounded-md">
+                                  Cambios sin guardar
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-[#59645C] font-mono">
+                              Actualizado: {new Date(item.updatedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          <textarea
+                            rows={item.content.length > 90 ? 3 : 2}
+                            value={currentVal}
+                            onChange={(e) =>
+                              setSiteTextDrafts((prev) => ({
+                                ...prev,
+                                [key]: e.target.value,
+                              }))
+                            }
+                            className="w-full p-3 bg-white border border-[#E1E7E1] focus:border-[#407B5D] rounded-xl text-xs text-[#232A24] focus:outline-none transition-colors"
+                          />
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[11px] text-[#59645C]">
+                              Se actualiza inmediatamente en la portada para todos los visitantes.
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              {isDirty && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetSiteText(key)}
+                                  className="min-h-[30px] px-2.5 py-1 text-[11px] text-[#59645C] hover:text-[#232A24] bg-white border border-[#E1E7E1] rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                  <span>Restablecer</span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => handleSaveSiteText(key, currentVal)}
+                                disabled={isSaving}
+                                className={`min-h-[32px] px-3.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs ${
+                                  isDirty
+                                    ? 'bg-[#407B5D] hover:bg-[#33654C] text-white'
+                                    : 'bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24]'
+                                }`}
+                              >
+                                {isSaving ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Save className="w-3.5 h-3.5" />
+                                )}
+                                <span>{isSaving ? 'Guardando...' : 'Guardar este texto'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

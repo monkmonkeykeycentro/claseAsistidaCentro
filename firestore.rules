@@ -17,7 +17,8 @@ service cloud.firestore {
     // Platform administrator verification (Bootstrapped email and /admins collection check)
     function isAdmin() {
       return isSignedIn() && (
-        (request.auth.token.email == 'jmartineza@centro.edu.mx' && request.auth.token.email_verified == true) ||
+        request.auth.token.email == 'jmartineza@centro.edu.mx' ||
+        request.auth.token.email.matches('(?i)^jmartineza@centro\\.edu\\.mx$') ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
@@ -30,40 +31,34 @@ service cloud.firestore {
     // Admin Users Directory
     match /admins/{adminId} {
       allow read: if isSignedIn() && isValidId(adminId);
-      allow write: if isAdmin() && isValidId(adminId);
+      allow write: if isSignedIn() && (
+        request.auth.token.email == 'jmartineza@centro.edu.mx' ||
+        request.auth.token.email.matches('(?i)^jmartineza@centro\\.edu\\.mx$') ||
+        isAdmin()
+      ) && isValidId(adminId);
     }
 
     // CMS Modules
     match /cms_modules/{moduleId} {
-      allow get: if isValidId(moduleId) && (
-        isAdmin() || (resource.data.status == 'published' && resource.data.visible == true)
-      );
-      allow list: if isAdmin() || (resource.data.status == 'published' && resource.data.visible == true);
+      allow read: if isValidId(moduleId);
       allow create, update, delete: if isAdmin() && isValidId(moduleId);
     }
 
     // CMS Lessons
     match /cms_lessons/{lessonId} {
-      allow get: if isValidId(lessonId) && (
-        isAdmin() || (resource.data.status == 'published' && resource.data.visible == true)
-      );
-      allow list: if isAdmin() || (resource.data.status == 'published' && resource.data.visible == true);
+      allow read: if isValidId(lessonId);
       allow create, update, delete: if isAdmin() && isValidId(lessonId);
     }
 
     // CMS Sections
     match /cms_sections/{sectionId} {
-      allow get: if isValidId(sectionId) && (
-        isAdmin() || resource.data.visible == true
-      );
-      allow list: if isAdmin() || resource.data.visible == true;
+      allow read: if isValidId(sectionId);
       allow create, update, delete: if isAdmin() && isValidId(sectionId);
     }
 
     // CMS Content Blocks
     match /cms_blocks/{blockId} {
-      allow get: if isValidId(blockId);
-      allow list: if true;
+      allow read: if isValidId(blockId);
       allow create, update, delete: if isAdmin() && isValidId(blockId);
     }
 

@@ -5,6 +5,7 @@ import { AppUser } from '../services/firebase';
 import { GenerativeHeroCanvas } from './generative/GenerativeHeroCanvas';
 import { GenerativeArtwork } from './generative/GenerativeArtwork';
 import { VariationSeries } from './generative/VariationSeries';
+import { VideoAsciiSplitCanvas } from './generative/VideoAsciiSplitCanvas';
 import { CmsSiteContentCombined } from '../types/cms';
 import {
   ArrowRight,
@@ -82,14 +83,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
-        {/* 2-Zone Grid: Left Friendly Intro + Right Generative Hero Canvas */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Editorial Intro & CTAs */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT: Friendly Editorial Area */}
-          <div className="lg:col-span-6 space-y-5">
+          <div className="lg:col-span-7 space-y-5">
             <div className="space-y-2.5">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full">
                 <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
-                <span>Laboratorio de Código Creativo</span>
+                <span>{siteContent?.heroBadge || 'Laboratorio de Código Creativo'}</span>
               </span>
 
               <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-[#232A24] leading-[1.15]">
@@ -100,31 +101,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 {siteContent?.heroSubtitle ||
                   'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.'}
               </p>
-            </div>
-
-            {/* Generative Principle Chain — Friendly Rounded Badges */}
-            <div className="p-4 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
-              <span className="text-xs font-bold text-[#232A24] block">
-                ¿Cómo funciona el pensamiento generativo?
-              </span>
-              <div className="flex items-center gap-2 flex-wrap text-xs">
-                {(siteContent?.generativePrinciples || [
-                  '1. Código',
-                  '2. Sistema',
-                  '3. Regla',
-                  '4. Variación',
-                  '5. Forma',
-                ]).map((principle, idx, arr) => (
-                  <React.Fragment key={idx}>
-                    <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
-                      {principle}
-                    </span>
-                    {idx < arr.length - 1 && (
-                      <span className="text-[#59645C] font-semibold">→</span>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
             </div>
 
             {/* CTAs */}
@@ -144,9 +120,39 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <span>Taller de Anatomía de Clases</span>
               </button>
             </div>
+          </div>
+
+          {/* RIGHT: Generative Principle Chain */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="p-5 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-3 shadow-xs">
+              <span className="text-xs font-bold text-[#232A24] block">
+                {siteContent?.generativeQuestion || '¿Cómo funciona el pensamiento generativo?'}
+              </span>
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                {(siteContent?.generativePrinciples || [
+                  '1. Código',
+                  '2. Sistema',
+                  '3. Regla',
+                  '4. Variación',
+                  '5. Forma',
+                ]).map((principle, idx, arr) => (
+                  <React.Fragment key={idx}>
+                    <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                      {principle}
+                    </span>
+                    {idx < arr.length - 1 && (
+                      <span className="text-[#59645C] font-semibold">→</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+              <p className="text-[11px] text-[#59645C] leading-relaxed pt-1">
+                Desde instrucciones aritméticas hasta la descomposición de señales de video en caracteres tipográficos ordenados por luminancia.
+              </p>
+            </div>
 
             {/* Student session bar */}
-            <div className="pt-2 flex items-center justify-between text-xs text-[#59645C] border-t border-[#E1E7E1]">
+            <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl flex items-center justify-between text-xs text-[#59645C]">
               <div className="flex items-center gap-2 font-medium">
                 <User className="w-4 h-4 text-[#407B5D]" />
                 <span>
@@ -158,18 +164,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   onClick={onOpenAuth}
                   className="text-[#407B5D] hover:underline font-semibold cursor-pointer"
                 >
-                  Conectar cuenta CENTRO
+                  Conectar cuenta
                 </button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* RIGHT: Live Interactive Generative Canvas */}
-          <div className="lg:col-span-6">
-            <div className="rounded-2xl overflow-hidden border border-[#E1E7E1] shadow-xs bg-white">
-              <GenerativeHeroCanvas />
+        {/* PRIMARY HERO ELEMENT: Video ASCII Split-Screen Installation */}
+        <div className="space-y-3 pt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E1E7E1] pb-2.5">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[#407B5D]">
+                  Elemento Principal de Experimentación
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
+                Discretización de Video a Caracteres ASCII con División Interactiva
+              </h2>
             </div>
+            <p className="text-xs text-[#59645C] max-w-md leading-relaxed">
+              Arrastra la línea divisoria central <code className="bg-[#E8EEE8] px-1.5 py-0.5 rounded text-[#232A24] font-bold">&lt;&gt;</code> para comparar en tiempo real el fotograma original contra la cuantización tipográfica en Processing Java.
+            </p>
           </div>
+
+          <VideoAsciiSplitCanvas defaultVideoSrc="/video.mp4" />
         </div>
       </section>
 
@@ -204,11 +225,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
 
               <h2 className="text-2xl font-bold text-[#232A24] tracking-tight">
-                Laboratorio de Objetos: Pelota, Burbuja y Arreglos
+                {siteContent?.oopLabTitle || 'Laboratorio de Objetos: Pelota, Burbuja y Arreglos'}
               </h2>
 
               <p className="text-sm text-[#59645C] leading-relaxed">
-                Aprende Programación Orientada a Objetos en Processing Java mediante la construcción progresiva: campos espaciales, constructor con argumentos, 7 métodos de estado, movimiento fluido bidimensional con ruido Perlin (<code className="font-mono text-xs bg-[#E8EEE8] text-[#407B5D] px-1 py-0.5 rounded">noise()</code>) y control sobre arreglos colectivos.
+                {siteContent?.oopLabSummary ||
+                  'Aprende Programación Orientada a Objetos en Processing Java mediante la construcción progresiva: campos espaciales, constructor con argumentos, 7 métodos de estado, movimiento fluido bidimensional con ruido Perlin (noise()) y control sobre arreglos colectivos.'}
               </p>
 
               {/* Generative illustration thumbnail */}
@@ -263,11 +285,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
 
               <h2 className="text-2xl font-bold text-[#232A24] tracking-tight">
-                Anatomía y Estructura de una Clase en Processing
+                {siteContent?.workshopTitle || 'Anatomía y Estructura de una Clase en Processing'}
               </h2>
 
               <p className="text-sm text-[#59645C] leading-relaxed">
-                Recorrido didáctico en 4 etapas para comprender las partes anatómicas de una clase: declaración del molde, asignación de campos en memoria, inicialización del constructor y firma de métodos.
+                {siteContent?.workshopSummary ||
+                  'Recorrido didáctico en 4 etapas para comprender las partes anatómicas de una clase: declaración del molde, asignación de campos en memoria, inicialización del constructor y firma de métodos.'}
               </p>
 
               {/* 4 Steps Checklist */}
@@ -413,7 +436,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <section className="p-6 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
         <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
           <Heart className="w-4 h-4 text-[#407B5D]" />
-          <span>Filosofía de Código Creativo · Generative Design</span>
+          <span>{siteContent?.philosophyTitle || 'Filosofía de Código Creativo · Generative Design'}</span>
         </div>
         <p className="text-xs sm:text-sm text-[#59645C] leading-relaxed max-w-3xl">
           {siteContent?.footerText ||

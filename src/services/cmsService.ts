@@ -65,32 +65,85 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 // 1. DEFAULT SITE CONTENT
 // ============================================================================
 export const DEFAULT_SITE_CONTENT: Record<string, CmsSiteContent> = {
-  hero_title: {
-    key: 'hero_title',
-    title: 'Título del Encabezado Principal',
+  hero_headline: {
+    key: 'hero_headline',
+    title: 'Titular Principal (Hero)',
     section: 'portada',
-    content: 'Código Creativo | Processing Java',
+    content: 'Aprende a programar creando arte y sistemas visuales.',
     updatedAt: new Date().toISOString(),
   },
   hero_subtitle: {
     key: 'hero_subtitle',
-    title: 'Subtítulo del Banner',
+    title: 'Subtítulo y Párrafo de Bienvenida',
     section: 'portada',
-    content: 'Laboratorio de programación visual, algoritmos generativos y diseño computacional interactivo.',
+    content:
+      'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.',
     updatedAt: new Date().toISOString(),
   },
-  hero_intro: {
-    key: 'hero_intro',
-    title: 'Texto Introductorio',
+  hero_badge: {
+    key: 'hero_badge',
+    title: 'Insignia del Banner',
     section: 'portada',
-    content: 'Explora los fundamentos del dibujo algorítmico, domina la Programación Orientada a Objetos y diseña sistemas vivos con Processing Java.',
+    content: 'Laboratorio de Código Creativo',
+    updatedAt: new Date().toISOString(),
+  },
+  generative_question: {
+    key: 'generative_question',
+    title: 'Pregunta Pensamiento Generativo',
+    section: 'pensamiento_generativo',
+    content: '¿Cómo funciona el pensamiento generativo?',
+    updatedAt: new Date().toISOString(),
+  },
+  generative_principles: {
+    key: 'generative_principles',
+    title: 'Cadena de Principios Generativos',
+    section: 'pensamiento_generativo',
+    content: '1. Código, 2. Sistema, 3. Regla, 4. Variación, 5. Forma',
+    updatedAt: new Date().toISOString(),
+  },
+  oop_lab_title: {
+    key: 'oop_lab_title',
+    title: 'Título Tarjeta Laboratorio POO',
+    section: 'laboratorios',
+    content: 'Laboratorio de Objetos: Pelota, Burbuja y Arreglos',
+    updatedAt: new Date().toISOString(),
+  },
+  oop_lab_summary: {
+    key: 'oop_lab_summary',
+    title: 'Descripción Tarjeta Laboratorio POO',
+    section: 'laboratorios',
+    content:
+      'Aprende Programación Orientada a Objetos en Processing Java mediante la construcción progresiva: campos espaciales, constructor con argumentos, 7 métodos de estado, movimiento fluido bidimensional con ruido Perlin (noise()) y control sobre arreglos colectivos.',
+    updatedAt: new Date().toISOString(),
+  },
+  workshop_title: {
+    key: 'workshop_title',
+    title: 'Título Tarjeta Taller Conceptual',
+    section: 'laboratorios',
+    content: 'Anatomía y Estructura de una Clase en Processing',
+    updatedAt: new Date().toISOString(),
+  },
+  workshop_summary: {
+    key: 'workshop_summary',
+    title: 'Descripción Tarjeta Taller Conceptual',
+    section: 'laboratorios',
+    content:
+      'Recorrido didáctico en 4 etapas para comprender las partes anatómicas de una clase: declaración del molde, asignación de campos en memoria, inicialización del constructor y firma de métodos.',
+    updatedAt: new Date().toISOString(),
+  },
+  philosophy_title: {
+    key: 'philosophy_title',
+    title: 'Título Filosofía Didáctica',
+    section: 'filosofia',
+    content: 'Filosofía de Código Creativo · Generative Design',
     updatedAt: new Date().toISOString(),
   },
   footer_text: {
     key: 'footer_text',
-    title: 'Pie de Página',
-    section: 'footer',
-    content: 'Código Creativo / CENTRO / Processing Java 4.3',
+    title: 'Párrafo de Filosofía Didáctica',
+    section: 'filosofia',
+    content:
+      'Inspirado en los principios de Generative Design, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.',
     updatedAt: new Date().toISOString(),
   },
 };
@@ -295,41 +348,96 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
 
 export async function getCmsModules(includeUnpublished = false): Promise<CmsModule[]> {
   const path = 'cms_modules';
+  let list: CmsModule[] = [];
   try {
     const q = query(collection(db, path));
     const snap = await getDocs(q);
-    const list = snap.docs.map((d) => d.data() as CmsModule);
-
-    const filtered = includeUnpublished
-      ? list.filter((m) => m.status !== 'archived')
-      : list.filter((m) => m.status === 'published' && m.visible);
-
-    return filtered.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    list = snap.docs.map((d) => d.data() as CmsModule);
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Notice reading cms_modules from Firestore:', error);
   }
+
+  // Merge with local storage cache if available
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
+    const cachedList = Object.values(cached) as CmsModule[];
+    if (cachedList.length > 0) {
+      const byId = new Map<string, CmsModule>();
+      list.forEach((m) => byId.set(m.id, m));
+      cachedList.forEach((m) => byId.set(m.id, m));
+      list = Array.from(byId.values());
+    }
+  } catch {}
+
+  // If still empty, synthesize from TOPICS_DATA
+  if (list.length === 0) {
+    list = TOPICS_DATA.map((t, idx) => ({
+      id: `mod_${t.id}`,
+      title: `Módulo 0${t.number}: ${t.title}`,
+      description: t.summary,
+      category: t.category,
+      badge: t.badge,
+      slug: t.id,
+      position: idx,
+      status: 'published',
+      visible: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+
+  const filtered = includeUnpublished
+    ? list.filter((m) => m.status !== 'archived')
+    : list.filter((m) => m.status === 'published' && m.visible);
+
+  return filtered.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
 export async function saveCmsModule(moduleData: CmsModule): Promise<void> {
   const path = `cms_modules/${moduleData.id}`;
+  const updated = {
+    ...moduleData,
+    updatedAt: new Date().toISOString(),
+  };
+
+  // 1. Immediately cache locally
   try {
-    const updated = {
-      ...moduleData,
-      updatedAt: new Date().toISOString(),
-    };
+    const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
+    cached[moduleData.id] = updated;
+    localStorage.setItem('cms_modules_cache', JSON.stringify(cached));
+  } catch {}
+
+  // 2. Persist to Firestore
+  try {
     await setDoc(doc(db, 'cms_modules', moduleData.id), updated, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Notice saving module to Firestore (cached locally):', error);
   }
 }
 
 export async function deleteCmsModule(moduleId: string, hardDelete = false): Promise<void> {
   const path = `cms_modules/${moduleId}`;
+
+  // 1. Update local cache
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
+    if (hardDelete) {
+      delete cached[moduleId];
+    } else {
+      if (cached[moduleId]) {
+        cached[moduleId] = { ...cached[moduleId], status: 'archived', visible: false, updatedAt: new Date().toISOString() };
+      } else {
+        cached[moduleId] = { id: moduleId, status: 'archived', visible: false, updatedAt: new Date().toISOString() };
+      }
+    }
+    localStorage.setItem('cms_modules_cache', JSON.stringify(cached));
+  } catch {}
+
+  // 2. Persist to Firestore
   try {
     if (hardDelete) {
       await deleteDoc(doc(db, 'cms_modules', moduleId));
     } else {
-      // Logical archive
       await setDoc(
         doc(db, 'cms_modules', moduleId),
         { status: 'archived', visible: false, updatedAt: new Date().toISOString() },
@@ -337,16 +445,44 @@ export async function deleteCmsModule(moduleId: string, hardDelete = false): Pro
       );
     }
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
+    console.warn('Notice deleting module in Firestore (cached locally):', error);
   }
 }
 
 export async function duplicateCmsModule(moduleId: string): Promise<CmsModule> {
   const path = `cms_modules/${moduleId}`;
   try {
+    let original: CmsModule | null = null;
     const snap = await getDoc(doc(db, 'cms_modules', moduleId));
-    if (!snap.exists()) throw new Error('Módulo no encontrado');
-    const original = snap.data() as CmsModule;
+    if (snap.exists()) {
+      original = snap.data() as CmsModule;
+    } else {
+      const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
+      original = cached[moduleId] || null;
+    }
+
+    if (!original) {
+      // Find from TOPICS_DATA
+      const rawId = moduleId.replace(/^mod_/, '');
+      const t = TOPICS_DATA.find((x) => x.id === rawId || `mod_${x.id}` === moduleId);
+      if (t) {
+        original = {
+          id: moduleId,
+          title: `Módulo 0${t.number}: ${t.title}`,
+          description: t.summary,
+          category: t.category,
+          badge: t.badge,
+          slug: t.id,
+          position: 0,
+          status: 'published',
+          visible: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        throw new Error('Módulo no encontrado');
+      }
+    }
 
     const newId = `mod_${Date.now()}`;
     const newModule: CmsModule = {
@@ -354,12 +490,12 @@ export async function duplicateCmsModule(moduleId: string): Promise<CmsModule> {
       id: newId,
       title: `${original.title} (Copia)`,
       status: 'draft',
-      position: original.position + 1,
+      position: (original.position ?? 0) + 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, 'cms_modules', newId), newModule);
+    await saveCmsModule(newModule);
 
     // Duplicate all lessons of this module
     const lessons = await getCmsLessons(moduleId, true);
@@ -379,50 +515,141 @@ export async function duplicateCmsModule(moduleId: string): Promise<CmsModule> {
 
 export async function getCmsLessons(moduleId?: string, includeUnpublished = false): Promise<CmsLesson[]> {
   const path = 'cms_lessons';
+  let list: CmsLesson[] = [];
   try {
     const snap = await getDocs(collection(db, path));
-    let list = snap.docs.map((d) => d.data() as CmsLesson);
-
-    if (moduleId) {
-      list = list.filter((l) => l.moduleId === moduleId);
-    }
-
-    const filtered = includeUnpublished
-      ? list.filter((l) => l.status !== 'archived')
-      : list.filter((l) => l.status === 'published' && l.visible);
-
-    return filtered.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    list = snap.docs.map((d) => d.data() as CmsLesson);
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Notice reading cms_lessons from Firestore:', error);
   }
+
+  // Merge with local storage cache
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
+    const cachedList = Object.values(cached) as CmsLesson[];
+    if (cachedList.length > 0) {
+      const byId = new Map<string, CmsLesson>();
+      list.forEach((l) => byId.set(l.id, l));
+      cachedList.forEach((l) => byId.set(l.id, l));
+      list = Array.from(byId.values());
+    }
+  } catch {}
+
+  // If still empty, build from TOPICS_DATA
+  if (list.length === 0) {
+    list = TOPICS_DATA.map((t, idx) => ({
+      id: `les_${t.id}`,
+      moduleId: `mod_${t.id}`,
+      title: t.title,
+      summary: t.summary,
+      badge: t.badge,
+      estimatedTime: t.estimatedTime,
+      slug: t.id,
+      position: idx,
+      status: 'published',
+      visible: true,
+      hasInteractiveWorkshop: t.hasInteractiveWorkshop,
+      workshopType:
+        t.id === 'classes'
+          ? 'classes'
+          : t.id === 'object-arrays'
+          ? 'object-arrays'
+          : undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+
+  if (moduleId) {
+    list = list.filter((l) => l.moduleId === moduleId);
+  }
+
+  const filtered = includeUnpublished
+    ? list.filter((l) => l.status !== 'archived')
+    : list.filter((l) => l.status === 'published' && l.visible);
+
+  return filtered.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
 export async function getCmsLessonById(lessonId: string): Promise<CmsLesson | null> {
   const path = `cms_lessons/${lessonId}`;
   try {
     const snap = await getDoc(doc(db, 'cms_lessons', lessonId));
-    if (!snap.exists()) return null;
-    return snap.data() as CmsLesson;
+    if (snap.exists()) return snap.data() as CmsLesson;
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Notice reading lesson by id:', error);
   }
+
+  // Check cache
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
+    if (cached[lessonId]) return cached[lessonId];
+  } catch {}
+
+  // Check fallback
+  const rawId = lessonId.replace(/^les_/, '');
+  const t = TOPICS_DATA.find((x) => x.id === rawId || `les_${x.id}` === lessonId);
+  if (t) {
+    return {
+      id: `les_${t.id}`,
+      moduleId: `mod_${t.id}`,
+      title: t.title,
+      summary: t.summary,
+      badge: t.badge,
+      estimatedTime: t.estimatedTime,
+      slug: t.id,
+      position: 0,
+      status: 'published',
+      visible: true,
+      hasInteractiveWorkshop: t.hasInteractiveWorkshop,
+      workshopType:
+        t.id === 'classes'
+          ? 'classes'
+          : t.id === 'object-arrays'
+          ? 'object-arrays'
+          : undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  return null;
 }
 
 export async function saveCmsLesson(lessonData: CmsLesson): Promise<void> {
   const path = `cms_lessons/${lessonData.id}`;
+  const updated = {
+    ...lessonData,
+    updatedAt: new Date().toISOString(),
+  };
+
   try {
-    const updated = {
-      ...lessonData,
-      updatedAt: new Date().toISOString(),
-    };
+    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
+    cached[lessonData.id] = updated;
+    localStorage.setItem('cms_lessons_cache', JSON.stringify(cached));
+  } catch {}
+
+  try {
     await setDoc(doc(db, 'cms_lessons', lessonData.id), updated, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Notice saving lesson to Firestore (cached locally):', error);
   }
 }
 
 export async function deleteCmsLesson(lessonId: string, hardDelete = false): Promise<void> {
   const path = `cms_lessons/${lessonId}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
+    if (hardDelete) {
+      delete cached[lessonId];
+    } else {
+      if (cached[lessonId]) {
+        cached[lessonId] = { ...cached[lessonId], status: 'archived', visible: false, updatedAt: new Date().toISOString() };
+      }
+    }
+    localStorage.setItem('cms_lessons_cache', JSON.stringify(cached));
+  } catch {}
+
   try {
     if (hardDelete) {
       await deleteDoc(doc(db, 'cms_lessons', lessonId));
@@ -434,16 +661,15 @@ export async function deleteCmsLesson(lessonId: string, hardDelete = false): Pro
       );
     }
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
+    console.warn('Notice deleting lesson in Firestore (cached locally):', error);
   }
 }
 
 export async function duplicateCmsLesson(lessonId: string, targetModuleId?: string): Promise<CmsLesson> {
   const path = `cms_lessons/${lessonId}`;
   try {
-    const snap = await getDoc(doc(db, 'cms_lessons', lessonId));
-    if (!snap.exists()) throw new Error('Lección no encontrada');
-    const original = snap.data() as CmsLesson;
+    const original = await getCmsLessonById(lessonId);
+    if (!original) throw new Error('Lección no encontrada');
 
     const newId = `les_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const newLesson: CmsLesson = {
@@ -452,14 +678,14 @@ export async function duplicateCmsLesson(lessonId: string, targetModuleId?: stri
       moduleId: targetModuleId || original.moduleId,
       title: `${original.title} (Copia)`,
       status: 'draft',
-      position: original.position + 1,
+      position: (original.position ?? 0) + 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, 'cms_lessons', newId), newLesson);
+    await saveCmsLesson(newLesson);
 
-    // Duplicate all sections of this lesson
+    // Duplicate sections and blocks
     const sections = await getCmsSections(lessonId, true);
     for (const sec of sections) {
       await duplicateCmsSection(sec.id, newId);
@@ -477,37 +703,83 @@ export async function duplicateCmsLesson(lessonId: string, targetModuleId?: stri
 
 export async function getCmsSections(lessonId: string, includeInvisible = false): Promise<CmsSection[]> {
   const path = 'cms_sections';
+  let list: CmsSection[] = [];
   try {
     const snap = await getDocs(collection(db, path));
-    let list = snap.docs
+    list = snap.docs
       .map((d) => d.data() as CmsSection)
       .filter((s) => s.lessonId === lessonId);
-
-    if (!includeInvisible) {
-      list = list.filter((s) => s.visible !== false);
-    }
-
-    return list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Notice reading cms_sections from Firestore:', error);
   }
+
+  // Merge with localStorage
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
+    const cachedForLesson = (Object.values(cached) as CmsSection[]).filter((s) => s.lessonId === lessonId);
+    if (cachedForLesson.length > 0) {
+      const byId = new Map<string, CmsSection>();
+      list.forEach((s) => byId.set(s.id, s));
+      cachedForLesson.forEach((s) => byId.set(s.id, s));
+      list = Array.from(byId.values());
+    }
+  } catch {}
+
+  // If empty, synthesize from TOPICS_DATA concepts!
+  if (list.length === 0) {
+    const rawTopicId = lessonId.replace(/^les_/, '');
+    const topic = TOPICS_DATA.find((t) => t.id === rawTopicId || `les_${t.id}` === lessonId);
+    if (topic && topic.concepts) {
+      list = topic.concepts.map((concept, cIdx) => ({
+        id: `sec_${concept.id}`,
+        lessonId: lessonId,
+        title: concept.title,
+        summary: concept.summary,
+        position: cIdx,
+        visible: true,
+        didacticTip: concept.didacticTip,
+        commonMistake: concept.commonMistake,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+  }
+
+  if (!includeInvisible) {
+    list = list.filter((s) => s.visible !== false);
+  }
+
+  return list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
 export async function saveCmsSection(sectionData: CmsSection): Promise<void> {
   const path = `cms_sections/${sectionData.id}`;
+  const updated = {
+    ...sectionData,
+    updatedAt: new Date().toISOString(),
+  };
+
   try {
-    const updated = {
-      ...sectionData,
-      updatedAt: new Date().toISOString(),
-    };
+    const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
+    cached[sectionData.id] = updated;
+    localStorage.setItem('cms_sections_cache', JSON.stringify(cached));
+  } catch {}
+
+  try {
     await setDoc(doc(db, 'cms_sections', sectionData.id), updated, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Notice saving section to Firestore (cached locally):', error);
   }
 }
 
 export async function deleteCmsSection(sectionId: string): Promise<void> {
   const path = `cms_sections/${sectionId}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
+    delete cached[sectionId];
+    localStorage.setItem('cms_sections_cache', JSON.stringify(cached));
+  } catch {}
+
   try {
     await deleteDoc(doc(db, 'cms_sections', sectionId));
     // Also remove associated blocks
@@ -516,16 +788,46 @@ export async function deleteCmsSection(sectionId: string): Promise<void> {
       await deleteDoc(doc(db, 'cms_blocks', b.id));
     }
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
+    console.warn('Notice deleting section from Firestore (cached locally):', error);
   }
 }
 
 export async function duplicateCmsSection(sectionId: string, targetLessonId?: string): Promise<CmsSection> {
   const path = `cms_sections/${sectionId}`;
   try {
+    let original: CmsSection | null = null;
     const snap = await getDoc(doc(db, 'cms_sections', sectionId));
-    if (!snap.exists()) throw new Error('Sección no encontrada');
-    const original = snap.data() as CmsSection;
+    if (snap.exists()) {
+      original = snap.data() as CmsSection;
+    } else {
+      const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
+      original = cached[sectionId] || null;
+    }
+
+    if (!original) {
+      // Find concept
+      const rawConceptId = sectionId.replace(/^sec_/, '');
+      for (const topic of TOPICS_DATA) {
+        const c = topic.concepts.find((x) => x.id === rawConceptId || `sec_${x.id}` === sectionId);
+        if (c) {
+          original = {
+            id: sectionId,
+            lessonId: targetLessonId || `les_${topic.id}`,
+            title: c.title,
+            summary: c.summary,
+            position: 0,
+            visible: true,
+            didacticTip: c.didacticTip,
+            commonMistake: c.commonMistake,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          break;
+        }
+      }
+    }
+
+    if (!original) throw new Error('Sección no encontrada');
 
     const newId = `sec_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const newSection: CmsSection = {
@@ -533,12 +835,12 @@ export async function duplicateCmsSection(sectionId: string, targetLessonId?: st
       id: newId,
       lessonId: targetLessonId || original.lessonId,
       title: `${original.title} (Copia)`,
-      position: original.position + 1,
+      position: (original.position ?? 0) + 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, 'cms_sections', newId), newSection);
+    await saveCmsSection(newSection);
 
     // Duplicate blocks
     const blocks = await getCmsBlocks(sectionId);
@@ -558,58 +860,130 @@ export async function duplicateCmsSection(sectionId: string, targetLessonId?: st
 
 export async function getCmsBlocks(sectionId: string): Promise<CmsBlock[]> {
   const path = 'cms_blocks';
+  let list: CmsBlock[] = [];
   try {
     const snap = await getDocs(collection(db, path));
-    const list = snap.docs
+    list = snap.docs
       .map((d) => d.data() as CmsBlock)
       .filter((b) => b.sectionId === sectionId);
-
-    return list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Notice reading cms_blocks from Firestore:', error);
   }
+
+  // Merge with localStorage
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
+    const cachedForSection = (Object.values(cached) as CmsBlock[]).filter((b) => b.sectionId === sectionId);
+    if (cachedForSection.length > 0) {
+      const byId = new Map<string, CmsBlock>();
+      list.forEach((b) => byId.set(b.id, b));
+      cachedForSection.forEach((b) => byId.set(b.id, b));
+      list = Array.from(byId.values());
+    }
+  } catch {}
+
+  // If empty, synthesize from TOPICS_DATA matching concept!
+  if (list.length === 0) {
+    const rawConceptId = sectionId.replace(/^sec_/, '');
+    let matchedConcept = null;
+    for (const topic of TOPICS_DATA) {
+      const c = topic.concepts.find((x) => x.id === rawConceptId || `sec_${x.id}` === sectionId);
+      if (c) {
+        matchedConcept = c;
+        break;
+      }
+    }
+    if (matchedConcept) {
+      let pos = 0;
+      if (matchedConcept.explanation) {
+        list.push({
+          id: `blk_${matchedConcept.id}_text`,
+          sectionId,
+          type: 'rich-text',
+          content: matchedConcept.explanation,
+          position: pos++,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      if (matchedConcept.codeSnippet) {
+        list.push({
+          id: `blk_${matchedConcept.id}_code`,
+          sectionId,
+          type: 'code',
+          content: matchedConcept.codeSnippet,
+          caption: 'Código de ejemplo en Processing Java',
+          position: pos++,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  return list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
 export async function saveCmsBlock(blockData: CmsBlock): Promise<void> {
   const path = `cms_blocks/${blockData.id}`;
+  const updated = {
+    ...blockData,
+    updatedAt: new Date().toISOString(),
+  };
+
   try {
-    const updated = {
-      ...blockData,
-      updatedAt: new Date().toISOString(),
-    };
+    const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
+    cached[blockData.id] = updated;
+    localStorage.setItem('cms_blocks_cache', JSON.stringify(cached));
+  } catch {}
+
+  try {
     await setDoc(doc(db, 'cms_blocks', blockData.id), updated, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Notice saving block to Firestore (cached locally):', error);
   }
 }
 
 export async function deleteCmsBlock(blockId: string): Promise<void> {
   const path = `cms_blocks/${blockId}`;
   try {
+    const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
+    delete cached[blockId];
+    localStorage.setItem('cms_blocks_cache', JSON.stringify(cached));
+  } catch {}
+
+  try {
     await deleteDoc(doc(db, 'cms_blocks', blockId));
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
+    console.warn('Notice deleting block from Firestore (cached locally):', error);
   }
 }
 
 export async function duplicateCmsBlock(blockId: string, targetSectionId?: string): Promise<CmsBlock> {
   const path = `cms_blocks/${blockId}`;
   try {
+    let original: CmsBlock | null = null;
     const snap = await getDoc(doc(db, 'cms_blocks', blockId));
-    if (!snap.exists()) throw new Error('Bloque no encontrado');
-    const original = snap.data() as CmsBlock;
+    if (snap.exists()) {
+      original = snap.data() as CmsBlock;
+    } else {
+      const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
+      original = cached[blockId] || null;
+    }
+
+    if (!original) throw new Error('Bloque no encontrado');
 
     const newId = `blk_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const newBlock: CmsBlock = {
       ...original,
       id: newId,
       sectionId: targetSectionId || original.sectionId,
-      position: original.position + 1,
+      position: (original.position ?? 0) + 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, 'cms_blocks', newId), newBlock);
+    await saveCmsBlock(newBlock);
     return newBlock;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
@@ -642,70 +1016,126 @@ export async function reorderCmsItems(
 
 export async function getAllSiteContent(): Promise<Record<string, CmsSiteContent>> {
   const path = 'cms_site_content';
+  const result: Record<string, CmsSiteContent> = { ...DEFAULT_SITE_CONTENT };
+
+  // 1. Check local storage cache
+  try {
+    const cached = JSON.parse(localStorage.getItem('cms_site_content_cache') || '{}');
+    Object.entries(cached).forEach(([k, item]) => {
+      result[k] = {
+        ...(result[k] || {}),
+        ...(item as CmsSiteContent),
+      };
+    });
+  } catch {}
+
+  // 2. Fetch from Firestore
   try {
     const snap = await getDocs(collection(db, path));
-    if (snap.empty) {
-      return DEFAULT_SITE_CONTENT;
-    }
-    const result: Record<string, CmsSiteContent> = { ...DEFAULT_SITE_CONTENT };
     snap.docs.forEach((d) => {
       const item = d.data() as CmsSiteContent;
-      result[item.key] = item;
+      result[item.key] = {
+        ...(result[item.key] || {}),
+        ...item,
+      };
     });
-    return result;
-  } catch {
-    return DEFAULT_SITE_CONTENT;
+  } catch (err) {
+    console.warn('Notice loading site content from Firestore (using cache/defaults):', err);
   }
+
+  return result;
 }
 
 export async function saveSiteContent(item: CmsSiteContent, userEmail?: string): Promise<void> {
   const path = `cms_site_content/${item.key}`;
+  const updated: CmsSiteContent = {
+    ...item,
+    updatedAt: new Date().toISOString(),
+    updatedBy: userEmail || auth.currentUser?.email || 'admin',
+  };
+
+  // 1. Save to local cache
   try {
-    const updated: CmsSiteContent = {
-      ...item,
-      updatedAt: new Date().toISOString(),
-      updatedBy: userEmail || auth.currentUser?.email || 'admin',
-    };
+    const cached = JSON.parse(localStorage.getItem('cms_site_content_cache') || '{}');
+    cached[item.key] = updated;
+    localStorage.setItem('cms_site_content_cache', JSON.stringify(cached));
+  } catch {}
+
+  // 2. Save to Firestore
+  try {
     await setDoc(doc(db, 'cms_site_content', item.key), updated, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn('Notice saving site content to Firestore (cached locally):', error);
   }
 }
 
 export function subscribeToSiteContent(
   callback: (content: CmsSiteContentCombined) => void
 ): () => void {
+  const parseAndEmit = (sourceObj: Record<string, CmsSiteContent>) => {
+    let heroHeadline = sourceObj.hero_headline?.content || DEFAULT_SITE_CONTENT.hero_headline.content;
+    let heroSubtitle = sourceObj.hero_subtitle?.content || DEFAULT_SITE_CONTENT.hero_subtitle.content;
+    let heroBadge = sourceObj.hero_badge?.content || DEFAULT_SITE_CONTENT.hero_badge.content;
+    let generativeQuestion = sourceObj.generative_question?.content || DEFAULT_SITE_CONTENT.generative_question.content;
+    let generativePrinciples = ['1. Código', '2. Sistema', '3. Regla', '4. Variación', '5. Forma'];
+    let oopLabTitle = sourceObj.oop_lab_title?.content || DEFAULT_SITE_CONTENT.oop_lab_title.content;
+    let oopLabSummary = sourceObj.oop_lab_summary?.content || DEFAULT_SITE_CONTENT.oop_lab_summary.content;
+    let workshopTitle = sourceObj.workshop_title?.content || DEFAULT_SITE_CONTENT.workshop_title.content;
+    let workshopSummary = sourceObj.workshop_summary?.content || DEFAULT_SITE_CONTENT.workshop_summary.content;
+    let philosophyTitle = sourceObj.philosophy_title?.content || DEFAULT_SITE_CONTENT.philosophy_title.content;
+    let footerText = sourceObj.footer_text?.content || DEFAULT_SITE_CONTENT.footer_text.content;
+
+    if (sourceObj.generative_principles?.content) {
+      const raw = sourceObj.generative_principles.content;
+      try {
+        if (raw.startsWith('[')) {
+          generativePrinciples = JSON.parse(raw);
+        } else {
+          generativePrinciples = raw.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+      } catch {
+        generativePrinciples = raw.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+    }
+
+    callback({
+      heroHeadline,
+      heroSubtitle,
+      heroBadge,
+      generativeQuestion,
+      generativePrinciples,
+      oopLabTitle,
+      oopLabSummary,
+      workshopTitle,
+      workshopSummary,
+      philosophyTitle,
+      footerText,
+    });
+  };
+
+  // Emit initial combined content from cache + defaults immediately
+  try {
+    getAllSiteContent().then((initial) => {
+      parseAndEmit(initial);
+    });
+  } catch {}
+
   try {
     const unsub = onSnapshot(
       collection(db, 'cms_site_content'),
       (snap) => {
-        let heroHeadline = 'Aprende a programar creando arte y sistemas visuales.';
-        let heroSubtitle =
-          'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.';
-        let footerText =
-          'Inspirado en los principios de Generative Design, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.';
-        let generativePrinciples = ['1. Código', '2. Sistema', '3. Regla', '4. Variación', '5. Forma'];
+        const combined: Record<string, CmsSiteContent> = { ...DEFAULT_SITE_CONTENT };
+        try {
+          const cached = JSON.parse(localStorage.getItem('cms_site_content_cache') || '{}');
+          Object.assign(combined, cached);
+        } catch {}
 
         snap.docs.forEach((d) => {
           const data = d.data() as CmsSiteContent;
-          if (data.key === 'hero_headline' && data.content) heroHeadline = data.content;
-          if (data.key === 'hero_subtitle' && data.content) heroSubtitle = data.content;
-          if (data.key === 'footer_text' && data.content) footerText = data.content;
-          if (data.key === 'generative_principles' && data.content) {
-            try {
-              generativePrinciples = JSON.parse(data.content);
-            } catch {
-              // fallback
-            }
-          }
+          combined[data.key] = data;
         });
 
-        callback({
-          heroHeadline,
-          heroSubtitle,
-          footerText,
-          generativePrinciples,
-        });
+        parseAndEmit(combined);
       },
       (err) => {
         console.warn('Site content subscription notice:', err);
@@ -960,10 +1390,36 @@ export async function getAllTopicsFromCmsOrFallback(
     }
 
     const result: TopicItem[] = [];
-    for (let i = 0; i < TOPICS_DATA.length; i++) {
-      const staticTopic = TOPICS_DATA[i];
-      const dynamicTopic = await getTopicFromCmsOrFallback(staticTopic.id, includeUnpublished);
-      result.push(dynamicTopic);
+    for (const mod of modules) {
+      const rawId = mod.slug || mod.id.replace(/^mod_/, '');
+      const staticTopic = TOPICS_DATA.find((t) => t.id === rawId || `mod_${t.id}` === mod.id);
+
+      if (staticTopic) {
+        const dynamicTopic = await getTopicFromCmsOrFallback(staticTopic.id, includeUnpublished);
+        result.push({
+          ...dynamicTopic,
+          title: mod.title.replace(/^Módulo \d+:\s*/, '') || dynamicTopic.title,
+          summary: mod.description || dynamicTopic.summary,
+          category: (mod.category as TopicItem['category']) || dynamicTopic.category,
+          badge: mod.badge || dynamicTopic.badge,
+        });
+      } else {
+        // Custom created module
+        const lessons = await getCmsLessons(mod.id, includeUnpublished);
+        const mainLesson = lessons[0];
+        result.push({
+          id: rawId,
+          number: (mod.position ?? result.length) + 1,
+          title: mod.title.replace(/^Módulo \d+:\s*/, '') || mod.title,
+          summary: mod.description || '',
+          category: (mod.category as TopicItem['category']) || 'Fundamentos',
+          badge: mod.badge || 'Módulo',
+          estimatedTime: mainLesson?.estimatedTime || '30 min',
+          conceptsCount: 1,
+          concepts: [],
+          hasInteractiveWorkshop: false,
+        });
+      }
     }
     return result;
   } catch {

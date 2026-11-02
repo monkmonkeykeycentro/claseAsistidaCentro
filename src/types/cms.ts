@@ -79,8 +79,15 @@ export interface CmsSiteContent {
 export interface CmsSiteContentCombined {
   heroHeadline: string;
   heroSubtitle: string;
-  footerText: string;
+  heroBadge?: string;
+  generativeQuestion?: string;
   generativePrinciples: string[];
+  oopLabTitle?: string;
+  oopLabSummary?: string;
+  workshopTitle?: string;
+  workshopSummary?: string;
+  philosophyTitle?: string;
+  footerText: string;
 }
 
 export interface CmsMediaResource {
