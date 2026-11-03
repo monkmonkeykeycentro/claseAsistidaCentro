@@ -23,6 +23,7 @@ interface HomeViewProps {
   onOpenWorkshop: (stage?: StageId) => void;
   onOpenOopLab?: () => void;
   onNavigateOopLab?: () => void;
+  onOpenPilot?: () => void;
   onSelectTopic: (topicId: string) => void;
   progress?: UserProgress;
   classesProgress?: UserProgress;
@@ -38,6 +39,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenWorkshop,
   onOpenOopLab,
   onNavigateOopLab,
+  onOpenPilot,
   onSelectTopic,
   progress,
   classesProgress,
@@ -189,6 +191,90 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           <VideoAsciiSplitCanvas defaultVideoSrc="/video.mp4" />
+        </div>
+      </section>
+
+      {/* PILOT MODULE: Exploraciones con Processing (3 Ejercicios Progresivos) */}
+      <section className="p-6 sm:p-7 bg-white border border-[#E1E7E1] rounded-3xl space-y-5 shadow-xs hover:border-[#407B5D]/60 transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+              <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
+                Módulo Piloto Educativo
+              </span>
+            </div>
+            <h2 className="text-2xl font-extrabold text-[#232A24] tracking-tight">
+              {siteContent?.pilotModuleTitle || 'Exploraciones con Processing'}
+            </h2>
+          </div>
+          {onOpenPilot && (
+            <button
+              onClick={onOpenPilot}
+              className="min-h-[42px] px-6 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0"
+            >
+              <span>Iniciar Exploraciones (3 Ejercicios)</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <p className="text-sm text-[#59645C] leading-relaxed max-w-3xl">
+          {siteContent?.pilotModuleDescription ||
+            'Secuencia progresiva con metodología Observar → Interpretar → Escribir → Experimentar → Documentar. Recorre desde el plano cartesiano hasta decisiones condicionales y experimentación audiovisual continua.'}
+        </p>
+
+        {/* The 3 Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+          <div
+            onClick={onOpenPilot}
+            className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl space-y-2 cursor-pointer transition-all"
+          >
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-[#407B5D]">01. COORDENADAS</span>
+              <span className="text-[#8E8E89]">5 Etapas</span>
+            </div>
+            <h3 className="text-sm font-bold text-[#232A24]">
+              {siteContent?.pilotEx1Title || 'Del espacio a la forma'}
+            </h3>
+            <p className="text-xs text-[#59645C] line-clamp-2">
+              {siteContent?.pilotEx1Objective ||
+                'Retícula cartesiana, origen (0,0), visualización de ejes e instrucciones Processing Java.'}
+            </p>
+          </div>
+
+          <div
+            onClick={onOpenPilot}
+            className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl space-y-2 cursor-pointer transition-all"
+          >
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-[#2868D9]">02. CONDICIONALES</span>
+              <span className="text-[#8E8E89]">5 Etapas</span>
+            </div>
+            <h3 className="text-sm font-bold text-[#232A24]">
+              {siteContent?.pilotEx2Title || 'Decisiones visuales'}
+            </h3>
+            <p className="text-xs text-[#59645C] line-clamp-2">
+              {siteContent?.pilotEx2Objective ||
+                'Bifurcaciones con if, else if y else en tres zonas horizontales con pruebas en valores límite.'}
+            </p>
+          </div>
+
+          <div
+            onClick={onOpenPilot}
+            className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl space-y-2 cursor-pointer transition-all"
+          >
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-[#D9AA3D]">03. AUDIOVISUAL</span>
+              <span className="text-[#8E8E89]">Instalación</span>
+            </div>
+            <h3 className="text-sm font-bold text-[#232A24]">
+              {siteContent?.pilotEx3Title || 'Discretización Video a ASCII'}
+            </h3>
+            <p className="text-xs text-[#59645C] line-clamp-2">
+              Video: Sallie Gardner at a Gallop (Eadweard Muybridge). División interactiva en vivo.
+            </p>
+          </div>
         </div>
       </section>
 

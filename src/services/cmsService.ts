@@ -109,6 +109,58 @@ export const DEFAULT_SITE_CONTENT: Record<string, CmsSiteContent> = {
       'Inspirado en los principios de Generative Design, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.',
     updatedAt: new Date().toISOString(),
   },
+  pilot_module_title: {
+    key: 'pilot_module_title',
+    title: 'Título Módulo Piloto',
+    section: 'piloto',
+    content: 'Exploraciones con Processing',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_module_description: {
+    key: 'pilot_module_description',
+    title: 'Descripción Módulo Piloto',
+    section: 'piloto',
+    content:
+      'Secuencia pedagógica de tres ejercicios para asimilar el sistema de coordenadas, las estructuras condicionales y la experimentación audiovisual.',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex1_title: {
+    key: 'pilot_ex1_title',
+    title: 'Título Ejercicio 1 (Coordenadas)',
+    section: 'piloto',
+    content: 'Sistemas de coordenadas: Del espacio a la forma',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex1_objective: {
+    key: 'pilot_ex1_objective',
+    title: 'Objetivo Ejercicio 1 (Coordenadas)',
+    section: 'piloto',
+    content:
+      'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex2_title: {
+    key: 'pilot_ex2_title',
+    title: 'Título Ejercicio 2 (Condicionales)',
+    section: 'piloto',
+    content: 'Estructuras condicionales: Decisiones visuales',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex2_objective: {
+    key: 'pilot_ex2_objective',
+    title: 'Objetivo Ejercicio 2 (Condicionales)',
+    section: 'piloto',
+    content:
+      'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex3_title: {
+    key: 'pilot_ex3_title',
+    title: 'Título Ejercicio 3 (Audiovisual)',
+    section: 'piloto',
+    content: 'Discretización audiovisual: Video a ASCII',
+    updatedAt: new Date().toISOString(),
+  },
 };
 
 // ============================================================================
@@ -299,6 +351,99 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
         };
         seedDocument('cms_blocks', challengeBlockId, challengeBlock);
       }
+    }
+
+    // Seed Pilot Module: Exploraciones con Processing
+    const pilotModId = 'mod_pilot_exploraciones';
+    const pilotModDoc: CmsModule = {
+      id: pilotModId,
+      title: 'Módulo Piloto: Exploraciones con Processing',
+      description: 'Secuencia pedagógica de tres ejercicios para asimilar el sistema de coordenadas, las estructuras condicionales y la experimentación audiovisual.',
+      category: 'Fundamentos',
+      badge: 'Módulo Piloto',
+      slug: 'exploraciones',
+      position: TOPICS_DATA.length,
+      status: 'published',
+      visible: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    seedDocument('cms_modules', pilotModId, pilotModDoc);
+
+    const pilotLessons: CmsLesson[] = [
+      {
+        id: 'les_pilot_coordinates',
+        moduleId: pilotModId,
+        title: '01. Del espacio a la forma: Sistemas de coordenadas',
+        summary: 'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+        badge: 'Metodología 5 Etapas',
+        estimatedTime: '20 min',
+        slug: 'coordenadas',
+        position: 0,
+        status: 'published',
+        visible: true,
+        hasInteractiveWorkshop: true,
+        workshopType: 'coordinates',
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'les_pilot_conditionals',
+        moduleId: pilotModId,
+        title: '02. Decisiones visuales: Estructuras condicionales',
+        summary: 'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis estricto de valores límite.',
+        badge: 'Metodología 5 Etapas',
+        estimatedTime: '20 min',
+        slug: 'condicionales',
+        position: 1,
+        status: 'published',
+        visible: true,
+        hasInteractiveWorkshop: true,
+        workshopType: 'conditionals',
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'les_pilot_video_ascii',
+        moduleId: pilotModId,
+        title: '03. Discretización audiovisual: Video a ASCII',
+        summary: 'Discretización de Video a Caracteres ASCII con división interactiva y cuantización tipográfica. Video: Sallie Gardner at a Gallop de Eadweard Muybridge.',
+        badge: 'Instalación Interactiva',
+        estimatedTime: '15 min',
+        slug: 'video-ascii',
+        position: 2,
+        status: 'published',
+        visible: true,
+        hasInteractiveWorkshop: true,
+        workshopType: 'video-ascii',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    for (const pLes of pilotLessons) {
+      seedDocument('cms_lessons', pLes.id, pLes);
+      const secId = `sec_${pLes.id}`;
+      seedDocument('cms_sections', secId, {
+        id: secId,
+        lessonId: pLes.id,
+        title: pLes.title,
+        summary: pLes.summary,
+        position: 0,
+        visible: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const blkId = `blk_${pLes.id}`;
+      seedDocument('cms_blocks', blkId, {
+        id: blkId,
+        sectionId: secId,
+        type: 'rich-text',
+        content: pLes.summary,
+        position: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
     // Seed default site texts
@@ -504,6 +649,13 @@ export function subscribeToSiteContent(callback: (content: CmsSiteContentCombine
       oopLabTitle: content('oop_lab_title'), oopLabSummary: content('oop_lab_summary'),
       workshopTitle: content('workshop_title'), workshopSummary: content('workshop_summary'),
       philosophyTitle: content('philosophy_title'), footerText: content('footer_text'),
+      pilotModuleTitle: content('pilot_module_title'),
+      pilotModuleDescription: content('pilot_module_description'),
+      pilotEx1Title: content('pilot_ex1_title'),
+      pilotEx1Objective: content('pilot_ex1_objective'),
+      pilotEx2Title: content('pilot_ex2_title'),
+      pilotEx2Objective: content('pilot_ex2_objective'),
+      pilotEx3Title: content('pilot_ex3_title'),
     });
   };
   emit(DEFAULT_SITE_CONTENT);

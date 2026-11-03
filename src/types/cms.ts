@@ -58,6 +58,9 @@ export interface CmsBlock {
   sectionId: string;
   type: BlockType;
   content: string;
+  contentP5?: string;
+  contentJava?: string;
+  codeLanguage?: 'p5' | 'processing';
   position: number;
   filename?: string;
   caption?: string;
@@ -88,6 +91,13 @@ export interface CmsSiteContentCombined {
   workshopSummary?: string;
   philosophyTitle?: string;
   footerText: string;
+  pilotModuleTitle?: string;
+  pilotModuleDescription?: string;
+  pilotEx1Title?: string;
+  pilotEx1Objective?: string;
+  pilotEx2Title?: string;
+  pilotEx2Objective?: string;
+  pilotEx3Title?: string;
 }
 
 export interface CmsMediaResource {

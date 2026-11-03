@@ -1,12 +1,13 @@
 import React from 'react';
 import { AppUser, isUserAdmin } from '../services/firebase';
-import { User, Cloud, BookOpen, Settings } from 'lucide-react';
+import { User, Cloud, BookOpen, Settings, Compass } from 'lucide-react';
 
 interface HeaderProps {
-  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab' | 'admin';
+  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'admin';
   onNavigateHome: () => void;
   onOpenCatalogue: () => void;
   onNavigateOopLab: () => void;
+  onNavigatePilot?: () => void;
   onNavigateAdmin?: () => void;
   currentUser: AppUser | null;
   onOpenAuth: () => void;
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateHome,
   onOpenCatalogue,
   onNavigateOopLab,
+  onNavigatePilot,
   onNavigateAdmin,
   currentUser,
   onOpenAuth,
@@ -87,6 +89,20 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
                   <span>Laboratorio POO</span>
                 </button>
+
+                {onNavigatePilot && (
+                  <button
+                    onClick={onNavigatePilot}
+                    className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                      currentView === 'pilot'
+                        ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
+                        : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
+                    }`}
+                  >
+                    <Compass className="w-3.5 h-3.5 text-[#407B5D]" />
+                    <span>Exploraciones</span>
+                  </button>
+                )}
 
                 <button
                   onClick={onOpenCatalogue}

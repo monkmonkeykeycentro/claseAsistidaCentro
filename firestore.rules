@@ -87,10 +87,10 @@ service cloud.firestore {
       allow read, write: if isAdmin() && isValidId(revisionId);
     }
 
-    // User profiles: each user can only read and write their own profile
+    // User profiles: each user can only read and write their own profile; admins can list and review
     match /users/{userId} {
-      allow get: if isOwner(userId) && isValidId(userId);
-      allow list: if false; // Disallow querying across all users
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow list: if isAdmin();
 
       allow create: if isOwner(userId)
         && isValidId(userId)
@@ -108,8 +108,8 @@ service cloud.firestore {
 
       // User progress subcollection
       match /progress/{topicId} {
-        allow get: if isOwner(userId) && isValidId(userId) && isValidId(topicId);
-        allow list: if isOwner(userId) && isValidId(userId);
+        allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(topicId);
+        allow list: if isOwner(userId) || isAdmin();
 
         allow create, update: if isOwner(userId)
           && isValidId(userId)
@@ -117,6 +117,19 @@ service cloud.firestore {
           && request.resource.data.userId == request.auth.uid;
 
         allow delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(topicId);
+      }
+
+      // Pilot exercise evidences subcollection
+      match /pilot_evidences/{exerciseId} {
+        allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(exerciseId);
+        allow list: if isOwner(userId) || isAdmin();
+
+        allow create, update: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(exerciseId)
+          && request.resource.data.userId == request.auth.uid;
+
+        allow delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(exerciseId);
       }
     }
   }

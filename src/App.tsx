@@ -14,6 +14,7 @@ import { TopicsCatalogueModal } from './components/TopicsCatalogueModal';
 import { TopicViewer } from './components/TopicViewer';
 import { AuthModal } from './components/AuthModal';
 import { OopLabView } from './components/oopLab/OopLabView';
+import { PilotExercisesView } from './components/pilot/PilotExercisesView';
 import {
   AppUser,
   subscribeToAuth,
@@ -44,7 +45,7 @@ const DEFAULT_PROGRESS: UserProgress = {
   stage4BuilderCustomized: false,
 };
 
-type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'admin';
+type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'admin';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>('home');
@@ -110,6 +111,19 @@ export default function App() {
         pathname.endsWith('/cms')
       )) {
         setActiveView('admin');
+        return;
+      }
+
+      if (
+        hash === '#exploraciones' ||
+        hash === '#piloto' ||
+        hash === '#coordenadas' ||
+        hash === '#condicionales' ||
+        hash === '#audiovisual' ||
+        search.has('pilot') ||
+        search.has('exploraciones')
+      ) {
+        setActiveView('pilot');
       }
     };
 
@@ -364,6 +378,7 @@ export default function App() {
         onNavigateHome={() => setActiveView('home')}
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
         onNavigateOopLab={() => setActiveView('oop-lab')}
+        onNavigatePilot={() => setActiveView('pilot')}
         onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -401,6 +416,7 @@ export default function App() {
               }
             }}
             onOpenOopLab={() => setActiveView('oop-lab')}
+            onOpenPilot={() => setActiveView('pilot')}
             progress={progress}
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -454,6 +470,53 @@ export default function App() {
             onOpenCatalogue={() => setIsCatalogueOpen(true)}
           />
         )}
+
+        {/* VIEW 5: Exploraciones con Processing (Secuencia Piloto de 3 Ejercicios) */}
+        {activeView === 'pilot' && (
+          <PilotExercisesView
+            onBackToHome={() => setActiveView('home')}
+            currentUser={currentUser}
+            configs={{
+              coordinates: {
+                id: 'coordinates',
+                title: siteContent?.pilotEx1Title || 'Sistemas de coordenadas',
+                subtitle: 'Del espacio a la forma',
+                objective:
+                  siteContent?.pilotEx1Objective ||
+                  'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+                instructions:
+                  'Explora la retícula cartesiana, predice posiciones, completa el código y valida las 3 metas.',
+                order: 0,
+                visible: true,
+                status: 'published',
+              },
+              conditionals: {
+                id: 'conditionals',
+                title: siteContent?.pilotEx2Title || 'Estructuras condicionales',
+                subtitle: 'Decisiones visuales',
+                objective:
+                  siteContent?.pilotEx2Objective ||
+                  'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.',
+                instructions:
+                  'Observa las tres zonas, anticipa el valor límite en X=200, escribe las bifurcaciones y ejecuta las 6 pruebas de frontera.',
+                order: 1,
+                visible: true,
+                status: 'published',
+              },
+              audiovisual: {
+                id: 'audiovisual',
+                title: siteContent?.pilotEx3Title || 'Discretización audiovisual: Video a ASCII',
+                subtitle: 'Instalación Interactiva Completa',
+                objective: 'Cuantización tipográfica de video en tiempo real.',
+                instructions:
+                  'Arrastra la división central <> para comparar original contra cuantización tipográfica.',
+                order: 2,
+                visible: true,
+                status: 'published',
+              },
+            }}
+          />
+        )}
       </main>
 
       {/* Topics Catalogue Modal */}
@@ -504,6 +567,13 @@ export default function App() {
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Laboratorio POO
+            </button>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
+              onClick={() => setActiveView('pilot')}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
+            >
+              Exploraciones
             </button>
           </div>
         </div>

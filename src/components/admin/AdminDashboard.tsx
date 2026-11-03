@@ -28,7 +28,13 @@ import {
   seedCmsFromExistingContentIfEmpty,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
-import { AppUser, isUserAdmin } from '../../services/firebase';
+import { AppUser, isUserAdmin, db } from '../../services/firebase';
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import {
+  PilotEvidenceRecord,
+  CoordinateEvidence,
+  ConditionalEvidence,
+} from '../../types/pilotExercises';
 import {
   Layers,
   BookOpen,
@@ -57,6 +63,11 @@ import {
   Save,
   RotateCcw,
   User,
+  FileCheck,
+  Compass,
+  Code2,
+  Filter,
+  Check,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -75,7 +86,10 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   onExitAdmin,
   onPreviewAsStudent,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'site_texts' | 'media' | 'history'>('content');
+  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'site_texts' | 'media' | 'history' | 'evidences'>('content');
+  const [evidenceList, setEvidenceList] = useState<PilotEvidenceRecord[]>([]);
+  const [evidenceFilter, setEvidenceFilter] = useState<'all' | 'coordinates' | 'conditionals'>('all');
+  const [selectedEvidence, setSelectedEvidence] = useState<PilotEvidenceRecord | null>(null);
   const [modules, setModules] = useState<CmsModule[]>([]);
   const [lessons, setLessons] = useState<CmsLesson[]>([]);
   const [siteContent, setSiteContent] = useState<Record<string, CmsSiteContent>>({});
@@ -166,6 +180,93 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       setMediaList(media);
       const revs = await getCmsRevisions();
       setRevisions(revs);
+
+      // 6. Load Student Evidences
+      try {
+        const loadedEvidences: PilotEvidenceRecord[] = [];
+        try {
+          const usersSnap = await getDocs(collection(db, 'users'));
+          for (const uDoc of usersSnap.docs) {
+            const uData = uDoc.data();
+            try {
+              const coordSnap = await getDoc(
+                doc(db, 'users', uDoc.id, 'pilot_evidences', 'coordinates')
+              );
+              if (coordSnap.exists()) {
+                const cData = coordSnap.data();
+                loadedEvidences.push({
+                  id: `ev_coord_${uDoc.id}`,
+                  exerciseId: 'coordinates',
+                  userId: uDoc.id,
+                  userEmail: uData.email || 'Estudiante',
+                  userName: uData.displayName || 'Estudiante',
+                  data: cData as CoordinateEvidence,
+                  submittedAt: cData.submittedAt || cData.updatedAt || new Date().toISOString(),
+                });
+              }
+              const condSnap = await getDoc(
+                doc(db, 'users', uDoc.id, 'pilot_evidences', 'conditionals')
+              );
+              if (condSnap.exists()) {
+                const cnData = condSnap.data();
+                loadedEvidences.push({
+                  id: `ev_cond_${uDoc.id}`,
+                  exerciseId: 'conditionals',
+                  userId: uDoc.id,
+                  userEmail: uData.email || 'Estudiante',
+                  userName: uData.displayName || 'Estudiante',
+                  data: cnData as ConditionalEvidence,
+                  submittedAt: cnData.submittedAt || cnData.updatedAt || new Date().toISOString(),
+                });
+              }
+            } catch {
+              // ignore subcollection error
+            }
+          }
+        } catch {
+          // ignore users listing error
+        }
+
+        // Also merge local storage evidence for instant preview
+        try {
+          const locCoord = localStorage.getItem('pilot_coordinate_evidence');
+          if (locCoord) {
+            const pCoord = JSON.parse(locCoord);
+            if (!loadedEvidences.some((e) => e.exerciseId === 'coordinates')) {
+              loadedEvidences.push({
+                id: 'ev_coord_local',
+                exerciseId: 'coordinates',
+                userId: currentUser?.uid || 'local',
+                userEmail: currentUser?.email || 'estudiante.demo@centro.edu.mx',
+                userName: currentUser?.displayName || 'Estudiante de Prueba',
+                data: pCoord,
+                submittedAt: pCoord.updatedAt || new Date().toISOString(),
+              });
+            }
+          }
+          const locCond = localStorage.getItem('pilot_conditional_evidence');
+          if (locCond) {
+            const pCond = JSON.parse(locCond);
+            if (!loadedEvidences.some((e) => e.exerciseId === 'conditionals')) {
+              loadedEvidences.push({
+                id: 'ev_cond_local',
+                exerciseId: 'conditionals',
+                userId: currentUser?.uid || 'local',
+                userEmail: currentUser?.email || 'estudiante.demo@centro.edu.mx',
+                userName: currentUser?.displayName || 'Estudiante de Prueba',
+                data: pCond,
+                submittedAt: pCond.updatedAt || new Date().toISOString(),
+              });
+            }
+          }
+        } catch {
+          // ignore
+        }
+
+        setEvidenceList(loadedEvidences);
+      } catch (evErr) {
+        console.warn('Could not load student evidences:', evErr);
+      }
     } catch (e) {
       console.error('Error loading CMS data:', e);
       setActionError('No se pudo cargar el CMS. Revisa tu conexión y las reglas de Firebase.');
@@ -495,7 +596,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           setEditingLesson(null);
           loadAll();
         }}
-        onLessonUpdated={(updated) => {
+        onLessonUpdated={(updated: CmsLesson) => {
           setEditingLesson(updated);
           setLessons(lessons.map((l) => (l.id === updated.id ? updated : l)));
         }}
@@ -584,6 +685,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
             {[
               { id: 'content', label: 'Módulos y Lecciones', icon: Layers, count: modules.length },
+              { id: 'evidences', label: 'Evidencias de Estudiantes', icon: FileCheck, count: evidenceList.length },
               { id: 'overview', label: 'Resumen & Estadísticas', icon: Sparkles },
               { id: 'site_texts', label: 'Textos Generales', icon: FileText },
               { id: 'media', label: 'Recursos Multimedia', icon: ImageIcon, count: mediaList.length },
@@ -1289,6 +1391,185 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 6: EVIDENCIAS DE ESTUDIANTES (PILOTO)                                 */}
+          {/* ========================================================================= */}
+          {activeTab === 'evidences' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
+                <div>
+                  <h3 className="text-base font-bold text-[#232A24]">
+                    Evidencias de Estudiantes · Exploraciones con Processing
+                  </h3>
+                  <p className="text-xs text-[#59645C]">
+                    Revisa las hipótesis, código Processing Java escrito, pruebas de frontera y reflexiones pedagógicas registradas por los estudiantes.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center border border-[#E1E7E1] bg-white rounded-xl p-1 text-xs">
+                    <button
+                      onClick={() => setEvidenceFilter('all')}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        evidenceFilter === 'all'
+                          ? 'bg-[#407B5D] text-white'
+                          : 'text-[#59645C] hover:text-[#232A24]'
+                      }`}
+                    >
+                      Todos ({evidenceList.length})
+                    </button>
+                    <button
+                      onClick={() => setEvidenceFilter('coordinates')}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        evidenceFilter === 'coordinates'
+                          ? 'bg-[#407B5D] text-white'
+                          : 'text-[#59645C] hover:text-[#232A24]'
+                      }`}
+                    >
+                      01. Coordenadas ({evidenceList.filter((e) => e.exerciseId === 'coordinates').length})
+                    </button>
+                    <button
+                      onClick={() => setEvidenceFilter('conditionals')}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        evidenceFilter === 'conditionals'
+                          ? 'bg-[#407B5D] text-white'
+                          : 'text-[#59645C] hover:text-[#232A24]'
+                      }`}
+                    >
+                      02. Condicionales ({evidenceList.filter((e) => e.exerciseId === 'conditionals').length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {evidenceList.filter((e) => evidenceFilter === 'all' || e.exerciseId === evidenceFilter).length === 0 ? (
+                <div className="p-8 text-center text-xs text-[#59645C] bg-[#F7F8F4] rounded-2xl border border-dashed border-[#E1E7E1] space-y-2">
+                  <FileCheck className="w-8 h-8 text-[#8E8E89] mx-auto opacity-50" />
+                  <p className="font-semibold">No se encontraron evidencias registradas para este filtro.</p>
+                  <p className="text-[11px] text-[#8E8E89]">
+                    Cuando los estudiantes completen los ejercicios en &quot;Exploraciones con Processing&quot; y guarden su avance, aparecerán aquí automáticamente.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {evidenceList
+                    .filter((e) => evidenceFilter === 'all' || e.exerciseId === evidenceFilter)
+                    .map((ev) => {
+                      const isCoord = ev.exerciseId === 'coordinates';
+                      const coordData = isCoord ? (ev.data as CoordinateEvidence) : null;
+                      const condData = !isCoord ? (ev.data as ConditionalEvidence) : null;
+
+                      return (
+                        <div
+                          key={ev.id}
+                          className="p-5 bg-white border border-[#E1E7E1] rounded-2xl shadow-xs space-y-4 hover:border-[#407B5D]/60 transition-all"
+                        >
+                          {/* Header bar */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md ${
+                                    isCoord ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-[#EBF1FA] text-[#2868D9]'
+                                  }`}
+                                >
+                                  {isCoord ? 'EJERCICIO 01 · COORDENADAS' : 'EJERCICIO 02 · CONDICIONALES'}
+                                </span>
+                                <span className="text-xs font-bold text-[#232A24]">
+                                  {ev.userName} ({ev.userEmail})
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-[#59645C] font-mono">
+                                Enviado: {new Date(ev.submittedAt).toLocaleString()} · Etapa: {ev.data.currentStage || 'documentar'}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                                ev.data.completed
+                                  ? 'bg-[#E8EEE8] text-[#407B5D]'
+                                  : 'bg-[#FFF9EE] text-[#8A6318]'
+                              }`}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>{ev.data.completed ? 'Completado al 100%' : 'En Progreso'}</span>
+                            </span>
+                          </div>
+
+                          {/* Content details grid */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
+                            {/* Left Column: Prediction & Reflections */}
+                            <div className="space-y-3">
+                              <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1">
+                                <span className="font-bold text-[#232A24] block">1. Predicción del Estudiante:</span>
+                                <p className="text-[#59645C] leading-relaxed">
+                                  {ev.data.prediction || 'Sin respuesta de predicción.'}
+                                </p>
+                              </div>
+
+                              <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1">
+                                <span className="font-bold text-[#232A24] block">2. Reflexión Escrita:</span>
+                                <p className="text-[#59645C] leading-relaxed">
+                                  {ev.data.reflection || 'Sin reflexión registrada.'}
+                                </p>
+                              </div>
+
+                              {/* Testing verification indicators */}
+                              {isCoord && coordData && (
+                                <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1.5">
+                                  <span className="font-bold text-[#232A24] block">Metas de Coordenadas:</span>
+                                  <div className="grid grid-cols-3 gap-2 font-mono text-[10px]">
+                                    <div className={`p-1.5 rounded text-center font-bold ${coordData.targetHits?.circleAtCenter ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-white text-[#8E8E89]'}`}>
+                                      Centro: {coordData.targetHits?.circleAtCenter ? '✓' : '✗'}
+                                    </div>
+                                    <div className={`p-1.5 rounded text-center font-bold ${coordData.targetHits?.rectAtZone ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-white text-[#8E8E89]'}`}>
+                                      Rect (100,80): {coordData.targetHits?.rectAtZone ? '✓' : '✗'}
+                                    </div>
+                                    <div className={`p-1.5 rounded text-center font-bold ${coordData.targetHits?.lineAcross ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-white text-[#8E8E89]'}`}>
+                                      Línea Y=200: {coordData.targetHits?.lineAcross ? '✓' : '✗'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {!isCoord && condData && condData.boundaryTests && (
+                                <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1.5">
+                                  <span className="font-bold text-[#232A24] block">Pruebas de Límites Ejecutadas:</span>
+                                  <div className="grid grid-cols-3 gap-1.5 font-mono text-[10px]">
+                                    {[199, 200, 201, 399, 400, 401].map((bx) => {
+                                      const t = condData.boundaryTests[bx];
+                                      return (
+                                        <div
+                                          key={bx}
+                                          className={`p-1 rounded text-center ${
+                                            t?.passed ? 'bg-[#E8EEE8] text-[#407B5D] font-bold' : 'bg-white text-[#8E8E89]'
+                                          }`}
+                                        >
+                                          X={bx}: {t?.passed ? 'OK ✓' : 'Pendiente'}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right Column: Processing Java Code Written */}
+                            <div className="space-y-1.5">
+                              <span className="font-bold text-[#232A24] block">Código Processing Java Enviado:</span>
+                              <pre className="p-3 bg-[#141414] text-[#FAF9F5] border border-[#232A24] rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto max-h-[220px]">
+                                <code>{ev.data.code || '// Sin código'}</code>
+                              </pre>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

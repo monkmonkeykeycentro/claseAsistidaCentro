@@ -140,14 +140,14 @@ export const GenerativeHeroCanvas: React.FC = () => {
   };
 
   return (
-    <div ref={containerRef} className="bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl overflow-hidden flex flex-col text-xs shadow-xs">
+    <div ref={containerRef} className="bg-[#FFFFFF] border border-[#DCE7F2] rounded-2xl overflow-hidden flex flex-col text-xs shadow-xs">
       {/* Top Header / Mode Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#FFFFFF] border-b border-[#E1E7E1]">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#FFFFFF] border-b border-[#DCE7F2]">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
-          <span className="font-bold text-[#232A24]">Estudio Generativo</span>
-          <span className="text-[#E1E7E1]">/</span>
-          <span className="text-xs text-[#59645C] font-medium">Fig. 01 · Reglas interactivas</span>
+          <span className="w-2 h-2 rounded-full bg-[#006699] inline-block" />
+          <span className="font-bold text-[#0C2233]">Estudio Generativo</span>
+          <span className="text-[#DCE7F2]">/</span>
+          <span className="text-xs text-[#4A6076] font-medium">Fig. 01 · Reglas interactivas</span>
         </div>
 
         {/* Algorithm Tabs */}
@@ -163,8 +163,8 @@ export const GenerativeHeroCanvas: React.FC = () => {
               onClick={() => setAlgorithm(tab.id as HeroAlgorithm)}
               className={`min-h-[30px] px-3 py-1 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                 algorithm === tab.id
-                  ? 'bg-[#407B5D] text-white border-[#407B5D] shadow-xs'
-                  : 'bg-[#FFFFFF] text-[#59645C] border-[#E1E7E1] hover:bg-[#E8EEE8]/40 hover:text-[#232A24]'
+                  ? 'bg-[#006699] text-white border-[#006699] shadow-xs'
+                  : 'bg-[#FFFFFF] text-[#4A6076] border-[#DCE7F2] hover:bg-[#E2EEF8]/40 hover:text-[#0C2233]'
               }`}
             >
               {tab.label}
@@ -186,24 +186,24 @@ export const GenerativeHeroCanvas: React.FC = () => {
       </div>
 
       {/* Control Strip */}
-      <div className="px-4 py-3 bg-[#F7F8F4] border-t border-[#E1E7E1] flex flex-wrap items-center justify-between gap-3">
+      <div className="px-4 py-3 bg-[#F4F8FB] border-t border-[#DCE7F2] flex flex-wrap items-center justify-between gap-3">
         {/* Sliders: Density & Speed */}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-[#59645C]">Densidad:</span>
+            <span className="text-xs font-medium text-[#4A6076]">Densidad:</span>
             <input
               type="range"
               min={6}
               max={16}
               value={density}
               onChange={(e) => setDensity(Number(e.target.value))}
-              className="w-20 accent-[#407B5D] cursor-pointer"
+              className="w-20 accent-[#006699] cursor-pointer"
             />
-            <span className="text-xs font-bold text-[#232A24] tabular-nums font-mono">{density}</span>
+            <span className="text-xs font-bold text-[#0C2233] tabular-nums font-mono">{density}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-[#59645C]">Velocidad:</span>
+            <span className="text-xs font-medium text-[#4A6076]">Velocidad:</span>
             <input
               type="range"
               min={0.2}
@@ -211,9 +211,9 @@ export const GenerativeHeroCanvas: React.FC = () => {
               step={0.1}
               value={speed}
               onChange={(e) => setSpeed(Number(e.target.value))}
-              className="w-16 accent-[#407B5D] cursor-pointer"
+              className="w-16 accent-[#006699] cursor-pointer"
             />
-            <span className="text-xs font-bold text-[#232A24] tabular-nums font-mono">{speed.toFixed(1)}x</span>
+            <span className="text-xs font-bold text-[#0C2233] tabular-nums font-mono">{speed.toFixed(1)}x</span>
           </div>
         </div>
 
@@ -221,16 +221,16 @@ export const GenerativeHeroCanvas: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="min-h-[32px] px-3 py-1 bg-[#FFFFFF] border border-[#E1E7E1] hover:bg-[#E8EEE8]/40 text-[#232A24] font-medium rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+            className="min-h-[32px] px-3 py-1 bg-[#FFFFFF] border border-[#DCE7F2] hover:bg-[#E2EEF8]/40 text-[#0C2233] font-medium rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             title={isPlaying ? 'Pausar animación' : 'Reanudar animación'}
           >
-            {isPlaying ? <Pause className="w-3.5 h-3.5 text-[#E6B65A]" /> : <Play className="w-3.5 h-3.5 text-[#407B5D]" />}
+            {isPlaying ? <Pause className="w-3.5 h-3.5 text-[#E6B65A]" /> : <Play className="w-3.5 h-3.5 text-[#006699]" />}
             <span>{isPlaying ? 'Pausar' : 'Reanudar'}</span>
           </button>
 
           <button
             onClick={handleRandomizeSeed}
-            className="min-h-[32px] px-3 py-1 bg-[#407B5D] hover:bg-[#33654C] text-white font-semibold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-98"
+            className="min-h-[32px] px-3 py-1 bg-[#006699] hover:bg-[#00507A] text-white font-semibold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-98"
             title="Cambiar semilla aleatoria reproducible"
           >
             <RefreshCw className="w-3.5 h-3.5" />
