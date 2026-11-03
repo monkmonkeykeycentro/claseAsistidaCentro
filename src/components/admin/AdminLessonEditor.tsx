@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CmsLesson,
   CmsSection,
@@ -7,7 +7,7 @@ import {
   BlockType,
 } from '../../types/cms';
 import {
-  saveCmsLesson,
+  saveCmsLessonContent,
   getCmsSections,
   saveCmsSection,
   deleteCmsSection,
@@ -64,6 +64,27 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
 
+  const savingRef = useRef(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const runAction = async (action: () => Promise<void>) => {
+    if (savingRef.current || isLoading) return;
+    savingRef.current = true;
+    setIsSaving(true);
+    setActionError(null);
+    try {
+      // Preserve field edits before operations that reload sections or blocks.
+      await saveCmsLessonContent(formData, sections, blocksBySection);
+      await action();
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No se pudo guardar el contenido.');
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
+  };
+
   // Load sections and their blocks
   const loadContent = async () => {
     setIsLoading(true);
@@ -82,7 +103,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
         setActiveSectionId(secList[0].id);
       }
     } catch (e) {
-      console.error('Error loading lesson content:', e);
+      setActionError('No se pudo cargar el contenido de la lección.');
     } finally {
       setIsLoading(false);
     }
@@ -94,14 +115,18 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
 
   // Handle saving the lesson metadata
   const handleSaveLesson = async (publishNow = false) => {
+    if (savingRef.current || isLoading) return;
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const updated: CmsLesson = {
         ...formData,
-        status: publishNow ? 'published' : formData.status,
+        status: publishNow ? 'published' : 'draft',
         updatedAt: new Date().toISOString(),
       };
-      await saveCmsLesson(updated);
+      await saveCmsLessonContent(updated, sections, blocksBySection);
+      setHasUnsavedChanges(false);
+      setActionError(null);
       setFormData(updated);
       onLessonUpdated(updated);
       setSaveSuccessMsg(
@@ -109,8 +134,9 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
       );
       setTimeout(() => setSaveSuccessMsg(null), 3000);
     } catch (err) {
-      alert('Error al guardar: ' + (err instanceof Error ? err.message : String(err)));
+      setActionError('Error al guardar: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -134,7 +160,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     setActiveSectionId(newId);
   };
 
-  const handleUpdateSectionField = async (
+  const handleUpdateSectionField = (
     secId: string,
     field: keyof CmsSection,
     value: any
@@ -143,7 +169,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     if (!current) return;
     const updated = { ...current, [field]: value, updatedAt: new Date().toISOString() };
     setSections(sections.map((s) => (s.id === secId ? updated : s)));
-    await saveCmsSection(updated);
+    setHasUnsavedChanges(true);
   };
 
   const handleDeleteSection = async (secId: string) => {
@@ -171,11 +197,11 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     copy.splice(targetIdx, 0, moved);
 
     const reordered = copy.map((item, p) => ({ ...item, position: p }));
-    setSections(reordered);
     await reorderCmsItems(
       'cms_sections',
       reordered.map((s) => s.id)
     );
+    setSections(reordered);
   };
 
   // Block operations
@@ -193,7 +219,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
         ? 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80'
         : type === 'video'
         ? 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-        : 'Actividad práctica guiada';
+        : type === 'resources' ? 'https://processing.org/reference/' : 'Actividad práctica guiada';
 
     const newBlock: CmsBlock = {
       id: newBlockId,
@@ -215,7 +241,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     }));
   };
 
-  const handleUpdateBlockField = async (
+  const handleUpdateBlockField = (
     secId: string,
     blockId: string,
     field: keyof CmsBlock,
@@ -227,9 +253,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     );
     setBlocksBySection((prev) => ({ ...prev, [secId]: updatedBlocks }));
     const targetBlock = updatedBlocks.find((b) => b.id === blockId);
-    if (targetBlock) {
-      await saveCmsBlock(targetBlock);
-    }
+    if (targetBlock) setHasUnsavedChanges(true);
   };
 
   const handleDeleteBlock = async (secId: string, blockId: string) => {
@@ -260,23 +284,26 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     currentBlocks.splice(targetIdx, 0, moved);
 
     const reordered = currentBlocks.map((b, p) => ({ ...b, position: p }));
-    setBlocksBySection((prev) => ({ ...prev, [secId]: reordered }));
     await reorderCmsItems(
       'cms_blocks',
       reordered.map((b) => b.id)
     );
+    setBlocksBySection((prev) => ({ ...prev, [secId]: reordered }));
   };
 
   const activeSection = sections.find((s) => s.id === activeSectionId) || sections[0];
   const activeBlocks = activeSection ? blocksBySection[activeSection.id] || [] : [];
 
   return (
-    <div className="space-y-6">
+    <div aria-busy={isSaving || isLoading}>
+      <fieldset disabled={isSaving || isLoading} className="space-y-6 border-0 p-0 m-0 min-w-0">
       {/* Top Breadcrumb & Action Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-[#E1E7E1] rounded-2xl shadow-xs">
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={() => {
+              if (!hasUnsavedChanges || confirm('Hay cambios sin guardar. ¿Deseas salir del editor?')) onBack();
+            }}
             className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -326,6 +353,8 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
         </div>
       </div>
 
+      {actionError && <div role="alert" className="p-4 rounded-xl bg-[#FFF9EE] border border-[#E6C687] text-sm text-[#8A6318]">{actionError}</div>}
+      <p className="text-xs text-[#59645C]">Los textos y bloques se guardan con «Guardar Borrador» o «Publicar Lección».</p>
       {saveSuccessMsg && (
         <div className="p-3.5 bg-[#E8EEE8] border border-[#407B5D] text-[#232A24] text-xs font-semibold rounded-xl flex items-center gap-2 shadow-xs animate-in fade-in">
           <Check className="w-4 h-4 text-[#407B5D]" />
@@ -351,7 +380,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, title: e.target.value }); }}
                   className="w-full px-3 py-2 border border-[#E1E7E1] rounded-xl text-xs bg-[#F7F8F4] text-[#232A24] focus:outline-none focus:border-[#407B5D]"
                 />
               </div>
@@ -362,7 +391,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                 </label>
                 <select
                   value={formData.moduleId}
-                  onChange={(e) => setFormData({ ...formData, moduleId: e.target.value })}
+                  onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, moduleId: e.target.value }); }}
                   className="w-full px-3 py-2 border border-[#E1E7E1] rounded-xl text-xs bg-[#F7F8F4] text-[#232A24] focus:outline-none"
                 >
                   {modules.map((m) => (
@@ -380,7 +409,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                 <textarea
                   rows={2}
                   value={formData.summary}
-                  onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                  onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, summary: e.target.value }); }}
                   className="w-full px-3 py-2 border border-[#E1E7E1] rounded-xl text-xs bg-[#F7F8F4] text-[#232A24] focus:outline-none"
                 />
               </div>
@@ -394,7 +423,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                     type="text"
                     value={formData.badge || ''}
                     placeholder="Ej. setup() y draw()"
-                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, badge: e.target.value }); }}
                     className="w-full px-2.5 py-1.5 border border-[#E1E7E1] rounded-xl text-xs bg-[#F7F8F4]"
                   />
                 </div>
@@ -406,7 +435,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                     type="text"
                     value={formData.estimatedTime || ''}
                     placeholder="Ej. 20 min"
-                    onChange={(e) => setFormData({ ...formData, estimatedTime: e.target.value })}
+                    onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, estimatedTime: e.target.value }); }}
                     className="w-full px-2.5 py-1.5 border border-[#E1E7E1] rounded-xl text-xs bg-[#F7F8F4]"
                   />
                 </div>
@@ -419,7 +448,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                   <input
                     type="checkbox"
                     checked={formData.visible}
-                    onChange={(e) => setFormData({ ...formData, visible: e.target.checked })}
+                    onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, visible: e.target.checked }); }}
                     className="w-4 h-4 rounded text-[#407B5D] accent-[#407B5D]"
                   />
                 </div>
@@ -428,9 +457,10 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                   <span className="font-semibold text-[#232A24]">Estado editorial:</span>
                   <select
                     value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value as any })
-                    }
+                    onChange={(e) => {
+                      setHasUnsavedChanges(true);
+                      setFormData({ ...formData, status: e.target.value as CmsLesson['status'] });
+                    }}
                     className="px-2.5 py-1 border border-[#E1E7E1] rounded-lg text-xs bg-[#F7F8F4]"
                   >
                     <option value="draft">Borrador</option>
@@ -452,7 +482,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                 </h3>
               </div>
               <button
-                onClick={handleAddSection}
+                onClick={() => runAction(handleAddSection)}
                 className="px-2.5 py-1 rounded-lg bg-[#E8EEE8] hover:bg-[#d8e3d8] text-[#407B5D] text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -498,7 +528,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
-                          onClick={() => handleMoveSection(sIdx, 'up')}
+                          onClick={() => runAction(() => handleMoveSection(sIdx, 'up'))}
                           disabled={sIdx === 0}
                           className="p-1 rounded hover:bg-white text-[#59645C] disabled:opacity-20 cursor-pointer"
                           title="Subir"
@@ -506,7 +536,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                           <ArrowUp className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleMoveSection(sIdx, 'down')}
+                          onClick={() => runAction(() => handleMoveSection(sIdx, 'down'))}
                           disabled={sIdx === sections.length - 1}
                           className="p-1 rounded hover:bg-white text-[#59645C] disabled:opacity-20 cursor-pointer"
                           title="Bajar"
@@ -514,14 +544,14 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                           <ArrowDown className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDuplicateSection(sec.id)}
+                          onClick={() => runAction(() => handleDuplicateSection(sec.id))}
                           className="p-1 rounded hover:bg-white text-[#59645C] cursor-pointer"
                           title="Duplicar sección"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDeleteSection(sec.id)}
+                          onClick={() => runAction(() => handleDeleteSection(sec.id))}
                           className="p-1 rounded hover:bg-red-50 text-red-600 cursor-pointer"
                           title="Eliminar sección"
                         >
@@ -611,40 +641,42 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => handleAddBlock(activeSection.id, 'rich-text')}
+                    onClick={() => runAction(() => handleAddBlock(activeSection.id, 'rich-text'))}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <FileText className="w-3.5 h-3.5 text-[#407B5D]" />
                     <span>+ Texto</span>
                   </button>
                   <button
-                    onClick={() => handleAddBlock(activeSection.id, 'code')}
+                    onClick={() => runAction(() => handleAddBlock(activeSection.id, 'code'))}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Code className="w-3.5 h-3.5 text-[#407B5D]" />
                     <span>+ Código Java</span>
                   </button>
                   <button
-                    onClick={() => handleAddBlock(activeSection.id, 'callout')}
+                    onClick={() => runAction(() => handleAddBlock(activeSection.id, 'callout'))}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <AlertTriangle className="w-3.5 h-3.5 text-[#E6B65A]" />
                     <span>+ Destacado / Nota</span>
                   </button>
                   <button
-                    onClick={() => handleAddBlock(activeSection.id, 'image')}
+                    onClick={() => runAction(() => handleAddBlock(activeSection.id, 'image'))}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <ImageIcon className="w-3.5 h-3.5 text-[#407B5D]" />
                     <span>+ Imagen</span>
                   </button>
                   <button
-                    onClick={() => handleAddBlock(activeSection.id, 'video')}
+                    onClick={() => runAction(() => handleAddBlock(activeSection.id, 'video'))}
                     className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Video className="w-3.5 h-3.5 text-[#407B5D]" />
                     <span>+ Video</span>
                   </button>
+                  <button onClick={() => runAction(() => handleAddBlock(activeSection.id, 'resources'))} className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] text-xs cursor-pointer">+ Recurso</button>
+                  <button onClick={() => runAction(() => handleAddBlock(activeSection.id, 'activity'))} className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] text-xs cursor-pointer">+ Actividad</button>
                 </div>
               </div>
 
@@ -673,7 +705,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                         {/* Block Action Controls */}
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => handleMoveBlock(activeSection.id, bIdx, 'up')}
+                            onClick={() => runAction(() => handleMoveBlock(activeSection.id, bIdx, 'up'))}
                             disabled={bIdx === 0}
                             className="p-1 rounded bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#59645C] disabled:opacity-20 cursor-pointer"
                             title="Subir bloque"
@@ -681,7 +713,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                             <ArrowUp className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleMoveBlock(activeSection.id, bIdx, 'down')}
+                            onClick={() => runAction(() => handleMoveBlock(activeSection.id, bIdx, 'down'))}
                             disabled={bIdx === activeBlocks.length - 1}
                             className="p-1 rounded bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#59645C] disabled:opacity-20 cursor-pointer"
                             title="Bajar bloque"
@@ -689,14 +721,14 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                             <ArrowDown className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDuplicateBlock(activeSection.id, block.id)}
+                            onClick={() => runAction(() => handleDuplicateBlock(activeSection.id, block.id))}
                             className="p-1 rounded bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#59645C] cursor-pointer"
                             title="Duplicar bloque"
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDeleteBlock(activeSection.id, block.id)}
+                            onClick={() => runAction(() => handleDeleteBlock(activeSection.id, block.id))}
                             className="p-1 rounded bg-white hover:bg-red-50 border border-[#E1E7E1] text-red-600 cursor-pointer"
                             title="Eliminar bloque"
                           >
@@ -791,6 +823,10 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                         </div>
                       )}
 
+                      {(block.type === 'resources' || block.type === 'activity') && (
+                        <textarea rows={4} value={block.content} onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)} placeholder={block.type === 'resources' ? 'URL o descripción del recurso' : 'Instrucciones de la actividad'} className="w-full p-3 rounded-xl border border-[#E1E7E1] text-sm" />
+                      )}
+
                       {block.type === 'image' && (
                         <div className="space-y-2 text-xs">
                           <input
@@ -864,6 +900,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
         sections={sections}
         blocksBySection={blocksBySection}
       />
+      </fieldset>
     </div>
   );
 };

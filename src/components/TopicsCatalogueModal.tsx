@@ -23,7 +23,7 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
 
   if (!isOpen) return null;
 
-  const allTopics = topics && topics.length > 0 ? topics : TOPICS_DATA;
+  const allTopics = topics ?? TOPICS_DATA;
 
   const categories = [
     { id: 'all', label: 'Todos los temas' },
@@ -186,7 +186,7 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
 
         {/* Footer */}
         <div className="p-4 bg-[#FFFFFF] border-t border-[#E1E7E1] text-xs text-[#59645C] flex items-center justify-between rounded-b-3xl">
-          <span className="font-medium">{TOPICS_DATA.length} módulos disponibles</span>
+          <span className="font-medium">{allTopics.length} lecciones disponibles</span>
           <button
             onClick={onClose}
             className="min-h-[38px] px-4 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"

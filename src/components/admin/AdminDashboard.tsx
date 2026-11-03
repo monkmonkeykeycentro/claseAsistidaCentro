@@ -28,7 +28,7 @@ import {
   seedCmsFromExistingContentIfEmpty,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
-import { AppUser, signInWithGoogle, isUserAdmin } from '../../services/firebase';
+import { AppUser, isUserAdmin } from '../../services/firebase';
 import {
   Layers,
   BookOpen,
@@ -65,7 +65,12 @@ interface AdminDashboardProps {
   onPreviewAsStudent: () => void;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+export const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
+  if (!isUserAdmin(props.currentUser)) return null;
+  return <AuthorizedAdminDashboard {...props} />;
+};
+
+const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   onExitAdmin,
   onPreviewAsStudent,
@@ -116,12 +121,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isWorking, setIsWorking] = useState(false);
+  const runAction = async (action: () => Promise<void>) => {
+    if (isWorking) return;
+    setIsWorking(true);
+    setActionError(null);
+    try { await action(); }
+    catch (error) { setActionError(error instanceof Error ? error.message : 'No se pudo completar la operación.'); }
+    finally { setIsWorking(false); }
+  };
+
   // Load all data
   const loadAll = async () => {
     setIsLoading(true);
     try {
       // 1. Seed if empty
-      await seedCmsFromExistingContentIfEmpty().catch(() => {});
+      await seedCmsFromExistingContentIfEmpty();
 
       // 2. Load modules & lessons
       const modList = await getCmsModules(true);
@@ -152,7 +168,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setRevisions(revs);
     } catch (e) {
       console.error('Error loading CMS data:', e);
-      showToast('Error cargando contenidos desde la base de datos');
+      setActionError('No se pudo cargar el CMS. Revisa tu conexión y las reglas de Firebase.');
     } finally {
       setIsLoading(false);
     }
@@ -171,7 +187,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       category: 'Fundamentos',
       badge: '',
       position: modules.length,
-      status: 'published',
+      status: 'draft',
       visible: true,
     });
     setIsModuleModalOpen(true);
@@ -252,15 +268,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     copy.splice(targetIdx, 0, moved);
 
     const reordered = copy.map((m, p) => ({ ...m, position: p }));
-    setModules(reordered);
     await reorderCmsItems(
       'cms_modules',
       reordered.map((m) => m.id)
     );
+    setModules(reordered);
   };
 
   // Lesson actions
-  const handleCreateNewLesson = (targetModuleId: string) => {
+  const handleCreateNewLesson = async (targetModuleId: string) => {
     const newLesson: CmsLesson = {
       id: `les_${Date.now()}`,
       moduleId: targetModuleId,
@@ -276,10 +292,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       updatedAt: new Date().toISOString(),
     };
 
-    saveCmsLesson(newLesson).then(() => {
-      setLessons([...lessons, newLesson]);
-      setEditingLesson(newLesson);
-    });
+    await saveCmsLesson(newLesson);
+    setLessons([...lessons, newLesson]);
+    setEditingLesson(newLesson);
   };
 
   const handleToggleLessonVisibility = async (les: CmsLesson) => {
@@ -336,7 +351,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       showToast(`✓ "${updated.title}" guardado correctamente.`);
     } catch (e) {
       console.error(e);
-      showToast(`Error al guardar "${current.title}"`);
+      setActionError(`No se pudo guardar "${current.title}". Revisa tu conexión y los permisos.`);
     } finally {
       setSavingTextKeys((prev) => ({ ...prev, [key]: false }));
     }
@@ -364,7 +379,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       showToast(`✓ Se guardaron ${count} textos generales en Firestore.`);
     } catch (err) {
       console.error(err);
-      showToast('Error al guardar algunos textos.');
+      setActionError('No se pudieron guardar todos los textos. Revisa tu conexión y los permisos.');
     } finally {
       setIsLoading(false);
     }
@@ -489,7 +504,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150 font-sans">
+    <div aria-busy={isWorking || isLoading} className="space-y-6 animate-in fade-in duration-150 font-sans">
       {/* Top Admin Navigation Header */}
       <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="space-y-1">
@@ -500,7 +515,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </span>
             <span className="text-[#E1E7E1]">/</span>
             <span className="text-[#59645C] font-mono text-[11px]">
-              {currentUser?.email || 'jmartineza@centro.edu.mx'}
+              {currentUser?.email}
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#232A24]">
@@ -523,7 +538,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
 
           <button
-            onClick={handleExportBackup}
+            onClick={() => runAction(handleExportBackup)}
             className="min-h-[40px] px-3.5 py-2 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-xs font-semibold text-[#232A24] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             title="Exportar respaldo completo del curriculum en JSON"
           >
@@ -541,44 +556,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* Admin Authorization Status Banner */}
-      {!currentUser ? (
-        <div className="p-4 bg-[#FFF9EE] border border-[#E6C687] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-[#8A6318] shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <span className="font-bold text-[#232A24] block">
-                Modo Administrador Activo (Edición en Vivo)
-              </span>
-              <p className="text-[#59645C] text-[11px] leading-relaxed">
-                Los cambios se aplican al instante localmente. Para persistir tus cambios permanentemente en la base de datos de Firebase, inicia sesión con la cuenta de profesor autorizada (<code className="font-mono font-bold text-[#232A24]">jmartineza@centro.edu.mx</code>).
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => signInWithGoogle().then(() => showToast('Iniciando sesión con Google...')).catch((e) => alert(e))}
-            className="min-h-[38px] px-4 py-2 bg-[#8A6318] hover:bg-[#725213] text-white rounded-xl font-semibold text-xs flex items-center gap-2 cursor-pointer shrink-0 transition-colors shadow-xs"
-          >
-            <User className="w-4 h-4" />
-            <span>Acceder con Google</span>
-          </button>
-        </div>
-      ) : isUserAdmin(currentUser) ? (
-        <div className="p-3.5 bg-[#E8EEE8] border border-[#A4C4B5] rounded-2xl flex items-center justify-between text-xs text-[#232A24] shadow-xs">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#407B5D]" />
-            <span>
-              Sesión de Administrador verificada: <strong>{currentUser.email}</strong>. Sincronización continua en Firestore habilitada.
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div className="p-3.5 bg-[#FFF9EE] border border-[#E6C687] rounded-2xl flex items-center justify-between text-xs text-[#8A6318] shadow-xs">
-          <span>
-            Sesión iniciada como <strong>{currentUser.email}</strong>. Esta cuenta no tiene permisos de administrador (requiere <code>jmartineza@centro.edu.mx</code>). Los cambios se guardarán localmente.
-          </span>
-        </div>
-      )}
+      <div className="p-3.5 bg-[#E8EEE8] border border-[#A4C4B5] rounded-2xl text-xs text-[#232A24]">
+        <ShieldCheck className="w-4 h-4 inline mr-2 text-[#407B5D]" />
+        Administrador: <strong>{currentUser?.email}</strong>. Los cambios se confirman al guardarse en Firebase.
+      </div>
+      {actionError && <div role="alert" className="p-4 bg-[#FFF9EE] border border-[#E6C687] rounded-xl text-sm text-[#8A6318]">{actionError}</div>}
 
       {toastMessage && (
         <div className="p-3.5 bg-[#E8EEE8] border border-[#407B5D] text-[#232A24] text-xs font-semibold rounded-xl flex items-center justify-between shadow-xs animate-in fade-in">
@@ -773,7 +755,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {/* Module Quick Actions */}
                           <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
                             <button
-                              onClick={() => handleMoveModule(mIdx, 'up')}
+                              onClick={() => runAction(() => handleMoveModule(mIdx, 'up'))}
                               disabled={mIdx === 0}
                               className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] disabled:opacity-20 cursor-pointer"
                               title="Subir posición"
@@ -781,7 +763,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               <ArrowUp className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => handleMoveModule(mIdx, 'down')}
+                              onClick={() => runAction(() => handleMoveModule(mIdx, 'down'))}
                               disabled={mIdx === filteredModules.length - 1}
                               className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] disabled:opacity-20 cursor-pointer"
                               title="Bajar posición"
@@ -790,7 +772,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </button>
 
                             <button
-                              onClick={() => handleToggleModuleVisibility(mod)}
+                              onClick={() => runAction(() => handleToggleModuleVisibility(mod))}
                               className={`p-1.5 rounded-lg border border-[#E1E7E1] transition-colors cursor-pointer ${
                                 mod.visible
                                   ? 'hover:bg-[#E8EEE8] text-[#407B5D]'
@@ -806,7 +788,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </button>
 
                             <button
-                              onClick={() => handleDuplicateModule(mod.id)}
+                              onClick={() => runAction(() => handleDuplicateModule(mod.id))}
                               className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] cursor-pointer"
                               title="Duplicar módulo y sus lecciones"
                             >
@@ -822,7 +804,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </button>
 
                             <button
-                              onClick={() => handleDeleteModule(mod.id)}
+                              onClick={() => runAction(() => handleDeleteModule(mod.id))}
                               className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-red-50 text-red-600 cursor-pointer"
                               title="Archivar módulo"
                             >
@@ -837,7 +819,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="flex items-center justify-between text-xs font-semibold text-[#59645C] mb-1">
                               <span>Lecciones del módulo ({modLessons.length})</span>
                               <button
-                                onClick={() => handleCreateNewLesson(mod.id)}
+                                onClick={() => runAction(() => handleCreateNewLesson(mod.id))}
                                 className="px-3 py-1 rounded-lg bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#407B5D] text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
                               >
                                 <Plus className="w-3.5 h-3.5" />
@@ -887,7 +869,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-1.5 shrink-0">
                                       <button
-                                        onClick={() => handleToggleLessonVisibility(les)}
+                                        onClick={() => runAction(() => handleToggleLessonVisibility(les))}
                                         className={`p-1.5 rounded-lg border border-[#E1E7E1] transition-colors cursor-pointer ${
                                           les.visible
                                             ? 'hover:bg-[#E8EEE8] text-[#407B5D]'
@@ -903,7 +885,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                       </button>
 
                                       <button
-                                        onClick={() => handleDuplicateLesson(les.id)}
+                                        onClick={() => runAction(() => handleDuplicateLesson(les.id))}
                                         className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] text-[#59645C] cursor-pointer"
                                         title="Duplicar lección"
                                       >
@@ -919,7 +901,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                       </button>
 
                                       <button
-                                        onClick={() => handleDeleteLesson(les.id)}
+                                        onClick={() => runAction(() => handleDeleteLesson(les.id))}
                                         className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-red-50 text-red-600 cursor-pointer"
                                         title="Archivar lección"
                                       >
@@ -1002,7 +984,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </button>
 
                   <button
-                    onClick={handleExportBackup}
+                    onClick={() => runAction(handleExportBackup)}
                     className="p-4 rounded-xl border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/40 transition-colors text-left space-y-1 cursor-pointer"
                   >
                     <Download className="w-5 h-5 text-[#407B5D]" />
@@ -1045,7 +1027,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </p>
                 </div>
                 <button
-                  onClick={handleSaveAllSiteTexts}
+                  onClick={() => runAction(handleSaveAllSiteTexts)}
                   className="min-h-[38px] px-4 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
                 >
                   <Save className="w-4 h-4" />
@@ -1152,7 +1134,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                               <button
                                 type="button"
-                                onClick={() => handleSaveSiteText(key, currentVal)}
+                                onClick={() => runAction(() => handleSaveSiteText(key, currentVal))}
                                 disabled={isSaving}
                                 className={`min-h-[32px] px-3.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs ${
                                   isDirty
@@ -1242,7 +1224,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           Copiar URL
                         </button>
                         <button
-                          onClick={() => handleDeleteMedia(m.id)}
+                          onClick={() => runAction(() => handleDeleteMedia(m.id))}
                           className="p-1 text-red-500 hover:text-red-700 cursor-pointer"
                           title="Eliminar recurso"
                         >
@@ -1273,7 +1255,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleExportBackup}
+                    onClick={() => runAction(handleExportBackup)}
                     className="min-h-[38px] px-4 py-2 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   >
                     <Download className="w-4 h-4 text-[#407B5D]" />
@@ -1322,6 +1304,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {moduleForm.id ? 'Configurar Módulo' : 'Nuevo Módulo'}
             </h3>
 
+            {actionError && <p role="alert" className="text-sm text-[#8A6318]">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
                 <label className="font-semibold text-[#232A24] block mb-1">
@@ -1402,10 +1385,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 Cancelar
               </button>
               <button
-                onClick={handleSaveModuleModal}
+                disabled={isWorking}
+                onClick={() => runAction(handleSaveModuleModal)}
                 className="px-5 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white cursor-pointer shadow-xs"
               >
-                Guardar Módulo
+                {isWorking ? 'Guardando…' : 'Guardar Módulo'}
               </button>
             </div>
           </div>
@@ -1420,6 +1404,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               Registrar Recurso Multimedia
             </h3>
 
+            {actionError && <p role="alert" className="text-sm text-[#8A6318]">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
                 <label className="font-semibold text-[#232A24] block mb-1">
@@ -1469,7 +1454,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 Cancelar
               </button>
               <button
-                onClick={handleAddMedia}
+                disabled={isWorking}
+                onClick={() => runAction(handleAddMedia)}
                 className="px-5 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-xs font-semibold text-white cursor-pointer shadow-xs"
               >
                 Guardar Recurso

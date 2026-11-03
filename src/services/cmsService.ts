@@ -7,12 +7,10 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
   writeBatch,
-  serverTimestamp,
   onSnapshot,
 } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { db, requireCmsAdmin } from './firebase';
 import {
   CmsModule,
   CmsLesson,
@@ -25,41 +23,6 @@ import {
   CurriculumExportData,
 } from '../types/cms';
 import { TOPICS_DATA, TopicItem, TopicConcept } from '../data/topicsData';
-
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-  };
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path,
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
 
 // ============================================================================
 // 1. DEFAULT SITE CONTENT
@@ -153,22 +116,31 @@ export const DEFAULT_SITE_CONTENT: Record<string, CmsSiteContent> = {
 // ============================================================================
 
 /**
- * Checks if CMS content exists in Firestore. If empty, automatically seeds
- * from existing static curriculum (TOPICS_DATA) preserving all concepts and code.
+ * Initialize static curriculum once, adding missing legacy documents and
+ * preserving existing editorial content. Only administrators can initialize.
  */
 export async function seedCmsFromExistingContentIfEmpty(): Promise<{
   seeded: boolean;
   moduleCount: number;
 }> {
+  await requireCmsAdmin();
   const path = 'cms_modules';
   try {
     const snap = await getDocs(collection(db, path));
-    if (!snap.empty) {
-      return { seeded: false, moduleCount: snap.size };
-    }
+    const initialized = await getDoc(doc(db, 'cms_site_content', 'curriculum_initialized'));
+    if (initialized.exists()) return { seeded: false, moduleCount: snap.size };
+    // Repair legacy partial initialization without overwriting authored documents.
+    const existing = new Set(snap.docs.map((document) => `cms_modules/${document.id}`));
+    const collections = ['cms_lessons', 'cms_sections', 'cms_blocks', 'cms_site_content'];
+    const snapshots = await Promise.all(collections.map((name) => getDocs(collection(db, name))));
+    snapshots.forEach((snapshot, index) => snapshot.docs.forEach((document) => existing.add(`${collections[index]}/${document.id}`)));
 
     console.info('🌱 Initializing CMS database from existing curriculum...');
     const now = new Date().toISOString();
+    const batch = writeBatch(db);
+    const seedDocument = (name: string, id: string, data: object) => {
+      if (!existing.has(`${name}/${id}`)) batch.set(doc(db, name, id), cleanDocument(data));
+    };
 
     // Map each TOPICS_DATA item into a Module + Lesson + Sections + Blocks
     for (let i = 0; i < TOPICS_DATA.length; i++) {
@@ -190,7 +162,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(doc(db, 'cms_modules', moduleId), moduleDoc);
+      seedDocument('cms_modules', moduleId, moduleDoc);
 
       // 2. Lesson
       const lessonDoc: CmsLesson = {
@@ -214,7 +186,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(doc(db, 'cms_lessons', lessonId), lessonDoc);
+      seedDocument('cms_lessons', lessonId, lessonDoc);
 
       // 3. Sections & Blocks (from concepts)
       for (let cIdx = 0; cIdx < topic.concepts.length; cIdx++) {
@@ -233,7 +205,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
           createdAt: now,
           updatedAt: now,
         };
-        await setDoc(doc(db, 'cms_sections', sectionId), sectionDoc);
+        seedDocument('cms_sections', sectionId, sectionDoc);
 
         // Block 1: Explanation (rich-text)
         const blockTextId = `blk_${concept.id}_text`;
@@ -246,7 +218,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
           createdAt: now,
           updatedAt: now,
         };
-        await setDoc(doc(db, 'cms_blocks', blockTextId), blockText);
+        seedDocument('cms_blocks', blockTextId, blockText);
 
         // Block 2: Code Snippet (code)
         if (concept.codeSnippet) {
@@ -262,7 +234,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
             createdAt: now,
             updatedAt: now,
           };
-          await setDoc(doc(db, 'cms_blocks', blockCodeId), blockCode);
+          seedDocument('cms_blocks', blockCodeId, blockCode);
         }
 
         // Block 3: Didactic Tip (callout)
@@ -279,7 +251,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
             createdAt: now,
             updatedAt: now,
           };
-          await setDoc(doc(db, 'cms_blocks', blockTipId), blockTip);
+          seedDocument('cms_blocks', blockTipId, blockTip);
         }
 
         // Block 4: Common Mistake (callout)
@@ -296,7 +268,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
             createdAt: now,
             updatedAt: now,
           };
-          await setDoc(doc(db, 'cms_blocks', blockMistakeId), blockMistake);
+          seedDocument('cms_blocks', blockMistakeId, blockMistake);
         }
       }
 
@@ -312,7 +284,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
           createdAt: now,
           updatedAt: now,
         };
-        await setDoc(doc(db, 'cms_sections', challengeSectionId), challengeSec);
+        seedDocument('cms_sections', challengeSectionId, challengeSec);
 
         const challengeBlockId = `blk_${topic.id}_challenge`;
         const challengeBlock: CmsBlock = {
@@ -325,1104 +297,319 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
           createdAt: now,
           updatedAt: now,
         };
-        await setDoc(doc(db, 'cms_blocks', challengeBlockId), challengeBlock);
+        seedDocument('cms_blocks', challengeBlockId, challengeBlock);
       }
     }
 
     // Seed default site texts
     for (const item of Object.values(DEFAULT_SITE_CONTENT)) {
-      await setDoc(doc(db, 'cms_site_content', item.key), item);
+      seedDocument('cms_site_content', item.key, item);
     }
 
+    batch.set(doc(db, 'cms_site_content', 'curriculum_initialized'), { initialized: true });
+    await batch.commit();
     console.info('✅ CMS database successfully seeded!');
     return { seeded: true, moduleCount: TOPICS_DATA.length };
   } catch (err) {
-    console.warn('Seeding check had an issue (handled with fallback):', err);
-    return { seeded: false, moduleCount: 0 };
+    console.error('No se pudo inicializar el CMS:', err);
+    throw new Error('No se pudo inicializar el CMS en Firebase. Revisa tu conexión y los permisos.');
   }
 }
 
-// ============================================================================
-// 3. MODULES CRUD
-// ============================================================================
+// Firestore is the only source of editorial data. Legacy local edits must never
+// override published data or turn a rejected write into a successful save.
+function cleanDocument<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data));
+}
+
+async function readCollection<T>(name: string, constraints: ReturnType<typeof where>[] = []): Promise<T[]> {
+  const snapshot = await getDocs(query(collection(db, name), ...constraints));
+  return snapshot.docs.map((document) => ({ ...document.data(), id: document.id }) as T);
+}
+
+async function persist(name: string, id: string, data: object): Promise<void> {
+  await requireCmsAdmin();
+  await setDoc(doc(db, name, id), cleanDocument(data), { merge: true });
+}
+
+const published = () => [where('status', '==', 'published'), where('visible', '==', true)];
+const byPosition = <T extends { position: number }>(list: T[]) => list.sort((a, b) => a.position - b.position);
 
 export async function getCmsModules(includeUnpublished = false): Promise<CmsModule[]> {
-  const path = 'cms_modules';
-  let list: CmsModule[] = [];
-  try {
-    const q = query(collection(db, path));
-    const snap = await getDocs(q);
-    list = snap.docs.map((d) => d.data() as CmsModule);
-  } catch (error) {
-    console.warn('Notice reading cms_modules from Firestore:', error);
-  }
-
-  // Merge with local storage cache if available
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
-    const cachedList = Object.values(cached) as CmsModule[];
-    if (cachedList.length > 0) {
-      const byId = new Map<string, CmsModule>();
-      list.forEach((m) => byId.set(m.id, m));
-      cachedList.forEach((m) => byId.set(m.id, m));
-      list = Array.from(byId.values());
-    }
-  } catch {}
-
-  // If still empty, synthesize from TOPICS_DATA
-  if (list.length === 0) {
-    list = TOPICS_DATA.map((t, idx) => ({
-      id: `mod_${t.id}`,
-      title: `Módulo 0${t.number}: ${t.title}`,
-      description: t.summary,
-      category: t.category,
-      badge: t.badge,
-      slug: t.id,
-      position: idx,
-      status: 'published',
-      visible: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-  }
-
-  const filtered = includeUnpublished
-    ? list.filter((m) => m.status !== 'archived')
-    : list.filter((m) => m.status === 'published' && m.visible);
-
-  return filtered.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  if (includeUnpublished) await requireCmsAdmin();
+  const list = await readCollection<CmsModule>('cms_modules', includeUnpublished ? [] : published());
+  return byPosition(list.filter((item) => item.status !== 'archived'));
 }
-
-export async function saveCmsModule(moduleData: CmsModule): Promise<void> {
-  const path = `cms_modules/${moduleData.id}`;
-  const updated = {
-    ...moduleData,
-    updatedAt: new Date().toISOString(),
-  };
-
-  // 1. Immediately cache locally
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
-    cached[moduleData.id] = updated;
-    localStorage.setItem('cms_modules_cache', JSON.stringify(cached));
-  } catch {}
-
-  // 2. Persist to Firestore
-  try {
-    await setDoc(doc(db, 'cms_modules', moduleData.id), updated, { merge: true });
-  } catch (error) {
-    console.warn('Notice saving module to Firestore (cached locally):', error);
-  }
-}
-
-export async function deleteCmsModule(moduleId: string, hardDelete = false): Promise<void> {
-  const path = `cms_modules/${moduleId}`;
-
-  // 1. Update local cache
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
-    if (hardDelete) {
-      delete cached[moduleId];
-    } else {
-      if (cached[moduleId]) {
-        cached[moduleId] = { ...cached[moduleId], status: 'archived', visible: false, updatedAt: new Date().toISOString() };
-      } else {
-        cached[moduleId] = { id: moduleId, status: 'archived', visible: false, updatedAt: new Date().toISOString() };
-      }
-    }
-    localStorage.setItem('cms_modules_cache', JSON.stringify(cached));
-  } catch {}
-
-  // 2. Persist to Firestore
-  try {
-    if (hardDelete) {
-      await deleteDoc(doc(db, 'cms_modules', moduleId));
-    } else {
-      await setDoc(
-        doc(db, 'cms_modules', moduleId),
-        { status: 'archived', visible: false, updatedAt: new Date().toISOString() },
-        { merge: true }
-      );
-    }
-  } catch (error) {
-    console.warn('Notice deleting module in Firestore (cached locally):', error);
-  }
-}
-
-export async function duplicateCmsModule(moduleId: string): Promise<CmsModule> {
-  const path = `cms_modules/${moduleId}`;
-  try {
-    let original: CmsModule | null = null;
-    const snap = await getDoc(doc(db, 'cms_modules', moduleId));
-    if (snap.exists()) {
-      original = snap.data() as CmsModule;
-    } else {
-      const cached = JSON.parse(localStorage.getItem('cms_modules_cache') || '{}');
-      original = cached[moduleId] || null;
-    }
-
-    if (!original) {
-      // Find from TOPICS_DATA
-      const rawId = moduleId.replace(/^mod_/, '');
-      const t = TOPICS_DATA.find((x) => x.id === rawId || `mod_${x.id}` === moduleId);
-      if (t) {
-        original = {
-          id: moduleId,
-          title: `Módulo 0${t.number}: ${t.title}`,
-          description: t.summary,
-          category: t.category,
-          badge: t.badge,
-          slug: t.id,
-          position: 0,
-          status: 'published',
-          visible: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      } else {
-        throw new Error('Módulo no encontrado');
-      }
-    }
-
-    const newId = `mod_${Date.now()}`;
-    const newModule: CmsModule = {
-      ...original,
-      id: newId,
-      title: `${original.title} (Copia)`,
-      status: 'draft',
-      position: (original.position ?? 0) + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await saveCmsModule(newModule);
-
-    // Duplicate all lessons of this module
-    const lessons = await getCmsLessons(moduleId, true);
-    for (const les of lessons) {
-      await duplicateCmsLesson(les.id, newId);
-    }
-
-    return newModule;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
-  }
-}
-
-// ============================================================================
-// 4. LESSONS CRUD
-// ============================================================================
 
 export async function getCmsLessons(moduleId?: string, includeUnpublished = false): Promise<CmsLesson[]> {
-  const path = 'cms_lessons';
-  let list: CmsLesson[] = [];
-  try {
-    const snap = await getDocs(collection(db, path));
-    list = snap.docs.map((d) => d.data() as CmsLesson);
-  } catch (error) {
-    console.warn('Notice reading cms_lessons from Firestore:', error);
+  if (includeUnpublished) await requireCmsAdmin();
+  if (!includeUnpublished && !moduleId) {
+    const modules = await getCmsModules();
+    return (await Promise.all(modules.map((module) => getCmsLessons(module.id)))).flat();
   }
-
-  // Merge with local storage cache
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
-    const cachedList = Object.values(cached) as CmsLesson[];
-    if (cachedList.length > 0) {
-      const byId = new Map<string, CmsLesson>();
-      list.forEach((l) => byId.set(l.id, l));
-      cachedList.forEach((l) => byId.set(l.id, l));
-      list = Array.from(byId.values());
-    }
-  } catch {}
-
-  // If still empty, build from TOPICS_DATA
-  if (list.length === 0) {
-    list = TOPICS_DATA.map((t, idx) => ({
-      id: `les_${t.id}`,
-      moduleId: `mod_${t.id}`,
-      title: t.title,
-      summary: t.summary,
-      badge: t.badge,
-      estimatedTime: t.estimatedTime,
-      slug: t.id,
-      position: idx,
-      status: 'published',
-      visible: true,
-      hasInteractiveWorkshop: t.hasInteractiveWorkshop,
-      workshopType:
-        t.id === 'classes'
-          ? 'classes'
-          : t.id === 'object-arrays'
-          ? 'object-arrays'
-          : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-  }
-
-  if (moduleId) {
-    list = list.filter((l) => l.moduleId === moduleId);
-  }
-
-  const filtered = includeUnpublished
-    ? list.filter((l) => l.status !== 'archived')
-    : list.filter((l) => l.status === 'published' && l.visible);
-
-  return filtered.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const constraints = includeUnpublished ? [] : published();
+  if (moduleId) constraints.push(where('moduleId', '==', moduleId));
+  const list = await readCollection<CmsLesson>('cms_lessons', constraints);
+  return byPosition(list.filter((item) => item.status !== 'archived'));
 }
 
 export async function getCmsLessonById(lessonId: string): Promise<CmsLesson | null> {
-  const path = `cms_lessons/${lessonId}`;
-  try {
-    const snap = await getDoc(doc(db, 'cms_lessons', lessonId));
-    if (snap.exists()) return snap.data() as CmsLesson;
-  } catch (error) {
-    console.warn('Notice reading lesson by id:', error);
-  }
-
-  // Check cache
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
-    if (cached[lessonId]) return cached[lessonId];
-  } catch {}
-
-  // Check fallback
-  const rawId = lessonId.replace(/^les_/, '');
-  const t = TOPICS_DATA.find((x) => x.id === rawId || `les_${x.id}` === lessonId);
-  if (t) {
-    return {
-      id: `les_${t.id}`,
-      moduleId: `mod_${t.id}`,
-      title: t.title,
-      summary: t.summary,
-      badge: t.badge,
-      estimatedTime: t.estimatedTime,
-      slug: t.id,
-      position: 0,
-      status: 'published',
-      visible: true,
-      hasInteractiveWorkshop: t.hasInteractiveWorkshop,
-      workshopType:
-        t.id === 'classes'
-          ? 'classes'
-          : t.id === 'object-arrays'
-          ? 'object-arrays'
-          : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  }
-
-  return null;
+  const snapshot = await getDoc(doc(db, 'cms_lessons', lessonId));
+  return snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } as CmsLesson : null;
 }
 
-export async function saveCmsLesson(lessonData: CmsLesson): Promise<void> {
-  const path = `cms_lessons/${lessonData.id}`;
-  const updated = {
-    ...lessonData,
-    updatedAt: new Date().toISOString(),
-  };
-
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
-    cached[lessonData.id] = updated;
-    localStorage.setItem('cms_lessons_cache', JSON.stringify(cached));
-  } catch {}
-
-  try {
-    await setDoc(doc(db, 'cms_lessons', lessonData.id), updated, { merge: true });
-  } catch (error) {
-    console.warn('Notice saving lesson to Firestore (cached locally):', error);
-  }
+export async function saveCmsModule(data: CmsModule): Promise<void> {
+  if (!data.title.trim()) throw new Error('El módulo necesita un título.');
+  await persist('cms_modules', data.id, { ...data, updatedAt: new Date().toISOString() });
 }
 
-export async function deleteCmsLesson(lessonId: string, hardDelete = false): Promise<void> {
-  const path = `cms_lessons/${lessonId}`;
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_lessons_cache') || '{}');
-    if (hardDelete) {
-      delete cached[lessonId];
-    } else {
-      if (cached[lessonId]) {
-        cached[lessonId] = { ...cached[lessonId], status: 'archived', visible: false, updatedAt: new Date().toISOString() };
-      }
-    }
-    localStorage.setItem('cms_lessons_cache', JSON.stringify(cached));
-  } catch {}
+export async function saveCmsLesson(data: CmsLesson): Promise<void> {
+  if (!data.title.trim() || !data.moduleId) throw new Error('La lección necesita un título y un módulo.');
+  await persist('cms_lessons', data.id, { ...data, updatedAt: new Date().toISOString() });
+}
 
-  try {
-    if (hardDelete) {
-      await deleteDoc(doc(db, 'cms_lessons', lessonId));
-    } else {
-      await setDoc(
-        doc(db, 'cms_lessons', lessonId),
-        { status: 'archived', visible: false, updatedAt: new Date().toISOString() },
-        { merge: true }
-      );
-    }
-  } catch (error) {
-    console.warn('Notice deleting lesson in Firestore (cached locally):', error);
-  }
+export async function deleteCmsModule(id: string, hardDelete = false): Promise<void> {
+  await requireCmsAdmin();
+  if (hardDelete) await deleteDoc(doc(db, 'cms_modules', id));
+  else await persist('cms_modules', id, { status: 'archived', visible: false, updatedAt: new Date().toISOString() });
+}
+
+export async function deleteCmsLesson(id: string, hardDelete = false): Promise<void> {
+  await requireCmsAdmin();
+  if (hardDelete) await deleteDoc(doc(db, 'cms_lessons', id));
+  else await persist('cms_lessons', id, { status: 'archived', visible: false, updatedAt: new Date().toISOString() });
+}
+
+function copyData<T extends { id: string; createdAt: string; updatedAt: string }>(data: T, prefix: string): T {
+  return { ...data, id: `${prefix}_${crypto.randomUUID()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+}
+
+export async function duplicateCmsModule(moduleId: string): Promise<CmsModule> {
+  await requireCmsAdmin();
+  const snapshot = await getDoc(doc(db, 'cms_modules', moduleId));
+  if (!snapshot.exists()) throw new Error('Módulo no encontrado.');
+  const original = snapshot.data() as CmsModule;
+  const copy = { ...copyData(original, 'mod'), title: `${original.title} (Copia)`, status: 'draft' as const };
+  await saveCmsModule(copy);
+  for (const lesson of await getCmsLessons(moduleId, true)) await duplicateCmsLesson(lesson.id, copy.id);
+  return copy;
 }
 
 export async function duplicateCmsLesson(lessonId: string, targetModuleId?: string): Promise<CmsLesson> {
-  const path = `cms_lessons/${lessonId}`;
-  try {
-    const original = await getCmsLessonById(lessonId);
-    if (!original) throw new Error('Lección no encontrada');
-
-    const newId = `les_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const newLesson: CmsLesson = {
-      ...original,
-      id: newId,
-      moduleId: targetModuleId || original.moduleId,
-      title: `${original.title} (Copia)`,
-      status: 'draft',
-      position: (original.position ?? 0) + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await saveCmsLesson(newLesson);
-
-    // Duplicate sections and blocks
-    const sections = await getCmsSections(lessonId, true);
-    for (const sec of sections) {
-      await duplicateCmsSection(sec.id, newId);
-    }
-
-    return newLesson;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
-  }
+  await requireCmsAdmin();
+  const original = await getCmsLessonById(lessonId);
+  if (!original) throw new Error('Lección no encontrada.');
+  const copy = { ...copyData(original, 'les'), moduleId: targetModuleId || original.moduleId, title: `${original.title} (Copia)`, status: 'draft' as const };
+  await saveCmsLesson(copy);
+  for (const section of await getCmsSections(lessonId, true)) await duplicateCmsSection(section.id, copy.id);
+  return copy;
 }
-
-// ============================================================================
-// 5. SECTIONS CRUD
-// ============================================================================
 
 export async function getCmsSections(lessonId: string, includeInvisible = false): Promise<CmsSection[]> {
-  const path = 'cms_sections';
-  let list: CmsSection[] = [];
-  try {
-    const snap = await getDocs(collection(db, path));
-    list = snap.docs
-      .map((d) => d.data() as CmsSection)
-      .filter((s) => s.lessonId === lessonId);
-  } catch (error) {
-    console.warn('Notice reading cms_sections from Firestore:', error);
-  }
-
-  // Merge with localStorage
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
-    const cachedForLesson = (Object.values(cached) as CmsSection[]).filter((s) => s.lessonId === lessonId);
-    if (cachedForLesson.length > 0) {
-      const byId = new Map<string, CmsSection>();
-      list.forEach((s) => byId.set(s.id, s));
-      cachedForLesson.forEach((s) => byId.set(s.id, s));
-      list = Array.from(byId.values());
-    }
-  } catch {}
-
-  // If empty, synthesize from TOPICS_DATA concepts!
-  if (list.length === 0) {
-    const rawTopicId = lessonId.replace(/^les_/, '');
-    const topic = TOPICS_DATA.find((t) => t.id === rawTopicId || `les_${t.id}` === lessonId);
-    if (topic && topic.concepts) {
-      list = topic.concepts.map((concept, cIdx) => ({
-        id: `sec_${concept.id}`,
-        lessonId: lessonId,
-        title: concept.title,
-        summary: concept.summary,
-        position: cIdx,
-        visible: true,
-        didacticTip: concept.didacticTip,
-        commonMistake: concept.commonMistake,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }));
-    }
-  }
-
-  if (!includeInvisible) {
-    list = list.filter((s) => s.visible !== false);
-  }
-
-  return list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  if (includeInvisible) await requireCmsAdmin();
+  const constraints = [where('lessonId', '==', lessonId)];
+  if (!includeInvisible) constraints.push(where('visible', '==', true));
+  return byPosition(await readCollection<CmsSection>('cms_sections', constraints));
 }
 
-export async function saveCmsSection(sectionData: CmsSection): Promise<void> {
-  const path = `cms_sections/${sectionData.id}`;
-  const updated = {
-    ...sectionData,
-    updatedAt: new Date().toISOString(),
-  };
-
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
-    cached[sectionData.id] = updated;
-    localStorage.setItem('cms_sections_cache', JSON.stringify(cached));
-  } catch {}
-
-  try {
-    await setDoc(doc(db, 'cms_sections', sectionData.id), updated, { merge: true });
-  } catch (error) {
-    console.warn('Notice saving section to Firestore (cached locally):', error);
-  }
+export async function saveCmsSection(data: CmsSection): Promise<void> {
+  await persist('cms_sections', data.id, { ...data, updatedAt: new Date().toISOString() });
 }
 
-export async function deleteCmsSection(sectionId: string): Promise<void> {
-  const path = `cms_sections/${sectionId}`;
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
-    delete cached[sectionId];
-    localStorage.setItem('cms_sections_cache', JSON.stringify(cached));
-  } catch {}
-
-  try {
-    await deleteDoc(doc(db, 'cms_sections', sectionId));
-    // Also remove associated blocks
-    const blocks = await getCmsBlocks(sectionId);
-    for (const b of blocks) {
-      await deleteDoc(doc(db, 'cms_blocks', b.id));
-    }
-  } catch (error) {
-    console.warn('Notice deleting section from Firestore (cached locally):', error);
-  }
+export async function deleteCmsSection(id: string): Promise<void> {
+  await requireCmsAdmin();
+  const blocks = await getCmsBlocks(id);
+  const batch = writeBatch(db);
+  blocks.forEach((block) => batch.delete(doc(db, 'cms_blocks', block.id)));
+  batch.delete(doc(db, 'cms_sections', id));
+  await batch.commit();
 }
 
 export async function duplicateCmsSection(sectionId: string, targetLessonId?: string): Promise<CmsSection> {
-  const path = `cms_sections/${sectionId}`;
-  try {
-    let original: CmsSection | null = null;
-    const snap = await getDoc(doc(db, 'cms_sections', sectionId));
-    if (snap.exists()) {
-      original = snap.data() as CmsSection;
-    } else {
-      const cached = JSON.parse(localStorage.getItem('cms_sections_cache') || '{}');
-      original = cached[sectionId] || null;
-    }
-
-    if (!original) {
-      // Find concept
-      const rawConceptId = sectionId.replace(/^sec_/, '');
-      for (const topic of TOPICS_DATA) {
-        const c = topic.concepts.find((x) => x.id === rawConceptId || `sec_${x.id}` === sectionId);
-        if (c) {
-          original = {
-            id: sectionId,
-            lessonId: targetLessonId || `les_${topic.id}`,
-            title: c.title,
-            summary: c.summary,
-            position: 0,
-            visible: true,
-            didacticTip: c.didacticTip,
-            commonMistake: c.commonMistake,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          break;
-        }
-      }
-    }
-
-    if (!original) throw new Error('Sección no encontrada');
-
-    const newId = `sec_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const newSection: CmsSection = {
-      ...original,
-      id: newId,
-      lessonId: targetLessonId || original.lessonId,
-      title: `${original.title} (Copia)`,
-      position: (original.position ?? 0) + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await saveCmsSection(newSection);
-
-    // Duplicate blocks
-    const blocks = await getCmsBlocks(sectionId);
-    for (const blk of blocks) {
-      await duplicateCmsBlock(blk.id, newId);
-    }
-
-    return newSection;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
-  }
+  await requireCmsAdmin();
+  const snapshot = await getDoc(doc(db, 'cms_sections', sectionId));
+  if (!snapshot.exists()) throw new Error('Sección no encontrada.');
+  const original = snapshot.data() as CmsSection;
+  const copy = { ...copyData(original, 'sec'), lessonId: targetLessonId || original.lessonId };
+  await saveCmsSection(copy);
+  for (const block of await getCmsBlocks(sectionId)) await duplicateCmsBlock(block.id, copy.id);
+  return copy;
 }
-
-// ============================================================================
-// 6. CONTENT BLOCKS CRUD
-// ============================================================================
 
 export async function getCmsBlocks(sectionId: string): Promise<CmsBlock[]> {
-  const path = 'cms_blocks';
-  let list: CmsBlock[] = [];
-  try {
-    const snap = await getDocs(collection(db, path));
-    list = snap.docs
-      .map((d) => d.data() as CmsBlock)
-      .filter((b) => b.sectionId === sectionId);
-  } catch (error) {
-    console.warn('Notice reading cms_blocks from Firestore:', error);
-  }
-
-  // Merge with localStorage
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
-    const cachedForSection = (Object.values(cached) as CmsBlock[]).filter((b) => b.sectionId === sectionId);
-    if (cachedForSection.length > 0) {
-      const byId = new Map<string, CmsBlock>();
-      list.forEach((b) => byId.set(b.id, b));
-      cachedForSection.forEach((b) => byId.set(b.id, b));
-      list = Array.from(byId.values());
-    }
-  } catch {}
-
-  // If empty, synthesize from TOPICS_DATA matching concept!
-  if (list.length === 0) {
-    const rawConceptId = sectionId.replace(/^sec_/, '');
-    let matchedConcept = null;
-    for (const topic of TOPICS_DATA) {
-      const c = topic.concepts.find((x) => x.id === rawConceptId || `sec_${x.id}` === sectionId);
-      if (c) {
-        matchedConcept = c;
-        break;
-      }
-    }
-    if (matchedConcept) {
-      let pos = 0;
-      if (matchedConcept.explanation) {
-        list.push({
-          id: `blk_${matchedConcept.id}_text`,
-          sectionId,
-          type: 'rich-text',
-          content: matchedConcept.explanation,
-          position: pos++,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-      if (matchedConcept.codeSnippet) {
-        list.push({
-          id: `blk_${matchedConcept.id}_code`,
-          sectionId,
-          type: 'code',
-          content: matchedConcept.codeSnippet,
-          caption: 'Código de ejemplo en Processing Java',
-          position: pos++,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    }
-  }
-
-  return list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  return byPosition(await readCollection<CmsBlock>('cms_blocks', [where('sectionId', '==', sectionId)]));
 }
 
-export async function saveCmsBlock(blockData: CmsBlock): Promise<void> {
-  const path = `cms_blocks/${blockData.id}`;
-  const updated = {
-    ...blockData,
-    updatedAt: new Date().toISOString(),
-  };
-
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
-    cached[blockData.id] = updated;
-    localStorage.setItem('cms_blocks_cache', JSON.stringify(cached));
-  } catch {}
-
-  try {
-    await setDoc(doc(db, 'cms_blocks', blockData.id), updated, { merge: true });
-  } catch (error) {
-    console.warn('Notice saving block to Firestore (cached locally):', error);
-  }
+export async function saveCmsBlock(data: CmsBlock): Promise<void> {
+  await persist('cms_blocks', data.id, { ...data, updatedAt: new Date().toISOString() });
 }
 
-export async function deleteCmsBlock(blockId: string): Promise<void> {
-  const path = `cms_blocks/${blockId}`;
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
-    delete cached[blockId];
-    localStorage.setItem('cms_blocks_cache', JSON.stringify(cached));
-  } catch {}
-
-  try {
-    await deleteDoc(doc(db, 'cms_blocks', blockId));
-  } catch (error) {
-    console.warn('Notice deleting block from Firestore (cached locally):', error);
-  }
+export async function deleteCmsBlock(id: string): Promise<void> {
+  await requireCmsAdmin();
+  await deleteDoc(doc(db, 'cms_blocks', id));
 }
 
 export async function duplicateCmsBlock(blockId: string, targetSectionId?: string): Promise<CmsBlock> {
-  const path = `cms_blocks/${blockId}`;
-  try {
-    let original: CmsBlock | null = null;
-    const snap = await getDoc(doc(db, 'cms_blocks', blockId));
-    if (snap.exists()) {
-      original = snap.data() as CmsBlock;
-    } else {
-      const cached = JSON.parse(localStorage.getItem('cms_blocks_cache') || '{}');
-      original = cached[blockId] || null;
-    }
-
-    if (!original) throw new Error('Bloque no encontrado');
-
-    const newId = `blk_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const newBlock: CmsBlock = {
-      ...original,
-      id: newId,
-      sectionId: targetSectionId || original.sectionId,
-      position: (original.position ?? 0) + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await saveCmsBlock(newBlock);
-    return newBlock;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
-  }
+  await requireCmsAdmin();
+  const snapshot = await getDoc(doc(db, 'cms_blocks', blockId));
+  if (!snapshot.exists()) throw new Error('Bloque no encontrado.');
+  const original = snapshot.data() as CmsBlock;
+  const copy = { ...copyData(original, 'blk'), sectionId: targetSectionId || original.sectionId };
+  await saveCmsBlock(copy);
+  return copy;
 }
 
-// ============================================================================
-// 7. ORDERING SYSTEM (DRAG & DROP OR BUTTONS)
-// ============================================================================
-
-export async function reorderCmsItems(
-  collectionName: 'cms_modules' | 'cms_lessons' | 'cms_sections' | 'cms_blocks',
-  orderedIds: string[]
-): Promise<void> {
-  try {
-    const batch = writeBatch(db);
-    orderedIds.forEach((id, index) => {
-      const ref = doc(db, collectionName, id);
-      batch.update(ref, { position: index, updatedAt: new Date().toISOString() });
-    });
-    await batch.commit();
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, collectionName);
+export async function saveCmsLessonContent(lesson: CmsLesson, sections: CmsSection[], blocks: Record<string, CmsBlock[]>): Promise<void> {
+  await requireCmsAdmin();
+  if (!lesson.title.trim()) throw new Error('La lección necesita un título.');
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'cms_lessons', lesson.id), cleanDocument(lesson));
+  for (const section of sections) {
+    batch.set(doc(db, 'cms_sections', section.id), cleanDocument(section));
+    for (const block of blocks[section.id] || []) batch.set(doc(db, 'cms_blocks', block.id), cleanDocument(block));
   }
+  await batch.commit();
 }
 
-// ============================================================================
-// 8. SITE GENERAL CONTENT (Textos Generales)
-// ============================================================================
+export async function reorderCmsItems(collectionName: 'cms_modules' | 'cms_lessons' | 'cms_sections' | 'cms_blocks', orderedIds: string[]): Promise<void> {
+  await requireCmsAdmin();
+  const batch = writeBatch(db);
+  orderedIds.forEach((id, position) => batch.update(doc(db, collectionName, id), { position, updatedAt: new Date().toISOString() }));
+  await batch.commit();
+}
 
 export async function getAllSiteContent(): Promise<Record<string, CmsSiteContent>> {
-  const path = 'cms_site_content';
-  const result: Record<string, CmsSiteContent> = { ...DEFAULT_SITE_CONTENT };
-
-  // 1. Check local storage cache
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_site_content_cache') || '{}');
-    Object.entries(cached).forEach(([k, item]) => {
-      result[k] = {
-        ...(result[k] || {}),
-        ...(item as CmsSiteContent),
-      };
-    });
-  } catch {}
-
-  // 2. Fetch from Firestore
-  try {
-    const snap = await getDocs(collection(db, path));
-    snap.docs.forEach((d) => {
-      const item = d.data() as CmsSiteContent;
-      result[item.key] = {
-        ...(result[item.key] || {}),
-        ...item,
-      };
-    });
-  } catch (err) {
-    console.warn('Notice loading site content from Firestore (using cache/defaults):', err);
-  }
-
+  const result = { ...DEFAULT_SITE_CONTENT };
+  const snapshot = await getDocs(collection(db, 'cms_site_content'));
+  snapshot.docs.forEach((document) => { if (document.id !== 'curriculum_initialized') result[document.id] = document.data() as CmsSiteContent; });
   return result;
 }
 
-export async function saveSiteContent(item: CmsSiteContent, userEmail?: string): Promise<void> {
-  const path = `cms_site_content/${item.key}`;
-  const updated: CmsSiteContent = {
-    ...item,
-    updatedAt: new Date().toISOString(),
-    updatedBy: userEmail || auth.currentUser?.email || 'admin',
-  };
-
-  // 1. Save to local cache
-  try {
-    const cached = JSON.parse(localStorage.getItem('cms_site_content_cache') || '{}');
-    cached[item.key] = updated;
-    localStorage.setItem('cms_site_content_cache', JSON.stringify(cached));
-  } catch {}
-
-  // 2. Save to Firestore
-  try {
-    await setDoc(doc(db, 'cms_site_content', item.key), updated, { merge: true });
-  } catch (error) {
-    console.warn('Notice saving site content to Firestore (cached locally):', error);
-  }
+export async function saveSiteContent(item: CmsSiteContent, _userEmail?: string): Promise<void> {
+  const user = await requireCmsAdmin();
+  await persist('cms_site_content', item.key, { ...item, updatedAt: new Date().toISOString(), updatedBy: user.email });
 }
 
-export function subscribeToSiteContent(
-  callback: (content: CmsSiteContentCombined) => void
-): () => void {
-  const parseAndEmit = (sourceObj: Record<string, CmsSiteContent>) => {
-    let heroHeadline = sourceObj.hero_headline?.content || DEFAULT_SITE_CONTENT.hero_headline.content;
-    let heroSubtitle = sourceObj.hero_subtitle?.content || DEFAULT_SITE_CONTENT.hero_subtitle.content;
-    let heroBadge = sourceObj.hero_badge?.content || DEFAULT_SITE_CONTENT.hero_badge.content;
-    let generativeQuestion = sourceObj.generative_question?.content || DEFAULT_SITE_CONTENT.generative_question.content;
-    let generativePrinciples = ['1. Código', '2. Sistema', '3. Regla', '4. Variación', '5. Forma'];
-    let oopLabTitle = sourceObj.oop_lab_title?.content || DEFAULT_SITE_CONTENT.oop_lab_title.content;
-    let oopLabSummary = sourceObj.oop_lab_summary?.content || DEFAULT_SITE_CONTENT.oop_lab_summary.content;
-    let workshopTitle = sourceObj.workshop_title?.content || DEFAULT_SITE_CONTENT.workshop_title.content;
-    let workshopSummary = sourceObj.workshop_summary?.content || DEFAULT_SITE_CONTENT.workshop_summary.content;
-    let philosophyTitle = sourceObj.philosophy_title?.content || DEFAULT_SITE_CONTENT.philosophy_title.content;
-    let footerText = sourceObj.footer_text?.content || DEFAULT_SITE_CONTENT.footer_text.content;
-
-    if (sourceObj.generative_principles?.content) {
-      const raw = sourceObj.generative_principles.content;
-      try {
-        if (raw.startsWith('[')) {
-          generativePrinciples = JSON.parse(raw);
-        } else {
-          generativePrinciples = raw.split(',').map((s) => s.trim()).filter(Boolean);
-        }
-      } catch {
-        generativePrinciples = raw.split(',').map((s) => s.trim()).filter(Boolean);
-      }
-    }
-
+export function subscribeToSiteContent(callback: (content: CmsSiteContentCombined) => void): () => void {
+  const emit = (source: Record<string, CmsSiteContent>) => {
+    const content = (key: string) => (source[key] ?? DEFAULT_SITE_CONTENT[key]).content;
+    let principles = content('generative_principles').split(',').map((item) => item.trim()).filter(Boolean);
+    try {
+      const parsed = JSON.parse(content('generative_principles'));
+      if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) principles = parsed;
+    } catch { /* The default format is comma-separated text. */ }
     callback({
-      heroHeadline,
-      heroSubtitle,
-      heroBadge,
-      generativeQuestion,
-      generativePrinciples,
-      oopLabTitle,
-      oopLabSummary,
-      workshopTitle,
-      workshopSummary,
-      philosophyTitle,
-      footerText,
+      heroHeadline: content('hero_headline'), heroSubtitle: content('hero_subtitle'), heroBadge: content('hero_badge'),
+      generativeQuestion: content('generative_question'), generativePrinciples: principles,
+      oopLabTitle: content('oop_lab_title'), oopLabSummary: content('oop_lab_summary'),
+      workshopTitle: content('workshop_title'), workshopSummary: content('workshop_summary'),
+      philosophyTitle: content('philosophy_title'), footerText: content('footer_text'),
     });
   };
-
-  // Emit initial combined content from cache + defaults immediately
-  try {
-    getAllSiteContent().then((initial) => {
-      parseAndEmit(initial);
-    });
-  } catch {}
-
-  try {
-    const unsub = onSnapshot(
-      collection(db, 'cms_site_content'),
-      (snap) => {
-        const combined: Record<string, CmsSiteContent> = { ...DEFAULT_SITE_CONTENT };
-        try {
-          const cached = JSON.parse(localStorage.getItem('cms_site_content_cache') || '{}');
-          Object.assign(combined, cached);
-        } catch {}
-
-        snap.docs.forEach((d) => {
-          const data = d.data() as CmsSiteContent;
-          combined[data.key] = data;
-        });
-
-        parseAndEmit(combined);
-      },
-      (err) => {
-        console.warn('Site content subscription notice:', err);
-      }
-    );
-    return unsub;
-  } catch {
-    return () => {};
-  }
+  emit(DEFAULT_SITE_CONTENT);
+  return onSnapshot(collection(db, 'cms_site_content'), (snapshot) => {
+    const source: Record<string, CmsSiteContent> = {};
+    snapshot.docs.forEach((document) => { source[document.id] = document.data() as CmsSiteContent; });
+    emit(source);
+  }, (error) => console.warn('No se pudieron cargar los textos del sitio:', error));
 }
-
-// ============================================================================
-// 9. MEDIA ASSET RESOURCES
-// ============================================================================
 
 export async function getCmsMediaResources(): Promise<CmsMediaResource[]> {
-  const path = 'cms_media';
-  try {
-    const snap = await getDocs(collection(db, path));
-    return snap.docs
-      .map((d) => d.data() as CmsMediaResource)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-  } catch {
-    return [];
-  }
+  return (await readCollection<CmsMediaResource>('cms_media')).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
-
-export async function saveCmsMediaResource(resource: CmsMediaResource): Promise<void> {
-  const path = `cms_media/${resource.id}`;
-  try {
-    await setDoc(doc(db, 'cms_media', resource.id), resource);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
-  }
+export async function saveCmsMediaResource(data: CmsMediaResource): Promise<void> {
+  await persist('cms_media', data.id, data);
 }
-
-export async function deleteCmsMediaResource(mediaId: string): Promise<void> {
-  const path = `cms_media/${mediaId}`;
-  try {
-    await deleteDoc(doc(db, 'cms_media', mediaId));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
-  }
+export async function deleteCmsMediaResource(id: string): Promise<void> {
+  await requireCmsAdmin();
+  await deleteDoc(doc(db, 'cms_media', id));
 }
-
-// ============================================================================
-// 10. REVISIONS & FULL BACKUP EXPORT / IMPORT
-// ============================================================================
-
-export async function createCmsRevision(
-  entityType: 'module' | 'lesson' | 'section' | 'full_backup',
-  entityId: string,
-  snapshot: unknown,
-  note = 'Guardado editorial'
-): Promise<CmsRevision> {
-  const revId = `rev_${Date.now()}`;
-  const rev: CmsRevision = {
-    id: revId,
-    entityType,
-    entityId,
-    snapshotJson: JSON.stringify(snapshot),
-    note,
-    createdBy: auth.currentUser?.email || 'admin',
-    createdAt: new Date().toISOString(),
+export async function createCmsRevision(entityType: CmsRevision['entityType'], entityId: string, snapshot: unknown, note = 'Guardado editorial'): Promise<CmsRevision> {
+  const user = await requireCmsAdmin();
+  const revision: CmsRevision = {
+    id: `rev_${crypto.randomUUID()}`, entityType, entityId, snapshotJson: JSON.stringify(snapshot),
+    note, createdBy: user.email || user.uid, createdAt: new Date().toISOString(),
   };
-
-  await setDoc(doc(db, 'cms_revisions', revId), rev);
-  return rev;
+  await persist('cms_revisions', revision.id, revision);
+  return revision;
 }
-
 export async function getCmsRevisions(entityId?: string): Promise<CmsRevision[]> {
-  const path = 'cms_revisions';
-  try {
-    const snap = await getDocs(collection(db, path));
-    let list = snap.docs.map((d) => d.data() as CmsRevision);
-    if (entityId) {
-      list = list.filter((r) => r.entityId === entityId);
-    }
-    return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch {
-    return [];
-  }
+  await requireCmsAdmin();
+  return (await readCollection<CmsRevision>('cms_revisions'))
+    .filter((item) => !entityId || item.entityId === entityId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
-
 export async function exportCurriculumBackup(): Promise<CurriculumExportData> {
-  const modules = await getCmsModules(true);
-  const lessons = await getCmsLessons(undefined, true);
-  const sectionsSnap = await getDocs(collection(db, 'cms_sections'));
-  const sections = sectionsSnap.docs.map((d) => d.data() as CmsSection);
-  const blocksSnap = await getDocs(collection(db, 'cms_blocks'));
-  const blocks = blocksSnap.docs.map((d) => d.data() as CmsBlock);
-  const siteContentObj = await getAllSiteContent();
-  const media = await getCmsMediaResources();
-
-  const backup: CurriculumExportData = {
-    version: '1.0.0',
-    exportedAt: new Date().toISOString(),
-    exportedBy: auth.currentUser?.email || 'admin@codigocreativo.edu',
-    modules,
-    lessons,
-    sections,
-    blocks,
-    siteContent: Object.values(siteContentObj),
-    media,
-  };
-
-  // Record a full backup revision
+  const user = await requireCmsAdmin();
+  const [modules, lessons, sections, blocks, siteContent, media] = await Promise.all([
+    readCollection<CmsModule>('cms_modules'), readCollection<CmsLesson>('cms_lessons'),
+    readCollection<CmsSection>('cms_sections'), readCollection<CmsBlock>('cms_blocks'),
+    getAllSiteContent(), getCmsMediaResources(),
+  ]);
+  const backup = { version: '1.0.0', exportedAt: new Date().toISOString(), exportedBy: user.email || user.uid,
+    modules, lessons, sections, blocks, siteContent: Object.values(siteContent), media };
   await createCmsRevision('full_backup', 'curriculum', backup, 'Exportación de respaldo general');
-
   return backup;
 }
-
 export async function importCurriculumBackup(backup: CurriculumExportData): Promise<void> {
-  if (!backup || !backup.modules || !backup.lessons) {
-    throw new Error('El archivo no contiene un formato de respaldo válido de Código Creativo');
-  }
-
-  // Create a rollback point before overwriting
-  const currentBackup = await exportCurriculumBackup();
-  await createCmsRevision('full_backup', 'pre_import', currentBackup, 'Punto de restauración previo a importación');
-
-  // Import modules
-  for (const mod of backup.modules) {
-    await setDoc(doc(db, 'cms_modules', mod.id), mod);
-  }
-  // Import lessons
-  for (const les of backup.lessons) {
-    await setDoc(doc(db, 'cms_lessons', les.id), les);
-  }
-  // Import sections
-  if (backup.sections) {
-    for (const sec of backup.sections) {
-      await setDoc(doc(db, 'cms_sections', sec.id), sec);
-    }
-  }
-  // Import blocks
-  if (backup.blocks) {
-    for (const blk of backup.blocks) {
-      await setDoc(doc(db, 'cms_blocks', blk.id), blk);
-    }
-  }
-  // Import site texts
-  if (backup.siteContent) {
-    for (const item of backup.siteContent) {
-      await setDoc(doc(db, 'cms_site_content', item.key), item);
-    }
-  }
-  // Import media
-  if (backup.media) {
-    for (const m of backup.media) {
-      await setDoc(doc(db, 'cms_media', m.id), m);
-    }
+  await requireCmsAdmin();
+  if (!backup || !Array.isArray(backup.modules) || !Array.isArray(backup.lessons)) throw new Error('Respaldo no válido.');
+  await exportCurriculumBackup();
+  const groups: [string, { id?: string; key?: string }[]][] = [
+    ['cms_modules', backup.modules], ['cms_lessons', backup.lessons], ['cms_sections', backup.sections || []],
+    ['cms_blocks', backup.blocks || []], ['cms_site_content', backup.siteContent || []], ['cms_media', backup.media || []],
+  ];
+  for (const [name, items] of groups) {
+    for (const item of items) await persist(name, (name === 'cms_site_content' ? item.key : item.id)!, item);
   }
 }
 
-// ============================================================================
-// 11. DYNAMIC TOPIC ADAPTER (READ CMS EDITS IN STUDENT VIEWS)
-// ============================================================================
-
-export async function getTopicFromCmsOrFallback(
-  topicId: string,
-  includeUnpublished = false
-): Promise<TopicItem> {
-  const fallback = TOPICS_DATA.find((t) => t.id === topicId) || TOPICS_DATA[0];
-  try {
-    const lessonIdCandidates = [`les_${topicId}`, topicId];
-    let lesson: CmsLesson | null = null;
-    let foundLessonId = '';
-
-    for (const cand of lessonIdCandidates) {
-      const snap = await getDoc(doc(db, 'cms_lessons', cand));
-      if (snap.exists()) {
-        lesson = snap.data() as CmsLesson;
-        foundLessonId = cand;
-        break;
-      }
+async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: boolean): Promise<TopicItem> {
+  const original = TOPICS_DATA.find((topic) => `les_${topic.id}` === lesson.id);
+  const sections = await getCmsSections(lesson.id, preview);
+  let quickChallenge = original?.quickChallenge;
+  const concepts: TopicConcept[] = await Promise.all(sections.map(async (section) => {
+    const blocks = await getCmsBlocks(section.id);
+    const activity = blocks.find((block) => block.type === 'activity' && block.activityConfig);
+    if (activity) {
+      try { quickChallenge = JSON.parse(activity.activityConfig!); } catch { /* Plain text activity. */ }
     }
-
-    if (!lesson) {
-      return fallback;
-    }
-
-    // Check visibility / status if not previewing
-    if (!includeUnpublished && (lesson.status !== 'published' || !lesson.visible)) {
-      return fallback;
-    }
-
-    const sections = await getCmsSections(foundLessonId, includeUnpublished);
-    if (!sections || sections.length === 0) {
-      return {
-        ...fallback,
-        title: lesson.title || fallback.title,
-        summary: lesson.summary || fallback.summary,
-        badge: lesson.badge || fallback.badge,
-        estimatedTime: lesson.estimatedTime || fallback.estimatedTime,
-      };
-    }
-
-    const concepts: TopicConcept[] = [];
-    let quickChallenge = fallback.quickChallenge;
-
-    for (const sec of sections) {
-      const blocks = await getCmsBlocks(sec.id);
-      const textBlock = blocks.find((b) => b.type === 'rich-text');
-      const codeBlock = blocks.find((b) => b.type === 'code');
-      const tipBlock = blocks.find((b) => b.type === 'callout' && (b.calloutType === 'tip' || b.calloutType === 'info'));
-      const mistakeBlock = blocks.find((b) => b.type === 'callout' && b.calloutType === 'warning');
-      const activityBlock = blocks.find((b) => b.type === 'activity');
-
-      if (activityBlock && activityBlock.activityConfig) {
-        try {
-          quickChallenge = JSON.parse(activityBlock.activityConfig);
-        } catch {
-          // ignore
-        }
-      }
-
-      concepts.push({
-        id: sec.id.replace('sec_', ''),
-        title: sec.title,
-        summary: sec.summary || '',
-        explanation: textBlock ? textBlock.content : (sec.summary || ''),
-        codeSnippet: codeBlock ? codeBlock.content : '',
-        didacticTip: sec.didacticTip || (tipBlock ? tipBlock.content : ''),
-        commonMistake: sec.commonMistake || (mistakeBlock ? mistakeBlock.content : undefined),
-      });
-    }
-
     return {
-      ...fallback,
-      title: lesson.title || fallback.title,
-      summary: lesson.summary || fallback.summary,
-      badge: lesson.badge || fallback.badge,
-      estimatedTime: lesson.estimatedTime || fallback.estimatedTime,
-      conceptsCount: concepts.length,
-      concepts: concepts.length > 0 ? concepts : fallback.concepts,
-      quickChallenge,
+      id: section.id, title: section.title, summary: section.summary || '',
+      explanation: blocks.filter((block) => block.type === 'rich-text').map((block) => block.content).join('\n\n'),
+      codeSnippet: blocks.find((block) => block.type === 'code')?.content || '',
+      didacticTip: section.didacticTip || '', commonMistake: section.commonMistake, blocks,
     };
-  } catch (err) {
-    console.warn('Notice loading dynamic CMS topic (using fallback):', err);
-    return fallback;
-  }
+  }));
+  return {
+    id: original?.id || lesson.id, number: module.position + 1, title: lesson.title, summary: lesson.summary,
+    category: module.category as TopicItem['category'], badge: lesson.badge || module.badge || '',
+    estimatedTime: lesson.estimatedTime || '20 min', conceptsCount: concepts.length, concepts,
+    hasInteractiveWorkshop: original?.hasInteractiveWorkshop || false, quickChallenge,
+  };
 }
 
-export async function getAllTopicsFromCmsOrFallback(
-  includeUnpublished = false
-): Promise<TopicItem[]> {
+export async function getAllTopicsFromCmsOrFallback(includeUnpublished = false): Promise<TopicItem[]> {
   try {
     const modules = await getCmsModules(includeUnpublished);
-    if (!modules || modules.length === 0) {
-      return TOPICS_DATA;
+    if (modules.length === 0) {
+      // Empty published results may mean everything was deliberately hidden.
+      const initialized = await getDoc(doc(db, 'cms_site_content', 'curriculum_initialized'));
+      return initialized.exists() ? [] : TOPICS_DATA;
     }
-
-    const result: TopicItem[] = [];
-    for (const mod of modules) {
-      const rawId = mod.slug || mod.id.replace(/^mod_/, '');
-      const staticTopic = TOPICS_DATA.find((t) => t.id === rawId || `mod_${t.id}` === mod.id);
-
-      if (staticTopic) {
-        const dynamicTopic = await getTopicFromCmsOrFallback(staticTopic.id, includeUnpublished);
-        result.push({
-          ...dynamicTopic,
-          title: mod.title.replace(/^Módulo \d+:\s*/, '') || dynamicTopic.title,
-          summary: mod.description || dynamicTopic.summary,
-          category: (mod.category as TopicItem['category']) || dynamicTopic.category,
-          badge: mod.badge || dynamicTopic.badge,
-        });
-      } else {
-        // Custom created module
-        const lessons = await getCmsLessons(mod.id, includeUnpublished);
-        const mainLesson = lessons[0];
-        result.push({
-          id: rawId,
-          number: (mod.position ?? result.length) + 1,
-          title: mod.title.replace(/^Módulo \d+:\s*/, '') || mod.title,
-          summary: mod.description || '',
-          category: (mod.category as TopicItem['category']) || 'Fundamentos',
-          badge: mod.badge || 'Módulo',
-          estimatedTime: mainLesson?.estimatedTime || '30 min',
-          conceptsCount: 1,
-          concepts: [],
-          hasInteractiveWorkshop: false,
-        });
-      }
-    }
-    return result;
-  } catch {
+    const groups = await Promise.all(modules.map(async (module) => {
+      const lessons = await getCmsLessons(module.id, includeUnpublished);
+      return Promise.all(lessons.map((lesson) => lessonToTopic(lesson, module, includeUnpublished)));
+    }));
+    return groups.flat();
+  } catch (error) {
+    if (includeUnpublished) throw error;
+    console.warn('No se pudo cargar el temario del CMS:', error);
     return TOPICS_DATA;
   }
+}
+
+export async function getTopicFromCmsOrFallback(topicId: string, includeUnpublished = false): Promise<TopicItem | null> {
+  const topics = await getAllTopicsFromCmsOrFallback(includeUnpublished);
+  return topics.find((topic) => topic.id === topicId) || null;
 }

@@ -12,8 +12,8 @@ import {
   doc,
   getDoc,
   setDoc,
-  serverTimestamp,
   getDocFromServer,
+  onSnapshot,
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { UserProgress, BuilderState } from '../types/classStructure';
@@ -51,34 +51,38 @@ export function isCentroEmail(email?: string | null): boolean {
   return email.toLowerCase().endsWith('@centro.edu.mx');
 }
 
-/**
- * Checks if the user has administrative privileges
- */
-export function isUserAdmin(user: FirebaseUser | AppUser | null): boolean {
-  if (!user || !user.email) return false;
-  const emailLower = user.email.toLowerCase();
-  return (
-    emailLower === 'jmartineza@centro.edu.mx' ||
-    emailLower.startsWith('admin@') ||
-    (user as AppUser).role === 'admin'
-  );
+// This predicate is for UI only. Firestore rules remain the authority for writes.
+export function isUserAdmin(user: AppUser | null): boolean {
+  return user?.role === 'admin';
 }
 
-/**
- * Formats a Firebase user into our app user interface
- */
-export function mapFirebaseUser(user: FirebaseUser | null): AppUser | null {
+function isBootstrapAdmin(user: FirebaseUser): boolean {
+  return user.emailVerified && user.email?.toLowerCase() === 'jmartineza@centro.edu.mx';
+}
+
+export function mapFirebaseUser(user: FirebaseUser | null, administrator = false): AppUser | null {
   if (!user) return null;
   const isCentro = isCentroEmail(user.email);
-  const isAdmin = isUserAdmin(user);
   return {
     uid: user.uid,
     email: user.email,
     displayName: user.displayName || user.email?.split('@')[0] || 'Estudiante',
     photoURL: user.photoURL,
     isCentroStudent: isCentro,
-    role: isAdmin ? 'admin' : isCentro ? 'student' : 'guest',
+    role: administrator ? 'admin' : isCentro ? 'student' : 'guest',
   };
+}
+
+export async function requireCmsAdmin(): Promise<AppUser> {
+  await auth.authStateReady();
+  const user = auth.currentUser;
+  if (!user) throw new Error('Inicia sesión con una cuenta administradora para modificar el contenido.');
+  const administrator = isBootstrapAdmin(user) ||
+    (await getDocFromServer(doc(db, 'admins', user.uid))).exists();
+  if (auth.currentUser?.uid !== user.uid || !administrator) {
+    throw new Error('Esta cuenta no tiene permisos de administrador.');
+  }
+  return mapFirebaseUser(user, true)!;
 }
 
 /**
@@ -88,7 +92,15 @@ export async function signInWithGoogle(): Promise<AppUser> {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
-    const appUser = mapFirebaseUser(user)!;
+    let administrator = isBootstrapAdmin(user);
+    if (!administrator) {
+      try {
+        administrator = (await getDocFromServer(doc(db, 'admins', user.uid))).exists();
+      } catch {
+        // Fail closed when the directory cannot be checked.
+      }
+    }
+    const appUser = mapFirebaseUser(user, administrator)!;
 
     // Save or update user profile document in Firestore
     try {
@@ -107,18 +119,6 @@ export async function signInWithGoogle(): Promise<AppUser> {
         { merge: true }
       );
 
-      // If user is admin, also register in /admins/{uid} for Firestore rules verification
-      if (appUser.role === 'admin') {
-        await setDoc(
-          doc(db, 'admins', user.uid),
-          {
-            uid: user.uid,
-            email: user.email,
-            assignedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      }
     } catch (saveError) {
       console.warn('Could not update user profile in Firestore (non-fatal):', saveError);
     }
@@ -141,9 +141,27 @@ export async function signOutApp(): Promise<void> {
  * Subscribe to auth state changes
  */
 export function subscribeToAuth(callback: (user: AppUser | null) => void): () => void {
-  return onAuthStateChanged(auth, (firebaseUser) => {
+  let unsubscribeAdmin: (() => void) | undefined;
+  const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+    unsubscribeAdmin?.();
+    if (!firebaseUser || isBootstrapAdmin(firebaseUser)) {
+      callback(mapFirebaseUser(firebaseUser, !!firebaseUser));
+      return;
+    }
     callback(mapFirebaseUser(firebaseUser));
+    // Cached membership must not grant editor access before server verification.
+    unsubscribeAdmin = onSnapshot(doc(db, 'admins', firebaseUser.uid), { includeMetadataChanges: true }, (snapshot) => {
+      if (auth.currentUser?.uid === firebaseUser.uid) {
+        callback(mapFirebaseUser(firebaseUser, snapshot.exists() && !snapshot.metadata.fromCache));
+      }
+    }, () => {
+      if (auth.currentUser?.uid === firebaseUser.uid) callback(mapFirebaseUser(firebaseUser));
+    });
   });
+  return () => {
+    unsubscribeAuth();
+    unsubscribeAdmin?.();
+  };
 }
 
 /**

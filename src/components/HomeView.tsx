@@ -48,7 +48,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onNavigateAdmin,
   topics,
 }) => {
-  const allCurriculumTopics = topics && topics.length > 0 ? topics : TOPICS_DATA;
+  const allCurriculumTopics = topics ?? TOPICS_DATA;
   const activeProgress = progress || classesProgress || {
     stageCompleted: { 1: false, 2: false, 3: false, 4: false },
     stage3CompletedExercises: [],

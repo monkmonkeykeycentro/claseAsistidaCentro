@@ -11,6 +11,7 @@ interface HeaderProps {
   currentUser: AppUser | null;
   onOpenAuth: () => void;
   isSyncing?: boolean;
+  topicCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,26 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenAuth,
   isSyncing,
+  topicCount = 7,
 }) => {
-  const logoClicksRef = React.useRef<{ count: number; lastTime: number }>({ count: 0, lastTime: 0 });
-
-  const handleLogoClick = () => {
-    const now = Date.now();
-    if (now - logoClicksRef.current.lastTime < 1000) {
-      logoClicksRef.current.count += 1;
-    } else {
-      logoClicksRef.current.count = 1;
-    }
-    logoClicksRef.current.lastTime = now;
-
-    if (logoClicksRef.current.count >= 3 && onNavigateAdmin) {
-      logoClicksRef.current.count = 0;
-      onNavigateAdmin();
-      return;
-    }
-
-    onNavigateHome();
-  };
 
   return (
     <header className="sticky top-0 z-40 bg-[#FFFFFF]/90 backdrop-blur-md border-b border-[#E1E7E1] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
@@ -50,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Brand: Código Creativo */}
           <div className="flex items-center gap-3 shrink-0">
             <button
-              onClick={handleLogoClick}
+              onClick={onNavigateHome}
               className="flex items-center gap-2.5 group text-left min-h-[44px] cursor-pointer"
               title="Laboratorio de Código Creativo — Inicio"
             >
@@ -111,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <BookOpen className="w-4 h-4 text-[#59645C]" />
                   <span>Temario</span>
-                  <span className="text-xs font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">7</span>
+                  <span className="text-xs font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">{topicCount}</span>
                 </button>
               </>
             )}
@@ -119,6 +102,12 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Student Account & Cloud Sync */}
           <div className="flex items-center gap-2 shrink-0">
+            {isUserAdmin(currentUser) && onNavigateAdmin && currentView !== 'admin' && (
+              <button onClick={onNavigateAdmin} className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] text-xs font-semibold flex items-center gap-1.5 cursor-pointer" title="Administrar contenidos">
+                <Settings className="w-4 h-4" />
+                <span>CMS</span>
+              </button>
+            )}
             {currentUser ? (
               <button
                 onClick={onOpenAuth}

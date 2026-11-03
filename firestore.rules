@@ -14,67 +14,75 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Platform administrator verification (Bootstrapped email and /admins collection check)
-    function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'jmartineza@centro.edu.mx' ||
-        request.auth.token.email.matches('(?i)^jmartineza@centro\\.edu\\.mx$') ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
+    function isBootstrapAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == 'jmartineza@centro.edu.mx';
     }
 
-    // Default deny all access
+    function isAdmin() {
+      return isSignedIn() && (isBootstrapAdmin()
+        || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isPublished(data) {
+      return data.status == 'published' && data.visible == true;
+    }
+
+    function publicModule(moduleId) {
+      return isPublished(get(/databases/$(database)/documents/cms_modules/$(moduleId)).data);
+    }
+
+    function publicLesson(lessonId) {
+      let lesson = get(/databases/$(database)/documents/cms_lessons/$(lessonId)).data;
+      return isPublished(lesson) && publicModule(lesson.moduleId);
+    }
+
+    function publicSection(sectionId) {
+      let section = get(/databases/$(database)/documents/cms_sections/$(sectionId)).data;
+      return section.visible == true && publicLesson(section.lessonId);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Admin Users Directory
     match /admins/{adminId} {
-      allow read: if isSignedIn() && isValidId(adminId);
-      allow write: if isSignedIn() && (
-        request.auth.token.email == 'jmartineza@centro.edu.mx' ||
-        request.auth.token.email.matches('(?i)^jmartineza@centro\\.edu\\.mx$') ||
-        isAdmin()
-      ) && isValidId(adminId);
+      allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
+      allow list: if isAdmin();
+      allow write: if isAdmin() && isValidId(adminId);
     }
 
-    // CMS Modules
     match /cms_modules/{moduleId} {
-      allow read: if isValidId(moduleId);
-      allow create, update, delete: if isAdmin() && isValidId(moduleId);
+      allow read: if isAdmin() || isPublished(resource.data);
+      allow write: if isAdmin() && isValidId(moduleId);
     }
 
-    // CMS Lessons
     match /cms_lessons/{lessonId} {
-      allow read: if isValidId(lessonId);
-      allow create, update, delete: if isAdmin() && isValidId(lessonId);
+      allow read: if isAdmin() || (isPublished(resource.data) && publicModule(resource.data.moduleId));
+      allow write: if isAdmin() && isValidId(lessonId);
     }
 
-    // CMS Sections
     match /cms_sections/{sectionId} {
-      allow read: if isValidId(sectionId);
-      allow create, update, delete: if isAdmin() && isValidId(sectionId);
+      allow read: if isAdmin() || (resource.data.visible == true && publicLesson(resource.data.lessonId));
+      allow write: if isAdmin() && isValidId(sectionId);
     }
 
-    // CMS Content Blocks
     match /cms_blocks/{blockId} {
-      allow read: if isValidId(blockId);
-      allow create, update, delete: if isAdmin() && isValidId(blockId);
+      allow read: if isAdmin() || publicSection(resource.data.sectionId);
+      allow write: if isAdmin() && isValidId(blockId);
     }
 
-    // CMS Site General Content
     match /cms_site_content/{contentKey} {
-      allow read: if isValidId(contentKey);
+      allow read: if true;
       allow write: if isAdmin() && isValidId(contentKey);
     }
 
-    // CMS Media Resources
     match /cms_media/{mediaId} {
-      allow read: if isValidId(mediaId);
+      allow read: if true;
       allow write: if isAdmin() && isValidId(mediaId);
     }
 
-    // CMS Editorial Revisions & Backups
     match /cms_revisions/{revisionId} {
       allow read, write: if isAdmin() && isValidId(revisionId);
     }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { CmsLesson, CmsSection, CmsBlock } from '../../types/cms';
-import { ProcessingCodeBlock } from '../ProcessingCodeBlock';
-import { X, Eye, Info, AlertTriangle, CheckCircle, ExternalLink, Code } from 'lucide-react';
+import { CmsBlockView } from '../CmsBlockView';
+import { X } from 'lucide-react';
 
 interface StudentPreviewModalProps {
   isOpen: boolean;
@@ -114,125 +114,7 @@ export const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({
 
                     {/* Blocks in this section */}
                     <div className="space-y-4">
-                      {blocks.map((block) => {
-                        if (block.type === 'rich-text') {
-                          return (
-                            <div
-                              key={block.id}
-                              className="text-sm text-[#232A24] leading-relaxed whitespace-pre-line"
-                            >
-                              {block.content}
-                            </div>
-                          );
-                        }
-
-                        if (block.type === 'code') {
-                          return (
-                            <div key={block.id} className="space-y-1.5">
-                              {block.caption && (
-                                <span className="text-xs font-semibold text-[#59645C] block">
-                                  {block.caption}
-                                </span>
-                              )}
-                              <ProcessingCodeBlock
-                                code={block.content}
-                                filename={block.filename || 'sketch.pde'}
-                                showCopyButton={true}
-                              />
-                            </div>
-                          );
-                        }
-
-                        if (block.type === 'callout') {
-                          const isWarning = block.calloutType === 'warning';
-                          const isTip = block.calloutType === 'tip';
-                          return (
-                            <div
-                              key={block.id}
-                              className={`p-4 rounded-xl border text-xs leading-relaxed flex items-start gap-3 ${
-                                isWarning
-                                  ? 'bg-[#FFF9EE] border-[#E6B65A] text-[#232A24]'
-                                  : isTip
-                                  ? 'bg-[#E8EEE8] border-[#407B5D] text-[#232A24]'
-                                  : 'bg-white border-[#E1E7E1] text-[#232A24]'
-                              }`}
-                            >
-                              {isWarning ? (
-                                <AlertTriangle className="w-4 h-4 text-[#8A6318] shrink-0 mt-0.5" />
-                              ) : (
-                                <Info className="w-4 h-4 text-[#407B5D] shrink-0 mt-0.5" />
-                              )}
-                              <div>
-                                {block.caption && (
-                                  <span className="font-bold block mb-0.5">
-                                    {block.caption}
-                                  </span>
-                                )}
-                                <span>{block.content}</span>
-                              </div>
-                            </div>
-                          );
-                        }
-
-                        if (block.type === 'image') {
-                          return (
-                            <div key={block.id} className="space-y-1.5 text-center">
-                              <img
-                                src={block.content}
-                                alt={block.caption || 'Imagen educativa'}
-                                className="max-w-full h-auto rounded-xl border border-[#E1E7E1] mx-auto shadow-xs"
-                              />
-                              {block.caption && (
-                                <span className="text-xs text-[#59645C] italic block">
-                                  {block.caption}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        }
-
-                        if (block.type === 'video') {
-                          return (
-                            <div key={block.id} className="space-y-1.5">
-                              <div className="aspect-video w-full rounded-xl overflow-hidden border border-[#E1E7E1]">
-                                <iframe
-                                  src={block.content}
-                                  title={block.caption || 'Video educativo'}
-                                  className="w-full h-full"
-                                  allowFullScreen
-                                />
-                              </div>
-                              {block.caption && (
-                                <span className="text-xs text-[#59645C] block">
-                                  {block.caption}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        }
-
-                        if (block.type === 'activity') {
-                          return (
-                            <div
-                              key={block.id}
-                              className="p-5 rounded-xl border border-[#407B5D] bg-[#E8EEE8]/30 space-y-2"
-                            >
-                              <div className="flex items-center gap-2 text-xs font-bold text-[#407B5D] uppercase">
-                                <Code className="w-4 h-4" />
-                                <span>Actividad Interactiva Vinculada</span>
-                              </div>
-                              <p className="text-xs font-semibold text-[#232A24]">
-                                {block.content}
-                              </p>
-                              <span className="text-[11px] text-[#59645C] block">
-                                En la plataforma del estudiante, este bloque se ejecuta con el simulador interactivo de Processing.
-                              </span>
-                            </div>
-                          );
-                        }
-
-                        return null;
-                      })}
+                      {blocks.map((block) => <CmsBlockView key={block.id} block={block} />)}
                     </div>
 
                     {/* Didactic Tip & Mistake Footers if any */}

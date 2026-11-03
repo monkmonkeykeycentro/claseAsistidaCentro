@@ -23,9 +23,7 @@ import {
 } from './services/firebase';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import {
-  seedCmsFromExistingContentIfEmpty,
   subscribeToSiteContent,
-  getTopicFromCmsOrFallback,
   getAllTopicsFromCmsOrFallback,
 } from './services/cmsService';
 import { CmsSiteContentCombined } from './types/cms';
@@ -56,7 +54,7 @@ export default function App() {
   const [currentTopicId, setCurrentTopicId] = useState<string>(() => {
     try {
       const saved = localStorage.getItem(TOPIC_STORAGE_KEY);
-      if (saved && TOPICS_DATA.some((t) => t.id === saved)) {
+      if (saved && /^[a-zA-Z0-9_-]+$/.test(saved)) {
         return saved;
       }
     } catch {
@@ -65,19 +63,22 @@ export default function App() {
     return 'classes';
   });
 
-  const [dynamicTopic, setDynamicTopic] = useState<TopicItem>(() => {
-    return TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5];
-  });
-
   const [allCurriculumTopics, setAllCurriculumTopics] = useState<TopicItem[]>(TOPICS_DATA);
+  const [curriculumIncludesDrafts, setCurriculumIncludesDrafts] = useState(false);
+  const [isCurriculumLoading, setIsCurriculumLoading] = useState(true);
+
 
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState<StageId>(1);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const canAdmin = isUserAdmin(currentUser);
+  const displayedTopics = curriculumIncludesDrafts && !canAdmin ? [] : allCurriculumTopics;
+  const dynamicTopic = displayedTopics.find((topic) => topic.id === currentTopicId) || null;
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleNavigateAdmin = () => {
+    if (!canAdmin) return;
     setActiveView('admin');
     window.location.hash = '#admin';
   };
@@ -97,17 +98,17 @@ export default function App() {
   useEffect(() => {
     const checkAdminRoute = () => {
       const hash = window.location.hash.toLowerCase();
-      const search = window.location.search.toLowerCase();
+      const search = new URLSearchParams(window.location.search.toLowerCase());
       const pathname = window.location.pathname.toLowerCase();
 
-      if (
+      if (canAdmin && (
         hash === '#admin' ||
         hash === '#cms' ||
-        search.includes('admin') ||
-        search.includes('cms') ||
+        search.has('admin') ||
+        search.has('cms') ||
         pathname.endsWith('/admin') ||
         pathname.endsWith('/cms')
-      ) {
+      )) {
         setActiveView('admin');
       }
     };
@@ -117,7 +118,7 @@ export default function App() {
     window.addEventListener('popstate', checkAdminRoute);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+      if (canAdmin && (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
         e.preventDefault();
         handleNavigateAdmin();
       }
@@ -129,15 +130,18 @@ export default function App() {
       window.removeEventListener('popstate', checkAdminRoute);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [canAdmin]);
 
-  // Initialize CMS content and seed existing topics idempotently
+  useEffect(() => {
+    if (!canAdmin) {
+      setActiveView((view) => view === 'admin' ? 'home' : view);
+      setIsStudentPreviewMode(false);
+    }
+  }, [canAdmin]);
+
+  // Read published site texts without attempting writes from public sessions.
   useEffect(() => {
     let isMounted = true;
-    seedCmsFromExistingContentIfEmpty().catch((err) => {
-      console.warn('CMS auto-seed check notice:', err);
-    });
-
     const unsubscribeSite = subscribeToSiteContent((content) => {
       if (isMounted) setSiteContent(content);
     });
@@ -151,20 +155,24 @@ export default function App() {
   // Refresh dynamic topic data from CMS whenever topic or view changes
   useEffect(() => {
     let isMounted = true;
-    getTopicFromCmsOrFallback(currentTopicId, isStudentPreviewMode).then((t) => {
-      if (isMounted) setDynamicTopic(t);
-    });
-
-    getAllTopicsFromCmsOrFallback(isStudentPreviewMode).then((list) => {
-      if (isMounted && list && list.length > 0) {
+    setIsCurriculumLoading(true);
+    getAllTopicsFromCmsOrFallback(canAdmin && isStudentPreviewMode).then((list) => {
+      if (isMounted) {
         setAllCurriculumTopics(list);
+        setCurriculumIncludesDrafts(canAdmin && isStudentPreviewMode);
+
       }
+    }).catch((error) => {
+      console.warn('No se pudo cargar la vista previa del CMS:', error);
+      if (isMounted) setAllCurriculumTopics([]);
+    }).finally(() => {
+      if (isMounted) setIsCurriculumLoading(false);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [currentTopicId, isStudentPreviewMode, activeView]);
+  }, [isStudentPreviewMode, activeView, canAdmin]);
 
   const [progress, setProgress] = useState<UserProgress>(() => {
     try {
@@ -190,37 +198,31 @@ export default function App() {
     return INITIAL_BUILDER_STATE;
   });
 
-  // Subscribe to Firebase Auth state
-  useEffect(() => {
-    const unsubscribe = subscribeToAuth(async (user) => {
-      setCurrentUser(user);
-      if (user) {
-        try {
-          setIsSyncing(true);
-          const cloudData = await loadUserTopicProgress(user.uid, currentTopicId);
-          if (cloudData && cloudData.progress) {
-            setProgress((prev) => ({
-              ...prev,
-              ...cloudData.progress,
-              stageCompleted: {
-                ...prev.stageCompleted,
-                ...(cloudData.progress.stageCompleted || {}),
-              },
-            }));
-            if (cloudData.builderState) {
-              setSavedBuilderState(cloudData.builderState);
-            }
-          }
-        } catch (e) {
-          console.warn('Could not sync initial progress from cloud:', e);
-        } finally {
-          setIsSyncing(false);
-        }
-      }
-    });
+  // Keep one identity subscription; changing lessons must not reset admin access.
+  useEffect(() => subscribeToAuth(setCurrentUser), []);
 
-    return () => unsubscribe();
-  }, [currentTopicId]);
+  useEffect(() => {
+    let isMounted = true;
+    if (!currentUser) {
+      setIsSyncing(false);
+      return;
+    }
+    setIsSyncing(true);
+    loadUserTopicProgress(currentUser.uid, currentTopicId).then((cloudData) => {
+      if (!isMounted || !cloudData?.progress) return;
+      setProgress((prev) => ({
+        ...prev,
+        ...cloudData.progress,
+        stageCompleted: { ...prev.stageCompleted, ...(cloudData.progress.stageCompleted || {}) },
+      }));
+      if (cloudData.builderState) setSavedBuilderState(cloudData.builderState);
+    }).catch((error) => {
+      console.warn('Could not sync initial progress from cloud:', error);
+    }).finally(() => {
+      if (isMounted) setIsSyncing(false);
+    });
+    return () => { isMounted = false; };
+  }, [currentUser?.uid, currentTopicId]);
 
   // Save topic change locally
   useEffect(() => {
@@ -330,7 +332,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F7F8F4] text-[#232A24] flex flex-col font-sans selection:bg-[#E8EEE8] selection:text-[#232A24]">
       {/* Student Preview Mode Banner */}
-      {isStudentPreviewMode && (
+      {canAdmin && isStudentPreviewMode && (
         <div className="bg-[#407B5D] text-white px-4 py-2 text-xs font-semibold flex items-center justify-between sticky top-0 z-50 shadow-sm">
           <div className="flex items-center gap-2 max-w-6xl mx-auto w-full justify-between">
             <div className="flex items-center gap-2">
@@ -339,7 +341,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setActiveView('admin')}
+                onClick={handleNavigateAdmin}
                 className="underline hover:text-[#E8EEE8] cursor-pointer text-xs"
               >
                 Volver al CMS
@@ -358,19 +360,20 @@ export default function App() {
       )}
 
       <Header
-        currentView={activeView}
+        currentView={activeView === 'admin' && !canAdmin ? 'home' : activeView}
         onNavigateHome={() => setActiveView('home')}
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
         onNavigateOopLab={() => setActiveView('oop-lab')}
-        onNavigateAdmin={handleNavigateAdmin}
+        onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         isSyncing={isSyncing}
+        topicCount={displayedTopics.length}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* VIEW 0: CMS Admin Dashboard */}
-        {activeView === 'admin' && (
+        {activeView === 'admin' && canAdmin && (
           <AdminDashboard
             currentUser={currentUser}
             onExitAdmin={handleExitAdmin}
@@ -382,7 +385,7 @@ export default function App() {
         )}
 
         {/* VIEW 1: Home View */}
-        {activeView === 'home' && (
+        {(activeView === 'home' || (activeView === 'admin' && !canAdmin)) && (
           <HomeView
             onOpenWorkshop={(stage) => {
               if (stage) setCurrentStage(stage);
@@ -403,8 +406,8 @@ export default function App() {
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onResetProgress={handleResetAllProgress}
             siteContent={siteContent}
-            onNavigateAdmin={handleNavigateAdmin}
-            topics={allCurriculumTopics}
+            onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
+            topics={displayedTopics}
           />
         )}
 
@@ -425,8 +428,9 @@ export default function App() {
         )}
 
         {/* VIEW 3: General Curriculum Topic Viewer */}
-        {activeView === 'topic' && (
+        {activeView === 'topic' && !isCurriculumLoading && dynamicTopic && (
           <TopicViewer
+            key={dynamicTopic.id}
             topic={dynamicTopic}
             onNavigateTopic={(tId) => {
               setCurrentTopicId(tId);
@@ -437,6 +441,10 @@ export default function App() {
             onOpenCatalogue={() => setIsCatalogueOpen(true)}
             onBackToHome={() => setActiveView('home')}
           />
+        )}
+
+        {activeView === 'topic' && (isCurriculumLoading || !dynamicTopic) && (
+          <p role="status" className="text-sm text-[#59645C]">{isCurriculumLoading ? 'Cargando contenido…' : 'Esta lección no está disponible. Elige otra desde el temario.'}</p>
         )}
 
         {/* VIEW 4: Laboratorio de Objetos (Pelota & Burbuja) */}
@@ -457,7 +465,7 @@ export default function App() {
         classesProgressCount={
           Object.values(progress.stageCompleted).filter(Boolean).length
         }
-        topics={allCurriculumTopics}
+        topics={displayedTopics}
       />
 
       {/* Auth Modal */}
@@ -488,7 +496,7 @@ export default function App() {
               onClick={() => setIsCatalogueOpen(true)}
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
-              Temario ({TOPICS_DATA.length})
+              Temario ({displayedTopics.length})
             </button>
             <span className="text-[#E1E7E1]">·</span>
             <button

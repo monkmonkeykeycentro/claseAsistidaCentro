@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f",
+      "rules": "firestore.rules"
+    }
+  ]
+}

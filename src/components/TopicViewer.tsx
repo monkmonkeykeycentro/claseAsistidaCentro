@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TopicItem } from '../data/topicsData';
+import { CmsBlockView } from './CmsBlockView';
 import { ProcessingCodeBlock } from './ProcessingCodeBlock';
 import { ObjectArraysSessionView } from './ObjectArraysSessionView';
 import {
@@ -45,7 +46,7 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
     );
   }
 
-  const activeConcept = topic.concepts[activeConceptIdx] || topic.concepts[0];
+  const activeConcept = topic.concepts[activeConceptIdx] || topic.concepts[0] || { id: 'empty', title: topic.title, summary: '', explanation: 'Esta lección aún no tiene contenido.', codeSnippet: '', didacticTip: '', commonMistake: undefined, blocks: undefined };
 
   const handleSelectOption = (idx: number) => {
     setSelectedOptionIdx(idx);
@@ -205,12 +206,15 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
             </div>
 
             <p className="text-sm text-[#59645C] leading-relaxed">
-              {activeConcept.explanation}
+              {!activeConcept.blocks && activeConcept.explanation}
             </p>
           </div>
 
+          {activeConcept.blocks && (
+            <div className="space-y-5">{activeConcept.blocks.map((block) => <CmsBlockView key={block.id} block={block} />)}</div>
+          )}
           {/* Processing Java Code Example */}
-          <div className="space-y-2">
+          {!activeConcept.blocks && activeConcept.codeSnippet && <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-[#59645C]">
               <span className="font-bold uppercase tracking-wider text-[#232A24]">
                 Código fuente de ejemplo
@@ -223,7 +227,7 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
               filename={`${activeConcept.id}.pde`}
               showCopyButton={true}
             />
-          </div>
+          </div>}
 
           {/* Interactive Challenge if present */}
           {topic.quickChallenge && (

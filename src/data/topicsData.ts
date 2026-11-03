@@ -1,3 +1,5 @@
+import type { CmsBlock } from '../types/cms';
+
 export interface TopicConcept {
   id: string;
   title: string;
@@ -6,6 +8,7 @@ export interface TopicConcept {
   codeSnippet: string;
   didacticTip: string;
   commonMistake?: string;
+  blocks?: CmsBlock[];
 }
 
 export interface TopicItem {
