@@ -16,6 +16,7 @@ import { AuthModal } from './components/AuthModal';
 import { OopLabView } from './components/oopLab/OopLabView';
 import { PilotExercisesView } from './components/pilot/PilotExercisesView';
 import { UnitActivitiesView } from './components/curriculum/UnitActivitiesView';
+import { ClassDesignerRoot } from './components/classDesigner/ClassDesignerRoot';
 import {
   AppUser,
   subscribeToAuth,
@@ -46,7 +47,7 @@ const DEFAULT_PROGRESS: UserProgress = {
   stage4BuilderCustomized: false,
 };
 
-type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin';
+type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin' | 'class-designer';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>('home');
@@ -147,6 +148,19 @@ export default function App() {
         search.has('exploraciones')
       ) {
         setActiveView('pilot');
+        return;
+      }
+
+      if (
+        hash === '#disenador-clases' ||
+        hash === '#disenador' ||
+        hash === '#class-designer' ||
+        hash === '#herramientas' ||
+        search.has('disenador') ||
+        search.has('designer')
+      ) {
+        setActiveView('class-designer');
+        return;
       }
     };
 
@@ -407,6 +421,10 @@ export default function App() {
           setActiveView('units');
           window.location.hash = '#unidades';
         }}
+        onNavigateClassDesigner={() => {
+          setActiveView('class-designer');
+          window.location.hash = '#disenador-clases';
+        }}
         onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -456,6 +474,10 @@ export default function App() {
               if (exId) setSelectedCurriculumExercise(exId);
               setActiveView('units');
               window.location.hash = unitId ? `#${unitId}` : '#unidades';
+            }}
+            onOpenClassDesigner={() => {
+              setActiveView('class-designer');
+              window.location.hash = '#disenador-clases';
             }}
             progress={progress}
             currentUser={currentUser}
@@ -567,6 +589,29 @@ export default function App() {
             isStudentPreviewMode={isStudentPreviewMode}
           />
         )}
+
+        {/* VIEW 7: Diseñador de Clases (POO) */}
+        {activeView === 'class-designer' && (
+          <ClassDesignerRoot
+            onBackToHome={() => {
+              setActiveView('home');
+              if (
+                window.location.hash === '#disenador-clases' ||
+                window.location.hash === '#disenador' ||
+                window.location.hash === '#class-designer' ||
+                window.location.hash === '#herramientas'
+              ) {
+                try {
+                  window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                } catch {
+                  window.location.hash = '';
+                }
+              }
+            }}
+            currentUser={currentUser}
+            onOpenCatalogue={() => setIsCatalogueOpen(true)}
+          />
+        )}
       </main>
 
       {/* Topics Catalogue Modal */}
@@ -608,6 +653,16 @@ export default function App() {
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Inicio
+            </button>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
+              onClick={() => {
+                setActiveView('class-designer');
+                window.location.hash = '#disenador-clases';
+              }}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors font-semibold"
+            >
+              Diseñador de Clases
             </button>
             <span className="text-[#E1E7E1]">·</span>
             <button

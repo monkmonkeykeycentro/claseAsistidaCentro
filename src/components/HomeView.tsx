@@ -20,6 +20,8 @@ import {
   Code2,
   Sliders,
   Compass,
+  PenTool,
+  Wrench,
 } from 'lucide-react';
 
 interface HomeViewProps {
@@ -28,6 +30,7 @@ interface HomeViewProps {
   onNavigateOopLab?: () => void;
   onOpenPilot?: () => void;
   onOpenUnits?: (unitId?: 'u1' | 'u2' | 'u3', exerciseId?: string) => void;
+  onOpenClassDesigner?: () => void;
   onSelectTopic: (topicId: string) => void;
   progress?: UserProgress;
   classesProgress?: UserProgress;
@@ -45,6 +48,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onNavigateOopLab,
   onOpenPilot,
   onOpenUnits,
+  onOpenClassDesigner,
   onSelectTopic,
   progress,
   classesProgress,
@@ -127,6 +131,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <span>Laboratorio POO</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+
+              {onOpenClassDesigner && (
+                <button
+                  onClick={onOpenClassDesigner}
+                  className="min-h-[44px] px-4 py-2.5 border border-[#407B5D] bg-[#E8EEE8] hover:bg-[#d8e4d8] text-[#407B5D] font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
+                >
+                  <PenTool className="w-4 h-4 text-[#407B5D]" />
+                  <span>Diseñador de Clases</span>
+                </button>
+              )}
 
               <button
                 onClick={() => onOpenWorkshop()}
@@ -507,6 +521,139 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN: Herramientas de Creación y Producción */}
+      <section className="p-6 sm:p-7 bg-[#FFFFFF] border border-[#E1E7E1] rounded-3xl space-y-5 shadow-xs hover:border-[#407B5D]/60 transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+              <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
+                Herramientas
+              </span>
+            </div>
+            <h2 className="text-2xl font-extrabold text-[#232A24] tracking-tight">
+              Herramientas de Creación y Producción
+            </h2>
+          </div>
+          {onOpenClassDesigner && (
+            <button
+              onClick={onOpenClassDesigner}
+              className="min-h-[42px] px-6 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0"
+            >
+              <PenTool className="w-4 h-4" />
+              <span>Abrir Diseñador de Clases</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <p className="text-sm text-[#59645C] leading-relaxed max-w-3xl">
+          Espacios de autoría autónoma para formular arquitecturas modulares, estructurar modelos orientados a objetos y generar código limpio en Processing Java para tus proyectos creativos.
+        </p>
+
+        {/* Tools Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+          {/* Card 1: Diseñador de Clases */}
+          <div
+            onClick={onOpenClassDesigner}
+            className="p-5 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 cursor-pointer transition-all group shadow-2xs hover:shadow-sm"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg font-mono flex items-center gap-1.5">
+                  <PenTool className="w-3.5 h-3.5" />
+                  <span>HERRAMIENTA POO</span>
+                </span>
+                <span className="text-[#8E8E89] text-[11px] font-mono">6 Etapas</span>
+              </div>
+
+              <h3 className="text-lg font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                Diseñador de Clases
+              </h3>
+
+              <p className="text-xs text-[#59645C] leading-relaxed">
+                Diseña los campos, constructores y métodos de tus objetos y genera su estructura inicial en Processing Java.
+              </p>
+
+              {/* Feature pills */}
+              <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-[#232A24]">
+                <div className="p-2 bg-white border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">1. ABSTRACCIÓN</span>
+                  <span className="font-bold">4 Preguntas</span>
+                </div>
+                <div className="p-2 bg-white border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">2. MEMORIA</span>
+                  <span className="font-bold">Estrategias A/B/C</span>
+                </div>
+                <div className="p-2 bg-white border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">3. PDE TABS</span>
+                  <span className="font-bold">Código Real</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#59645C]">
+                Incluye plantilla Resorte (Slinky)
+              </span>
+              <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <span>Diseñar mi clase</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: Laboratorio de Objetos Complementario */}
+          <div
+            onClick={handleOpenOop}
+            className="p-5 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 cursor-pointer transition-all group shadow-2xs hover:shadow-sm"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg font-mono flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>SIMULADOR EN VIVO</span>
+                </span>
+                <span className="text-[#8E8E89] text-[11px] font-mono">60 FPS</span>
+              </div>
+
+              <h3 className="text-lg font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                Laboratorio POO · Pelota y Burbuja
+              </h3>
+
+              <p className="text-xs text-[#59645C] leading-relaxed">
+                Experimenta en tiempo real con instancias activas, métodos interactivos de estado y control simultáneo sobre arreglos de objetos.
+              </p>
+
+              <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-[#232A24]">
+                <div className="p-2 bg-white border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">ESTADO</span>
+                  <span className="font-bold">7 Métodos</span>
+                </div>
+                <div className="p-2 bg-white border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">FÍSICA</span>
+                  <span className="font-bold">noise() Perlin</span>
+                </div>
+                <div className="p-2 bg-white border border-[#E1E7E1] rounded-xl text-center">
+                  <span className="text-[10px] text-[#59645C] block font-semibold">COLECCIONES</span>
+                  <span className="font-bold">Arreglos[]</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#59645C]">
+                Inspección de telemetría y variables
+              </span>
+              <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <span>Entrar al laboratorio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
           </div>
         </div>
       </section>

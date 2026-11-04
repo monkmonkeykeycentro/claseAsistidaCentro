@@ -131,6 +131,19 @@ service cloud.firestore {
 
         allow delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(exerciseId);
       }
+
+      // Class designs subcollection for the Diseñador de Clases tool
+      match /class_designs/{designId} {
+        allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(designId);
+        allow list: if isOwner(userId) || isAdmin();
+
+        allow create, update: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(designId)
+          && request.resource.data.userId == request.auth.uid;
+
+        allow delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(designId);
+      }
     }
   }
 }

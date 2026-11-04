@@ -1,14 +1,15 @@
 import React from 'react';
 import { AppUser, isUserAdmin } from '../services/firebase';
-import { User, Cloud, BookOpen, Settings, Compass, Layers } from 'lucide-react';
+import { User, Cloud, BookOpen, Settings, Compass, Layers, PenTool } from 'lucide-react';
 
 interface HeaderProps {
-  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin';
+  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin' | 'class-designer';
   onNavigateHome: () => void;
   onOpenCatalogue: () => void;
   onNavigateOopLab: () => void;
   onNavigatePilot?: () => void;
   onNavigateUnits?: () => void;
+  onNavigateClassDesigner?: () => void;
   onNavigateAdmin?: () => void;
   currentUser: AppUser | null;
   onOpenAuth: () => void;
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateOopLab,
   onNavigatePilot,
   onNavigateUnits,
+  onNavigateClassDesigner,
   onNavigateAdmin,
   currentUser,
   onOpenAuth,
@@ -91,6 +93,20 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
                   <span>Laboratorio POO</span>
                 </button>
+
+                {onNavigateClassDesigner && (
+                  <button
+                    onClick={onNavigateClassDesigner}
+                    className={`min-h-[40px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                      currentView === 'class-designer'
+                        ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
+                        : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
+                    }`}
+                  >
+                    <PenTool className="w-3.5 h-3.5 text-[#407B5D]" />
+                    <span>Diseñador</span>
+                  </button>
+                )}
 
                 {onNavigatePilot && (
                   <button
