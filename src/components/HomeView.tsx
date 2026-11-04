@@ -17,6 +17,9 @@ import {
   Layers,
   Play,
   Heart,
+  Code2,
+  Sliders,
+  Compass,
 } from 'lucide-react';
 
 interface HomeViewProps {
@@ -24,6 +27,7 @@ interface HomeViewProps {
   onOpenOopLab?: () => void;
   onNavigateOopLab?: () => void;
   onOpenPilot?: () => void;
+  onOpenUnits?: (unitId?: 'u1' | 'u2' | 'u3', exerciseId?: string) => void;
   onSelectTopic: (topicId: string) => void;
   progress?: UserProgress;
   classesProgress?: UserProgress;
@@ -40,6 +44,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenOopLab,
   onNavigateOopLab,
   onOpenPilot,
+  onOpenUnits,
   onSelectTopic,
   progress,
   classesProgress,
@@ -104,20 +109,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             {/* CTAs */}
-            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
+              {onOpenUnits && (
+                <button
+                  onClick={() => onOpenUnits('u1')}
+                  className="min-h-[44px] px-6 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs active:scale-98 cursor-pointer"
+                >
+                  <Layers className="w-4 h-4" />
+                  <span>Unidades 1, 2 y 3 (14 Prácticas)</span>
+                </button>
+              )}
+
               <button
                 onClick={handleOpenOop}
-                className="min-h-[44px] px-6 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs active:scale-98 cursor-pointer"
+                className="min-h-[44px] px-5 py-2.5 border border-[#407B5D] text-[#407B5D] hover:bg-[#E8EEE8] font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-2xs active:scale-98 cursor-pointer bg-white"
               >
-                <span>Entrar al Laboratorio POO</span>
+                <span>Laboratorio POO</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
               <button
                 onClick={() => onOpenWorkshop()}
-                className="min-h-[44px] px-5 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8]/40 text-[#232A24] font-semibold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+                className="min-h-[44px] px-4 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8]/40 text-[#232A24] font-medium rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
               >
-                <span>Taller de Anatomía de Clases</span>
+                <span>Taller de Clases</span>
               </button>
             </div>
           </div>
@@ -274,6 +289,224 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <p className="text-xs text-[#59645C] line-clamp-2">
               Video: Sallie Gardner at a Gallop (Eadweard Muybridge). División interactiva en vivo.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* PLAN CURRICULAR: Unidades 1, 2 y 3 (14 Actividades Interactivas) */}
+      <section className="p-6 sm:p-7 bg-[#FFFFFF] border border-[#E1E7E1] rounded-3xl space-y-6 shadow-xs hover:border-[#407B5D]/60 transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+              <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
+                Plan Curricular de Processing Java
+              </span>
+            </div>
+            <h2 className="text-2xl font-extrabold text-[#232A24] tracking-tight">
+              Unidades 1, 2 y 3 · 14 Prácticas Interactivas
+            </h2>
+          </div>
+          {onOpenUnits && (
+            <button
+              onClick={() => onOpenUnits('u1')}
+              className="min-h-[42px] px-6 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0"
+            >
+              <Layers className="w-4 h-4" />
+              <span>Explorar las 3 Unidades</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <p className="text-sm text-[#59645C] leading-relaxed max-w-3xl">
+          Estructura curricular completa orientada a construir pensamiento computacional y código creativo mediante Processing Java. Cada actividad integra: Inicio visual interactivo, Manipulación de parámetros en vivo, Pregunta de interpretación con retroalimentación razonada y Registro de evidencia pedagógica.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-1">
+          {/* UNIDAD 1 */}
+          <div className="p-5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#407B5D] transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                  UNIDAD 1
+                </span>
+                <span className="text-[#8E8E89]">3 Prácticas</span>
+              </div>
+              <h3 className="text-base font-bold text-[#232A24]">
+                Fundamentos de programación y código creativo
+              </h3>
+              <p className="text-xs text-[#59645C] leading-relaxed">
+                Descubre cómo una imagen se construye siguiendo instrucciones secuenciales precisas y cómo una regla origina múltiples variaciones.
+              </p>
+              <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
+                <li
+                  onClick={() => onOpenUnits?.('u1', 'u1-e1')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U1-E1</span>
+                  <span>Secuencia de instrucciones</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u1', 'u1-e2')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U1-E2</span>
+                  <span>Una regla, múltiples variaciones</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u1', 'u1-e3')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U1-E3</span>
+                  <span>Del boceto a un procedimiento</span>
+                </li>
+              </ul>
+            </div>
+            {onOpenUnits && (
+              <button
+                onClick={() => onOpenUnits('u1')}
+                className="w-full min-h-[36px] px-3 py-1.5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] hover:text-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Comenzar Unidad 1</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* UNIDAD 2 */}
+          <div className="p-5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#407B5D] transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                  UNIDAD 2
+                </span>
+                <span className="text-[#8E8E89]">6 Prácticas</span>
+              </div>
+              <h3 className="text-base font-bold text-[#232A24]">
+                Primeros pasos con Processing
+              </h3>
+              <p className="text-xs text-[#59645C] leading-relaxed">
+                Aprende la interfaz, sistema de coordenadas, funciones con parámetros, primitivas 2D, espacios RGB/HSB y cómo consultar referencias oficiales.
+              </p>
+              <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
+                <li
+                  onClick={() => onOpenUnits?.('u2', 'u2-e1')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U2-E1</span>
+                  <span>Primer recorrido por Processing</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u2', 'u2-e2')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U2-E2</span>
+                  <span>Del espacio a la forma: coordenadas</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u2', 'u2-e3')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U2-E3</span>
+                  <span>Leer funciones y comentarios</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u2', 'u2-e4')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U2-E4</span>
+                  <span>Composición con primitivas 2D</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u2', 'u2-e5')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U2-E5</span>
+                  <span>Laboratorio de color: RGB y HSB</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u2', 'u2-e6')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U2-E6</span>
+                  <span>Aprender a consultar una referencia</span>
+                </li>
+              </ul>
+            </div>
+            {onOpenUnits && (
+              <button
+                onClick={() => onOpenUnits('u2')}
+                className="w-full min-h-[36px] px-3 py-1.5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] hover:text-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Comenzar Unidad 2</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* UNIDAD 3 */}
+          <div className="p-5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#407B5D] transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                  UNIDAD 3
+                </span>
+                <span className="text-[#8E8E89]">5 Prácticas</span>
+              </div>
+              <h3 className="text-base font-bold text-[#232A24]">
+                Variables y personalización visual
+              </h3>
+              <p className="text-xs text-[#59645C] leading-relaxed">
+                Comprende los parámetros como decisiones modificables y reutilizables: tipos de datos, variables del sistema, operaciones aritméticas e incrementación animada.
+              </p>
+              <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
+                <li
+                  onClick={() => onOpenUnits?.('u3', 'u3-e1')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U3-E1</span>
+                  <span>Del valor fijo a la variable</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u3', 'u3-e2')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U3-E2</span>
+                  <span>Tipos de datos y width/height</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u3', 'u3-e3')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U3-E3</span>
+                  <span>Sistema con variables propias</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u3', 'u3-e4')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U3-E4</span>
+                  <span>Operaciones y retoque</span>
+                </li>
+                <li
+                  onClick={() => onOpenUnits?.('u3', 'u3-e5')}
+                  className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                >
+                  <span className="text-[#407B5D] font-bold">U3-E5</span>
+                  <span>Incrementación y animación</span>
+                </li>
+              </ul>
+            </div>
+            {onOpenUnits && (
+              <button
+                onClick={() => onOpenUnits('u3')}
+                className="w-full min-h-[36px] px-3 py-1.5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] hover:text-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Comenzar Unidad 3</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </section>

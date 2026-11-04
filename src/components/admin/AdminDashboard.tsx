@@ -28,6 +28,7 @@ import {
   seedCmsFromExistingContentIfEmpty,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
+import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
 import { AppUser, isUserAdmin, db } from '../../services/firebase';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import {
@@ -74,6 +75,7 @@ interface AdminDashboardProps {
   currentUser: AppUser | null;
   onExitAdmin: () => void;
   onPreviewAsStudent: () => void;
+  onOpenExerciseInRunner?: (unitId: 'u1' | 'u2' | 'u3', exerciseId: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
@@ -85,8 +87,9 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   onExitAdmin,
   onPreviewAsStudent,
+  onOpenExerciseInRunner,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'site_texts' | 'media' | 'history' | 'evidences'>('content');
+  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'content' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
   const [evidenceList, setEvidenceList] = useState<PilotEvidenceRecord[]>([]);
   const [evidenceFilter, setEvidenceFilter] = useState<'all' | 'coordinates' | 'conditionals'>('all');
   const [selectedEvidence, setSelectedEvidence] = useState<PilotEvidenceRecord | null>(null);
@@ -684,7 +687,8 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="lg:col-span-3 space-y-4">
           <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
             {[
-              { id: 'content', label: 'Módulos y Lecciones', icon: Layers, count: modules.length },
+              { id: 'curriculum_units', label: 'Propuesta Unidades 1–3', icon: BookOpen, count: 14 },
+              { id: 'content', label: 'Módulos y Lecciones (CMS)', icon: Layers, count: modules.length },
               { id: 'evidences', label: 'Evidencias de Estudiantes', icon: FileCheck, count: evidenceList.length },
               { id: 'overview', label: 'Resumen & Estadísticas', icon: Sparkles },
               { id: 'site_texts', label: 'Textos Generales', icon: FileText },
@@ -736,6 +740,23 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Right Main Content Area (9 cols) */}
         <div className="lg:col-span-9 space-y-6">
+          {/* ========================================================================= */}
+          {/* TAB 0: PROPUESTA CURRICULAR U1–U3 (REVISIÓN DOCENTE)                     */}
+          {/* ========================================================================= */}
+          {activeTab === 'curriculum_units' && (
+            <AdminCurriculumUnitsView
+              adminEmail={currentUser?.email || undefined}
+              onPreviewAsStudent={onPreviewAsStudent}
+              onOpenExerciseInRunner={(uId, exId) => {
+                if (onOpenExerciseInRunner) {
+                  onOpenExerciseInRunner(uId, exId);
+                } else {
+                  window.location.hash = `#${exId}`;
+                }
+              }}
+            />
+          )}
+
           {/* ========================================================================= */}
           {/* TAB 1: MÓDULOS Y LECCIONES                                                */}
           {/* ========================================================================= */}

@@ -9,6 +9,7 @@ interface TopicsCatalogueModalProps {
   onSelectTopic: (topicId: string) => void;
   classesProgressCount: number;
   topics?: TopicItem[];
+  onNavigateUnits?: () => void;
 }
 
 export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
@@ -17,6 +18,7 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
   currentTopicId,
   onSelectTopic,
   topics,
+  onNavigateUnits,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -103,6 +105,34 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
 
         {/* Topics Grid */}
         <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar space-y-3.5 flex-1 bg-[#F7F8F4]">
+          {onNavigateUnits && (
+            <div className="p-4 bg-[#FFFFFF] border border-[#407B5D]/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#E8EEE8] text-[#407B5D] flex items-center justify-center shrink-0">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-[#232A24]">
+                    Plan de Unidades Curriculares (14 Prácticas Interactivas)
+                  </h4>
+                  <p className="text-[11px] text-[#59645C]">
+                    Unidad 1 (Fundamentos), Unidad 2 (Primeros pasos) y Unidad 3 (Variables).
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  onClose();
+                  onNavigateUnits();
+                }}
+                className="min-h-[34px] px-3.5 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <span>Explorar Unidades</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {filteredTopics.map((topic) => {
               const isCurrent = topic.id === currentTopicId;

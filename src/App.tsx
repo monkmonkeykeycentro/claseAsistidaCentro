@@ -15,6 +15,7 @@ import { TopicViewer } from './components/TopicViewer';
 import { AuthModal } from './components/AuthModal';
 import { OopLabView } from './components/oopLab/OopLabView';
 import { PilotExercisesView } from './components/pilot/PilotExercisesView';
+import { UnitActivitiesView } from './components/curriculum/UnitActivitiesView';
 import {
   AppUser,
   subscribeToAuth,
@@ -45,7 +46,7 @@ const DEFAULT_PROGRESS: UserProgress = {
   stage4BuilderCustomized: false,
 };
 
-type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'admin';
+type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>('home');
@@ -78,6 +79,9 @@ export default function App() {
   const dynamicTopic = displayedTopics.find((topic) => topic.id === currentTopicId) || null;
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [selectedCurriculumUnit, setSelectedCurriculumUnit] = useState<'u1' | 'u2' | 'u3'>('u1');
+  const [selectedCurriculumExercise, setSelectedCurriculumExercise] = useState<string | undefined>(undefined);
+
   const handleNavigateAdmin = () => {
     if (!canAdmin) return;
     setActiveView('admin');
@@ -95,7 +99,7 @@ export default function App() {
     }
   };
 
-  // URL route detection (#admin, #cms, ?admin, /admin) and keyboard shortcut (Ctrl+Shift+A)
+  // URL route detection (#admin, #cms, ?admin, /admin, #unidades, #u1, #u2, #u3) and keyboard shortcut (Ctrl+Shift+A)
   useEffect(() => {
     const checkAdminRoute = () => {
       const hash = window.location.hash.toLowerCase();
@@ -111,6 +115,25 @@ export default function App() {
         pathname.endsWith('/cms')
       )) {
         setActiveView('admin');
+        return;
+      }
+
+      if (
+        hash === '#unidades' ||
+        hash === '#unidad-1' ||
+        hash === '#unidad-2' ||
+        hash === '#unidad-3' ||
+        hash === '#u1' ||
+        hash === '#u2' ||
+        hash === '#u3' ||
+        hash === '#actividades' ||
+        search.has('units') ||
+        search.has('unidades')
+      ) {
+        if (hash === '#unidad-2' || hash === '#u2') setSelectedCurriculumUnit('u2');
+        else if (hash === '#unidad-3' || hash === '#u3') setSelectedCurriculumUnit('u3');
+        else if (hash === '#unidad-1' || hash === '#u1') setSelectedCurriculumUnit('u1');
+        setActiveView('units');
         return;
       }
 
@@ -379,6 +402,11 @@ export default function App() {
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
         onNavigateOopLab={() => setActiveView('oop-lab')}
         onNavigatePilot={() => setActiveView('pilot')}
+        onNavigateUnits={() => {
+          setSelectedCurriculumExercise(undefined);
+          setActiveView('units');
+          window.location.hash = '#unidades';
+        }}
         onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -395,6 +423,12 @@ export default function App() {
             onPreviewAsStudent={() => {
               setIsStudentPreviewMode(true);
               setActiveView('home');
+            }}
+            onOpenExerciseInRunner={(uId, exId) => {
+              setSelectedCurriculumUnit(uId);
+              setSelectedCurriculumExercise(exId);
+              setActiveView('units');
+              window.location.hash = `#${exId}`;
             }}
           />
         )}
@@ -417,6 +451,12 @@ export default function App() {
             }}
             onOpenOopLab={() => setActiveView('oop-lab')}
             onOpenPilot={() => setActiveView('pilot')}
+            onOpenUnits={(unitId, exId) => {
+              if (unitId) setSelectedCurriculumUnit(unitId);
+              if (exId) setSelectedCurriculumExercise(exId);
+              setActiveView('units');
+              window.location.hash = unitId ? `#${unitId}` : '#unidades';
+            }}
             progress={progress}
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -517,6 +557,16 @@ export default function App() {
             }}
           />
         )}
+        {/* VIEW 6: Unidades y Actividades Curriculares (Unidad 1, 2 y 3) */}
+        {activeView === 'units' && (
+          <UnitActivitiesView
+            onBackToHome={() => setActiveView('home')}
+            currentUser={currentUser}
+            initialUnitId={selectedCurriculumUnit}
+            initialExerciseId={selectedCurriculumExercise}
+            isStudentPreviewMode={isStudentPreviewMode}
+          />
+        )}
       </main>
 
       {/* Topics Catalogue Modal */}
@@ -529,6 +579,11 @@ export default function App() {
           Object.values(progress.stageCompleted).filter(Boolean).length
         }
         topics={displayedTopics}
+        onNavigateUnits={() => {
+          setSelectedCurriculumExercise(undefined);
+          setActiveView('units');
+          window.location.hash = '#unidades';
+        }}
       />
 
       {/* Auth Modal */}
@@ -553,6 +608,17 @@ export default function App() {
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Inicio
+            </button>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
+              onClick={() => {
+                setSelectedCurriculumExercise(undefined);
+                setActiveView('units');
+                window.location.hash = '#unidades';
+              }}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors font-semibold"
+            >
+              Unidades 1-3
             </button>
             <span className="text-[#E1E7E1]">·</span>
             <button
