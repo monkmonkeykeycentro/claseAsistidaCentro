@@ -895,18 +895,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
           })}
         </div>
       </section>
-
-      {/* 5. Friendly Creative Coding Philosophy Note */}
-      <section className="p-6 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
-          <Heart className="w-4 h-4 text-[#407B5D]" />
-          <span>{siteContent?.philosophyTitle || 'Filosofía de Código Creativo · Generative Design'}</span>
-        </div>
-        <p className="text-xs sm:text-sm text-[#59645C] leading-relaxed max-w-3xl">
-          {siteContent?.footerText ||
-            'Inspirado en los principios de Generative Design, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.'}
-        </p>
-      </section>
     </div>
   );
 };
