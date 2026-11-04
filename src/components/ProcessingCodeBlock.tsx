@@ -21,7 +21,7 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
   code,
   codeP5,
   codeJava,
-  defaultLanguage = 'p5',
+  defaultLanguage = 'processing',
   activeLine = null,
   highlightedSection = null,
   onSelectToken,
@@ -38,15 +38,16 @@ export const ProcessingCodeBlock: React.FC<ProcessingCodeBlockProps> = ({
   const hasP5 = Boolean(codeP5 && codeP5.trim().length > 0);
   const hasJava = Boolean(codeJava && codeJava.trim().length > 0);
   
-  // Decide initial language (user wants P5 as primary display)
+  // Decide initial language (Processing Java as primary displayed code)
   const [activeLang, setActiveLang] = useState<'p5' | 'processing'>(() => {
-    if (hasP5) return 'p5';
-    if (defaultLanguage === 'p5' && (hasP5 || !hasJava)) return 'p5';
+    if (defaultLanguage === 'processing') return 'processing';
+    if (hasJava && !hasP5) return 'processing';
+    if (defaultLanguage === 'p5' && hasP5) return 'p5';
+    if (hasJava) return 'processing';
     if (code.includes('createCanvas') || code.includes('function setup') || code.includes('function draw')) {
       return 'p5';
     }
-    if (hasJava) return 'processing';
-    return 'p5';
+    return 'processing';
   });
 
   // Select active code content

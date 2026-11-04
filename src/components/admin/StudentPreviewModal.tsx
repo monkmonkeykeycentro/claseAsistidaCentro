@@ -1,6 +1,7 @@
 import React from 'react';
 import { CmsLesson, CmsSection, CmsBlock } from '../../types/cms';
 import { CmsBlockView } from '../CmsBlockView';
+import { P5LiveThumbnail } from '../generative/P5LiveThumbnail';
 import { X } from 'lucide-react';
 
 interface StudentPreviewModalProps {
@@ -57,7 +58,7 @@ export const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({
         {/* Modal Scrollable Content */}
         <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar space-y-8 flex-1">
           {/* Header Summary */}
-          <div className="space-y-3 border-b border-[#E1E7E1] pb-6">
+          <div className="space-y-4 border-b border-[#E1E7E1] pb-6">
             <div className="flex items-center gap-2 text-xs">
               {lesson.badge && (
                 <span className="bg-[#E8EEE8] text-[#407B5D] px-2.5 py-0.5 rounded-full font-semibold">
@@ -70,6 +71,17 @@ export const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({
                 </span>
               )}
             </div>
+
+            {lesson.thumbnailP5 && (
+              <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl flex flex-col items-center gap-2 shadow-2xs">
+                <span className="text-[11px] font-mono text-[#407B5D] font-bold self-start flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#407B5D] animate-pulse" />
+                  Miniatura en vivo de la lección (p5.js):
+                </span>
+                <P5LiveThumbnail p5Code={lesson.thumbnailP5} width={360} height={150} interactive={true} />
+              </div>
+            )}
+
             <p className="text-sm sm:text-base text-[#59645C] leading-relaxed max-w-3xl">
               {lesson.summary}
             </p>

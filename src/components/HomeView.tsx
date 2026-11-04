@@ -4,6 +4,7 @@ import { UserProgress, StageId } from '../types/classStructure';
 import { AppUser } from '../services/firebase';
 import { GenerativeHeroCanvas } from './generative/GenerativeHeroCanvas';
 import { GenerativeArtwork } from './generative/GenerativeArtwork';
+import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 import { VariationSeries } from './generative/VariationSeries';
 import { VideoAsciiSplitCanvas } from './generative/VideoAsciiSplitCanvas';
 import { CmsSiteContentCombined } from '../types/cms';
@@ -833,9 +834,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </div>
 
                   {/* Generative Diagram Thumbnail connected to topic concept */}
-                  <div className="border border-[#E1E7E1] bg-[#F7F8F4] rounded-xl flex items-center justify-center p-1.5">
-                    <GenerativeArtwork
-                      topicNumber={topic.number}
+                  <div className="border border-[#E1E7E1] bg-[#F7F8F4] rounded-xl flex items-center justify-center p-1.5 overflow-hidden">
+                    <P5LiveThumbnail
+                      p5Code={topic.thumbnailP5 || topic.concepts[0]?.codeSnippetP5}
+                      fallbackTopicNumber={topic.number}
                       width={280}
                       height={125}
                       interactive={true}

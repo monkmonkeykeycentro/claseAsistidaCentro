@@ -1,6 +1,7 @@
 import React from 'react';
 import { CmsBlock } from '../types/cms';
 import { ProcessingCodeBlock } from './ProcessingCodeBlock';
+import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 
 function webUrl(value: string): string | undefined {
   try {
@@ -21,12 +22,49 @@ function videoUrl(value: string): string | undefined {
 }
 
 export function CmsBlockView({ block }: { block: CmsBlock }) {
-  if (block.type === 'code') return (
-    <div className="space-y-2">
-      {block.caption && <p className="text-xs text-[#59645C]">{block.caption}</p>}
-      <ProcessingCodeBlock code={block.content} filename={block.filename || 'sketch.pde'} showCopyButton />
-    </div>
-  );
+  if (block.type === 'code') {
+    const javaCode = block.contentJava || block.content;
+    const p5Code = block.contentP5;
+
+    return (
+      <div className="space-y-3">
+        {block.caption && (
+          <p className="text-xs font-mono text-[#59645C]">{block.caption}</p>
+        )}
+
+        {/* Live p5.js visual thumbnail executed in sandboxed canvas */}
+        {p5Code && (
+          <div className="border border-[#E1E7E1] rounded-2xl overflow-hidden bg-white p-3 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between text-xs text-[#59645C] px-1">
+              <span className="font-mono text-[11px] flex items-center gap-1.5 font-bold text-[#407B5D]">
+                <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block animate-pulse" />
+                Miniatura interactiva (p5.js en vivo)
+              </span>
+              <span className="text-[10px] text-[#7A867E]">Mueve el cursor / lienzo activo</span>
+            </div>
+            <div className="w-full flex justify-center bg-[#F7F8F4] rounded-xl p-2 border border-[#E1E7E1]">
+              <P5LiveThumbnail
+                p5Code={p5Code}
+                width={380}
+                height={160}
+                interactive={true}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Processing Java Code Displayed to Student */}
+        <ProcessingCodeBlock
+          code={javaCode}
+          codeJava={javaCode}
+          codeP5={p5Code}
+          defaultLanguage="processing"
+          filename={block.filename || 'sketch.pde'}
+          showCopyButton
+        />
+      </div>
+    );
+  }
   if (block.type === 'image') {
     const src = webUrl(block.content);
     return src ? <figure className="space-y-2"><img src={src} alt={block.caption || 'Imagen educativa'} loading="lazy" className="max-w-full rounded-xl" />{block.caption && <figcaption className="text-xs text-[#59645C]">{block.caption}</figcaption>}</figure> : null;

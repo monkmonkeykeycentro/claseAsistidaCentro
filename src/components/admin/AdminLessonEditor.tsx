@@ -20,6 +20,7 @@ import {
 } from '../../services/cmsService';
 import { StudentPreviewModal } from './StudentPreviewModal';
 import { ProcessingCodeBlock } from '../ProcessingCodeBlock';
+import { P5LiveThumbnail } from '../generative/P5LiveThumbnail';
 import {
   ArrowLeft,
   Save,
@@ -469,6 +470,61 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                   </select>
                 </div>
               </div>
+
+              {/* Dual Code Configuration for Lesson Card / Header */}
+              <div className="pt-3 border-t border-[#E1E7E1] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#232A24] text-[11px] uppercase tracking-wide">
+                    Miniatura en vivo & Código
+                  </span>
+                  <span className="text-[10px] text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded font-mono font-bold">
+                    p5.js + Processing
+                  </span>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-[#59645C] block mb-1 text-[11px]">
+                    Código p5.js de miniatura (se ejecuta en la tarjeta del home):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.thumbnailP5 || ''}
+                    placeholder={'function setup() {\n  createCanvas(280, 125);\n}\nfunction draw() {\n  background(240);\n}'}
+                    onChange={(e) => {
+                      setHasUnsavedChanges(true);
+                      setFormData({ ...formData, thumbnailP5: e.target.value });
+                    }}
+                    className="w-full p-2 border border-[#E1E7E1] rounded-xl font-mono text-[11px] bg-[#F7F8F4] text-[#232A24] focus:outline-none focus:border-[#407B5D]"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-[#59645C] block mb-1 text-[11px]">
+                    Código Processing Java (lo que lee el estudiante):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.displayCodeJava || ''}
+                    placeholder={'void setup() {\n  size(400, 400);\n}\nvoid draw() {\n  background(255);\n}'}
+                    onChange={(e) => {
+                      setHasUnsavedChanges(true);
+                      setFormData({ ...formData, displayCodeJava: e.target.value });
+                    }}
+                    className="w-full p-2 border border-[#E1E7E1] rounded-xl font-mono text-[11px] bg-[#F7F8F4] text-[#232A24] focus:outline-none focus:border-[#407B5D]"
+                  />
+                </div>
+
+                {formData.thumbnailP5 && (
+                  <div className="pt-1 space-y-1">
+                    <span className="text-[10px] text-[#59645C] font-semibold block">
+                      Vista previa de miniatura ejecutándose en p5:
+                    </span>
+                    <div className="flex justify-center p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl overflow-hidden">
+                      <P5LiveThumbnail p5Code={formData.thumbnailP5} width={240} height={105} interactive={true} />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -753,7 +809,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                       )}
 
                       {block.type === 'code' && (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <input
                               type="text"
@@ -761,8 +817,8 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                               onChange={(e) =>
                                 handleUpdateBlockField(activeSection.id, block.id, 'filename', e.target.value)
                               }
-                              placeholder="Nombre de archivo (ej. Pelota.pde)"
-                              className="px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl font-mono text-xs"
+                              placeholder="Nombre de archivo (ej. sketch.pde)"
+                              className="px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl font-mono text-xs text-[#232A24]"
                             />
                             <input
                               type="text"
@@ -770,19 +826,73 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                               onChange={(e) =>
                                 handleUpdateBlockField(activeSection.id, block.id, 'caption', e.target.value)
                               }
-                              placeholder="Pie de código / descripción"
-                              className="px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl text-xs"
+                              placeholder="Pie de código / descripción del sketch"
+                              className="px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl text-xs text-[#232A24]"
                             />
                           </div>
-                          <textarea
-                            rows={6}
-                            value={block.content}
-                            onChange={(e) =>
-                              handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)
-                            }
-                            className="w-full p-3 bg-white border border-[#E1E7E1] rounded-xl font-mono text-xs text-[#232A24] focus:outline-none focus:border-[#407B5D]"
-                            placeholder="// Código Processing Java..."
-                          />
+
+                          {/* Dual Code Inputs: 1. Processing Java (Displayed) and 2. p5.js (Live thumbnail) */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <label className="font-bold text-[#232A24] flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-[#006699]" />
+                                  <span>1. Código Processing Java (.pde)</span>
+                                </label>
+                                <span className="text-[10px] text-[#59645C] font-mono">Lo que lee el alumno</span>
+                              </div>
+                              <textarea
+                                rows={8}
+                                value={block.contentJava !== undefined ? block.contentJava : block.content}
+                                onChange={(e) => {
+                                  handleUpdateBlockField(activeSection.id, block.id, 'contentJava', e.target.value);
+                                  handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value);
+                                }}
+                                className="w-full p-2.5 bg-white border border-[#E1E7E1] focus:border-[#407B5D] rounded-xl font-mono text-xs text-[#232A24] focus:outline-none"
+                                placeholder="// Código en Processing Java (.pde)&#10;void setup() {&#10;  size(400, 400);&#10;}&#10;void draw() {&#10;  background(240);&#10;  circle(200, 200, 50);&#10;}"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <label className="font-bold text-[#232A24] flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-[#ED225D]" />
+                                  <span>2. Código p5.js (.js)</span>
+                                </label>
+                                <span className="text-[10px] text-[#407B5D] font-mono font-bold">Miniatura viva</span>
+                              </div>
+                              <textarea
+                                rows={8}
+                                value={block.contentP5 || ''}
+                                onChange={(e) =>
+                                  handleUpdateBlockField(activeSection.id, block.id, 'contentP5', e.target.value)
+                                }
+                                className="w-full p-2.5 bg-white border border-[#E1E7E1] focus:border-[#407B5D] rounded-xl font-mono text-xs text-[#232A24] focus:outline-none"
+                                placeholder="// Código p5.js para la miniatura&#10;function setup() {&#10;  createCanvas(340, 150);&#10;}&#10;function draw() {&#10;  background(240);&#10;  circle(mouseX, mouseY, 30);&#10;}"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Live mini preview of the p5.js code */}
+                          <div className="p-3 bg-white border border-[#E1E7E1] rounded-xl space-y-2">
+                            <div className="flex items-center justify-between text-xs text-[#59645C]">
+                              <span className="font-semibold text-[11px] flex items-center gap-1.5 text-[#407B5D]">
+                                <span className="w-2 h-2 rounded-full bg-[#407B5D] animate-pulse" />
+                                Vista previa de la miniatura interactiva (p5.js en ejecución):
+                              </span>
+                              <span className="text-[10px] text-[#7A867E]">
+                                {block.contentP5?.trim() ? 'Ejecutando p5.js en tiempo real' : 'Sin código p5 (agrega código para ver la miniatura)'}
+                              </span>
+                            </div>
+                            <div className="w-full flex justify-center bg-[#F7F8F4] rounded-lg p-2 border border-[#E1E7E1]">
+                              <P5LiveThumbnail
+                                p5Code={block.contentP5}
+                                width={340}
+                                height={150}
+                                interactive={true}
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
 

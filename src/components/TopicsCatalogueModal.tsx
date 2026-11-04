@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TopicItem, TOPICS_DATA } from '../data/topicsData';
+import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 import { BookOpen, Check, ArrowRight, X, Clock, Layers } from 'lucide-react';
 
 interface TopicsCatalogueModalProps {
@@ -176,6 +177,12 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
                     <h3 className="font-bold text-sm sm:text-base text-[#232A24] group-hover:text-[#407B5D] transition-colors">
                       {topic.title}
                     </h3>
+
+                    {topic.thumbnailP5 && (
+                      <div className="w-full flex justify-center bg-[#F7F8F4] p-1.5 rounded-xl border border-[#E1E7E1] overflow-hidden my-1">
+                        <P5LiveThumbnail p5Code={topic.thumbnailP5} width={260} height={90} interactive={false} />
+                      </div>
+                    )}
 
                     <p className="text-xs text-[#59645C] leading-relaxed line-clamp-2">
                       {topic.summary}

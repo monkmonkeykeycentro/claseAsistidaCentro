@@ -27,6 +27,8 @@ export interface CmsLesson {
   visible: boolean;
   hasInteractiveWorkshop?: boolean;
   workshopType?: 'classes' | 'oop-lab' | 'object-arrays' | string;
+  thumbnailP5?: string;
+  displayCodeJava?: string;
   createdAt: string;
   updatedAt: string;
 }

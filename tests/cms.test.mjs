@@ -243,3 +243,51 @@ test('a missing administrator directory or a connectivity error fails closed', a
   await assert.rejects(identity.requireCmsAdmin, /offline/);
   assert.equal(state.writes.length, 0);
 });
+
+test('code blocks and lessons execute p5 live thumbnail while displaying Processing Java code', async () => {
+  curriculum();
+  const dualLesson = {
+    ...lesson,
+    id: 'les_dual',
+    title: 'Lección Dual p5 y Java',
+    thumbnailP5: 'function setup() { createCanvas(200, 100); } function draw() { background(100); }',
+    displayCodeJava: 'void setup() { size(200, 100); }\nvoid draw() { background(100); }',
+  };
+  const dualSection = {
+    ...section,
+    id: 'sec_dual',
+    lessonId: 'les_dual',
+    title: 'Sección con código dual',
+  };
+  const dualBlock = {
+    id: 'blk_dual',
+    sectionId: 'sec_dual',
+    type: 'code',
+    filename: 'dual_sketch.pde',
+    content: 'void setup() { size(400, 400); }\nvoid draw() { circle(mouseX, mouseY, 20); }',
+    contentJava: 'void setup() { size(400, 400); }\nvoid draw() { circle(mouseX, mouseY, 20); }',
+    contentP5: 'function setup() { createCanvas(400, 400); } function draw() { circle(mouseX, mouseY, 20); }',
+    position: 0,
+    createdAt: '',
+    updatedAt: '',
+  };
+  state.documents.set('cms_lessons/les_dual', dualLesson);
+  state.documents.set('cms_sections/sec_dual', dualSection);
+  state.documents.set('cms_blocks/blk_dual', dualBlock);
+
+  const topics = await cms.getAllTopicsFromCmsOrFallback();
+  const found = topics.find((t) => t.id === 'les_dual');
+  assert.ok(found);
+  assert.equal(found.thumbnailP5, dualLesson.thumbnailP5);
+  assert.equal(found.displayCodeJava, dualLesson.displayCodeJava);
+  assert.equal(found.concepts[0].codeSnippetJava, dualBlock.contentJava);
+  assert.equal(found.concepts[0].codeSnippetP5, dualBlock.contentP5);
+  assert.equal(found.concepts[0].defaultLanguage, 'processing');
+
+  // Verify CmsBlockView renders the p5 live thumbnail container and Processing Java code
+  const blockHtml = renderToStaticMarkup(React.createElement(CmsBlockView, { block: dualBlock }));
+  assert.match(blockHtml, /Miniatura interactiva \(p5\.js en vivo\)/);
+  assert.match(blockHtml, /circle\(mouseX, mouseY, 20\)/);
+  assert.match(blockHtml, /Processing/);
+});
+

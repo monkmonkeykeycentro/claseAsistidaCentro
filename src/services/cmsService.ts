@@ -726,18 +726,42 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
     if (activity) {
       try { quickChallenge = JSON.parse(activity.activityConfig!); } catch { /* Plain text activity. */ }
     }
+    const codeBlock = blocks.find((block) => block.type === 'code');
+    const javaCode = codeBlock?.contentJava || codeBlock?.content || '';
+    const p5Code = codeBlock?.contentP5 || '';
+
     return {
-      id: section.id, title: section.title, summary: section.summary || '',
+      id: section.id,
+      title: section.title,
+      summary: section.summary || '',
       explanation: blocks.filter((block) => block.type === 'rich-text').map((block) => block.content).join('\n\n'),
-      codeSnippet: blocks.find((block) => block.type === 'code')?.content || '',
-      didacticTip: section.didacticTip || '', commonMistake: section.commonMistake, blocks,
+      codeSnippet: javaCode,
+      codeSnippetJava: javaCode,
+      codeSnippetP5: p5Code,
+      defaultLanguage: 'processing' as const,
+      didacticTip: section.didacticTip || '',
+      commonMistake: section.commonMistake,
+      blocks,
     };
   }));
+
+  const thumbnailP5 = lesson.thumbnailP5 || concepts.find((c) => c.codeSnippetP5)?.codeSnippetP5 || original?.thumbnailP5;
+  const displayCodeJava = lesson.displayCodeJava || concepts.find((c) => c.codeSnippetJava)?.codeSnippetJava || original?.displayCodeJava;
+
   return {
-    id: original?.id || lesson.id, number: module.position + 1, title: lesson.title, summary: lesson.summary,
-    category: module.category as TopicItem['category'], badge: lesson.badge || module.badge || '',
-    estimatedTime: lesson.estimatedTime || '20 min', conceptsCount: concepts.length, concepts,
-    hasInteractiveWorkshop: original?.hasInteractiveWorkshop || false, quickChallenge,
+    id: original?.id || lesson.id,
+    number: module.position + 1,
+    title: lesson.title,
+    summary: lesson.summary,
+    category: module.category as TopicItem['category'],
+    badge: lesson.badge || module.badge || '',
+    estimatedTime: lesson.estimatedTime || '20 min',
+    conceptsCount: concepts.length,
+    concepts,
+    hasInteractiveWorkshop: original?.hasInteractiveWorkshop || false,
+    quickChallenge,
+    thumbnailP5,
+    displayCodeJava,
   };
 }
 

@@ -25,6 +25,8 @@ export interface TopicItem {
   conceptsCount: number;
   hasInteractiveWorkshop: boolean;
   concepts: TopicConcept[];
+  thumbnailP5?: string;
+  displayCodeJava?: string;
   quickChallenge?: {
     question: string;
     codeTemplate: string;
