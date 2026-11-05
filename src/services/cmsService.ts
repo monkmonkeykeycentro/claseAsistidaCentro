@@ -21,6 +21,8 @@ import {
   CmsMediaResource,
   CmsRevision,
   CurriculumExportData,
+  HeaderNavigationItem,
+  DEFAULT_HEADER_NAVIGATION,
 } from '../types/cms';
 import { TOPICS_DATA, TopicItem, TopicConcept } from '../data/topicsData';
 
@@ -107,6 +109,65 @@ export const DEFAULT_SITE_CONTENT: Record<string, CmsSiteContent> = {
     section: 'filosofia',
     content:
       'Inspirado en los principios de Generative Design, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_module_title: {
+    key: 'pilot_module_title',
+    title: 'Título Módulo Piloto',
+    section: 'piloto',
+    content: 'Exploraciones con Processing',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_module_description: {
+    key: 'pilot_module_description',
+    title: 'Descripción Módulo Piloto',
+    section: 'piloto',
+    content:
+      'Secuencia pedagógica de tres ejercicios para asimilar el sistema de coordenadas, las estructuras condicionales y la experimentación audiovisual.',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex1_title: {
+    key: 'pilot_ex1_title',
+    title: 'Título Ejercicio 1 (Coordenadas)',
+    section: 'piloto',
+    content: 'Sistemas de coordenadas: Del espacio a la forma',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex1_objective: {
+    key: 'pilot_ex1_objective',
+    title: 'Objetivo Ejercicio 1 (Coordenadas)',
+    section: 'piloto',
+    content:
+      'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex2_title: {
+    key: 'pilot_ex2_title',
+    title: 'Título Ejercicio 2 (Condicionales)',
+    section: 'piloto',
+    content: 'Estructuras condicionales: Decisiones visuales',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex2_objective: {
+    key: 'pilot_ex2_objective',
+    title: 'Objetivo Ejercicio 2 (Condicionales)',
+    section: 'piloto',
+    content:
+      'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.',
+    updatedAt: new Date().toISOString(),
+  },
+  pilot_ex3_title: {
+    key: 'pilot_ex3_title',
+    title: 'Título Ejercicio 3 (Audiovisual)',
+    section: 'piloto',
+    content: 'Discretización audiovisual: Video a ASCII',
+    updatedAt: new Date().toISOString(),
+  },
+  header_navigation_config: {
+    key: 'header_navigation_config',
+    title: 'Apartados y Navegación del Header',
+    section: 'navegacion',
+    content: JSON.stringify(DEFAULT_HEADER_NAVIGATION),
     updatedAt: new Date().toISOString(),
   },
 };
@@ -301,6 +362,99 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
       }
     }
 
+    // Seed Pilot Module: Exploraciones con Processing
+    const pilotModId = 'mod_pilot_exploraciones';
+    const pilotModDoc: CmsModule = {
+      id: pilotModId,
+      title: 'Módulo Piloto: Exploraciones con Processing',
+      description: 'Secuencia pedagógica de tres ejercicios para asimilar el sistema de coordenadas, las estructuras condicionales y la experimentación audiovisual.',
+      category: 'Fundamentos',
+      badge: 'Módulo Piloto',
+      slug: 'exploraciones',
+      position: TOPICS_DATA.length,
+      status: 'published',
+      visible: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    seedDocument('cms_modules', pilotModId, pilotModDoc);
+
+    const pilotLessons: CmsLesson[] = [
+      {
+        id: 'les_pilot_coordinates',
+        moduleId: pilotModId,
+        title: '01. Del espacio a la forma: Sistemas de coordenadas',
+        summary: 'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+        badge: 'Metodología 5 Etapas',
+        estimatedTime: '20 min',
+        slug: 'coordenadas',
+        position: 0,
+        status: 'published',
+        visible: true,
+        hasInteractiveWorkshop: true,
+        workshopType: 'coordinates',
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'les_pilot_conditionals',
+        moduleId: pilotModId,
+        title: '02. Decisiones visuales: Estructuras condicionales',
+        summary: 'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis estricto de valores límite.',
+        badge: 'Metodología 5 Etapas',
+        estimatedTime: '20 min',
+        slug: 'condicionales',
+        position: 1,
+        status: 'published',
+        visible: true,
+        hasInteractiveWorkshop: true,
+        workshopType: 'conditionals',
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'les_pilot_video_ascii',
+        moduleId: pilotModId,
+        title: '03. Discretización audiovisual: Video a ASCII',
+        summary: 'Discretización de Video a Caracteres ASCII con división interactiva y cuantización tipográfica. Video: Sallie Gardner at a Gallop de Eadweard Muybridge.',
+        badge: 'Instalación Interactiva',
+        estimatedTime: '15 min',
+        slug: 'video-ascii',
+        position: 2,
+        status: 'published',
+        visible: true,
+        hasInteractiveWorkshop: true,
+        workshopType: 'video-ascii',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    for (const pLes of pilotLessons) {
+      seedDocument('cms_lessons', pLes.id, pLes);
+      const secId = `sec_${pLes.id}`;
+      seedDocument('cms_sections', secId, {
+        id: secId,
+        lessonId: pLes.id,
+        title: pLes.title,
+        summary: pLes.summary,
+        position: 0,
+        visible: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const blkId = `blk_${pLes.id}`;
+      seedDocument('cms_blocks', blkId, {
+        id: blkId,
+        sectionId: secId,
+        type: 'rich-text',
+        content: pLes.summary,
+        position: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
     // Seed default site texts
     for (const item of Object.values(DEFAULT_SITE_CONTENT)) {
       seedDocument('cms_site_content', item.key, item);
@@ -492,26 +646,126 @@ export async function saveSiteContent(item: CmsSiteContent, _userEmail?: string)
 
 export function subscribeToSiteContent(callback: (content: CmsSiteContentCombined) => void): () => void {
   const emit = (source: Record<string, CmsSiteContent>) => {
-    const content = (key: string) => (source[key] ?? DEFAULT_SITE_CONTENT[key]).content;
-    let principles = content('generative_principles').split(',').map((item) => item.trim()).filter(Boolean);
     try {
-      const parsed = JSON.parse(content('generative_principles'));
-      if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) principles = parsed;
-    } catch { /* The default format is comma-separated text. */ }
-    callback({
-      heroHeadline: content('hero_headline'), heroSubtitle: content('hero_subtitle'), heroBadge: content('hero_badge'),
-      generativeQuestion: content('generative_question'), generativePrinciples: principles,
-      oopLabTitle: content('oop_lab_title'), oopLabSummary: content('oop_lab_summary'),
-      workshopTitle: content('workshop_title'), workshopSummary: content('workshop_summary'),
-      philosophyTitle: content('philosophy_title'), footerText: content('footer_text'),
-    });
+      const content = (key: string): string => {
+        const item = source[key];
+        if (item && typeof item.content === 'string' && item.content.trim().length > 0) {
+          return item.content;
+        }
+        const def = DEFAULT_SITE_CONTENT[key];
+        if (def && typeof def.content === 'string') {
+          return def.content;
+        }
+        return '';
+      };
+
+      const rawPrinciples = content('generative_principles');
+      let principles: string[] = ['1. Código', '2. Sistema', '3. Regla', '4. Variación', '5. Forma'];
+      if (rawPrinciples) {
+        try {
+          const parsed = JSON.parse(rawPrinciples);
+          if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+            principles = parsed;
+          } else {
+            principles = rawPrinciples.split(',').map((item) => item.trim()).filter(Boolean);
+          }
+        } catch {
+          principles = rawPrinciples.split(',').map((item) => item.trim()).filter(Boolean);
+        }
+      }
+      if (!principles.length) {
+        principles = ['1. Código', '2. Sistema', '3. Regla', '4. Variación', '5. Forma'];
+      }
+
+      const rawNav = content('header_navigation_config');
+      let navItems: HeaderNavigationItem[] = DEFAULT_HEADER_NAVIGATION;
+      if (rawNav) {
+        try {
+          const parsed = JSON.parse(rawNav);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            navItems = parsed;
+          }
+        } catch {
+          // Keep defaults
+        }
+      }
+
+      callback({
+        heroHeadline: content('hero_headline') || DEFAULT_SITE_CONTENT.hero_headline.content,
+        heroSubtitle: content('hero_subtitle') || DEFAULT_SITE_CONTENT.hero_subtitle.content,
+        heroBadge: content('hero_badge') || 'Laboratorio de Código Creativo',
+        generativeQuestion: content('generative_question') || '¿Cómo funciona el pensamiento generativo?',
+        generativePrinciples: principles,
+        oopLabTitle: content('oop_lab_title') || DEFAULT_SITE_CONTENT.oop_lab_title.content,
+        oopLabSummary: content('oop_lab_summary') || DEFAULT_SITE_CONTENT.oop_lab_summary.content,
+        workshopTitle: content('workshop_title') || DEFAULT_SITE_CONTENT.workshop_title.content,
+        workshopSummary: content('workshop_summary') || DEFAULT_SITE_CONTENT.workshop_summary.content,
+        philosophyTitle: content('philosophy_title') || DEFAULT_SITE_CONTENT.philosophy_title.content,
+        footerText: content('footer_text') || DEFAULT_SITE_CONTENT.footer_text.content,
+        pilotModuleTitle: content('pilot_module_title') || 'Exploraciones con Processing',
+        pilotModuleDescription: content('pilot_module_description') || 'Secuencia pedagógica de tres ejercicios para asimilar el sistema de coordenadas, las estructuras condicionales y la experimentación audiovisual.',
+        pilotEx1Title: content('pilot_ex1_title') || 'Sistemas de coordenadas: Del espacio a la forma',
+        pilotEx1Objective: content('pilot_ex1_objective') || 'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+        pilotEx2Title: content('pilot_ex2_title') || 'Estructuras condicionales: Decisiones visuales',
+        pilotEx2Objective: content('pilot_ex2_objective') || 'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.',
+        pilotEx3Title: content('pilot_ex3_title') || 'Discretización audiovisual: Video a ASCII',
+        headerNavigation: navItems,
+      });
+    } catch (err) {
+      console.warn('Error al procesar textos de cms_site_content, usando valores por defecto:', err);
+    }
   };
+
   emit(DEFAULT_SITE_CONTENT);
-  return onSnapshot(collection(db, 'cms_site_content'), (snapshot) => {
-    const source: Record<string, CmsSiteContent> = {};
-    snapshot.docs.forEach((document) => { source[document.id] = document.data() as CmsSiteContent; });
-    emit(source);
-  }, (error) => console.warn('No se pudieron cargar los textos del sitio:', error));
+
+  return onSnapshot(
+    collection(db, 'cms_site_content'),
+    (snapshot) => {
+      try {
+        const source: Record<string, CmsSiteContent> = {};
+        snapshot.docs.forEach((document) => {
+          const data = document.data();
+          if (data && typeof data === 'object') {
+            source[document.id] = { ...data, key: document.id } as CmsSiteContent;
+          }
+        });
+        emit(source);
+      } catch (err) {
+        console.warn('Error en listener de cms_site_content:', err);
+      }
+    },
+    (error) => console.warn('No se pudieron cargar los textos del sitio:', error)
+  );
+}
+
+export async function getHeaderNavigation(): Promise<HeaderNavigationItem[]> {
+  try {
+    const docSnap = await getDoc(doc(db, 'cms_site_content', 'header_navigation_config'));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data && typeof data.content === 'string') {
+        const parsed = JSON.parse(data.content);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Error al cargar navegación de cabecera:', err);
+  }
+  return DEFAULT_HEADER_NAVIGATION;
+}
+
+export async function saveHeaderNavigation(items: HeaderNavigationItem[]): Promise<void> {
+  const user = await requireCmsAdmin();
+  await persist('cms_site_content', 'header_navigation_config', {
+    key: 'header_navigation_config',
+    title: 'Apartados y Navegación del Header',
+    section: 'navegacion',
+    content: JSON.stringify(items),
+    updatedAt: new Date().toISOString(),
+    updatedBy: user.email,
+  });
 }
 
 export async function getCmsMediaResources(): Promise<CmsMediaResource[]> {
@@ -574,18 +828,42 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
     if (activity) {
       try { quickChallenge = JSON.parse(activity.activityConfig!); } catch { /* Plain text activity. */ }
     }
+    const codeBlock = blocks.find((block) => block.type === 'code');
+    const javaCode = codeBlock?.contentJava || codeBlock?.content || '';
+    const p5Code = codeBlock?.contentP5 || '';
+
     return {
-      id: section.id, title: section.title, summary: section.summary || '',
+      id: section.id,
+      title: section.title,
+      summary: section.summary || '',
       explanation: blocks.filter((block) => block.type === 'rich-text').map((block) => block.content).join('\n\n'),
-      codeSnippet: blocks.find((block) => block.type === 'code')?.content || '',
-      didacticTip: section.didacticTip || '', commonMistake: section.commonMistake, blocks,
+      codeSnippet: javaCode,
+      codeSnippetJava: javaCode,
+      codeSnippetP5: p5Code,
+      defaultLanguage: 'processing' as const,
+      didacticTip: section.didacticTip || '',
+      commonMistake: section.commonMistake,
+      blocks,
     };
   }));
+
+  const thumbnailP5 = lesson.thumbnailP5 || concepts.find((c) => c.codeSnippetP5)?.codeSnippetP5 || original?.thumbnailP5;
+  const displayCodeJava = lesson.displayCodeJava || concepts.find((c) => c.codeSnippetJava)?.codeSnippetJava || original?.displayCodeJava;
+
   return {
-    id: original?.id || lesson.id, number: module.position + 1, title: lesson.title, summary: lesson.summary,
-    category: module.category as TopicItem['category'], badge: lesson.badge || module.badge || '',
-    estimatedTime: lesson.estimatedTime || '20 min', conceptsCount: concepts.length, concepts,
-    hasInteractiveWorkshop: original?.hasInteractiveWorkshop || false, quickChallenge,
+    id: original?.id || lesson.id,
+    number: module.position + 1,
+    title: lesson.title,
+    summary: lesson.summary,
+    category: module.category as TopicItem['category'],
+    badge: lesson.badge || module.badge || '',
+    estimatedTime: lesson.estimatedTime || '20 min',
+    conceptsCount: concepts.length,
+    concepts,
+    hasInteractiveWorkshop: original?.hasInteractiveWorkshop || false,
+    quickChallenge,
+    thumbnailP5,
+    displayCodeJava,
   };
 }
 

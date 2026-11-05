@@ -6,6 +6,9 @@ export interface TopicConcept {
   summary: string;
   explanation: string;
   codeSnippet: string;
+  codeSnippetP5?: string;
+  codeSnippetJava?: string;
+  defaultLanguage?: 'p5' | 'processing';
   didacticTip: string;
   commonMistake?: string;
   blocks?: CmsBlock[];
@@ -22,6 +25,8 @@ export interface TopicItem {
   conceptsCount: number;
   hasInteractiveWorkshop: boolean;
   concepts: TopicConcept[];
+  thumbnailP5?: string;
+  displayCodeJava?: string;
   quickChallenge?: {
     question: string;
     codeTemplate: string;
@@ -46,7 +51,29 @@ export const TOPICS_DATA: TopicItem[] = [
         title: 'El ciclo setup() y draw()',
         summary: 'setup() se ejecuta una sola vez al arrancar; draw() se repite continuamente en bucle.',
         explanation: 'Processing divide la ejecución gráfica en dos momentos clave: en setup() defines el tamaño de ventana con size() e inicializas datos; en draw() Processing dibuja fotograma a fotograma.',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(800, 600); // Se ejecuta una sola vez al inicio
+  background(255);
+}
+
+function draw() {
+  // Se repite 60 veces por segundo
+  background(255); // Limpia el fotograma anterior
+  fill(0, 102, 153);
+  ellipse(mouseX, mouseY, 40, 40);
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(800, 600); // Se ejecuta una sola vez al inicio
+  background(255);
+}
+
+function draw() {
+  // Se repite 60 veces por segundo
+  background(255); // Limpia el fotograma anterior
+  fill(0, 102, 153);
+  ellipse(mouseX, mouseY, 40, 40);
+}`,
+        codeSnippetJava: `void setup() {
   size(800, 600); // Se ejecuta una sola vez al inicio
   background(255);
 }
@@ -57,6 +84,7 @@ void draw() {
   fill(0, 102, 153);
   ellipse(mouseX, mouseY, 40, 40);
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Si olvidas llamar a background() dentro de draw(), las formas de los fotogramas anteriores dejarán un rastro en el lienzo.',
         commonMistake: 'Poner size() dentro de draw(): size() SOLO debe invocarse en la primera línea de setup().',
       },
@@ -65,7 +93,25 @@ void draw() {
         title: 'Sistema de Coordenadas Cartesiano',
         summary: 'El origen (0, 0) está en la esquina superior izquierda. X crece a la derecha; Y crece hacia abajo.',
         explanation: 'A diferencia de las matemáticas tradicionales donde Y crece hacia arriba, en las pantallas digitales el eje Y desciende. El límite inferior derecho es (width, height).',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(400, 400);
+}
+
+function draw() {
+  background(240);
+  // Centro exacto del lienzo usando variables del sistema:
+  ellipse(width / 2, height / 2, 50, 50);
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(400, 400);
+}
+
+function draw() {
+  background(240);
+  // Centro exacto del lienzo usando variables del sistema:
+  ellipse(width / 2, height / 2, 50, 50);
+}`,
+        codeSnippetJava: `void setup() {
   size(400, 400);
 }
 
@@ -74,6 +120,7 @@ void draw() {
   // Centro exacto del lienzo usando variables del sistema:
   ellipse(width / 2, height / 2, 50, 50);
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Usa siempre width y height en lugar de números duros para que tu dibujo se adapte a cualquier tamaño de ventana.',
       },
       {
@@ -81,7 +128,33 @@ void draw() {
         title: 'Primitivas 2D y Color',
         summary: 'Líneas, rectángulos, elipses y control de relleno (fill) y contorno (stroke).',
         explanation: 'En Processing las funciones de estilo como fill() y stroke() actúan como "levantar una brocha": afectan a todas las figuras que se dibujen después de la llamada hasta que se cambie el color.',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(300, 300);
+  noStroke(); // Sin contorno
+}
+
+function draw() {
+  background(255);
+  fill(226, 102, 26); // Naranja Processing
+  rect(50, 50, 100, 60);
+
+  fill(0, 102, 153); // Azul Processing
+  circle(200, 200, 70);
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(300, 300);
+  noStroke(); // Sin contorno
+}
+
+function draw() {
+  background(255);
+  fill(226, 102, 26); // Naranja Processing
+  rect(50, 50, 100, 60);
+
+  fill(0, 102, 153); // Azul Processing
+  circle(200, 200, 70);
+}`,
+        codeSnippetJava: `void setup() {
   size(300, 300);
   noStroke(); // Sin contorno
 }
@@ -94,6 +167,7 @@ void draw() {
   fill(0, 102, 153); // Azul Processing
   circle(200, 200, 70);
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'El orden de las instrucciones importa: rect(x, y, w, h) dibuja por defecto desde la esquina superior izquierda.',
       },
     ],
@@ -130,7 +204,37 @@ void draw() {
         title: 'Tipos Primitivos en Processing',
         summary: 'int para enteros, float para decimales con precisión continua, boolean para verdadero/falso.',
         explanation: 'Java exige especificar el tipo de dato al declarar una variable. En programación creativa, float es esencial para animaciones fluidas y cálculos de velocidad o trigonometría.',
-        codeSnippet: `int vidas = 9;
+        codeSnippet: `let vidas = 9;
+let posicionX = 120.5;
+let velocidad = 3.2;
+let estaActivo = true;
+let nombre = "Michi";
+
+function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  posicionX += velocidad; // Movimiento continuo
+  console.log(nombre + " vidas: " + vidas);
+}`,
+        codeSnippetP5: `let vidas = 9;
+let posicionX = 120.5;
+let velocidad = 3.2;
+let estaActivo = true;
+let nombre = "Michi";
+
+function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  posicionX += velocidad; // Movimiento continuo
+  console.log(nombre + " vidas: " + vidas);
+}`,
+        codeSnippetJava: `int vidas = 9;
 float posicionX = 120.5;
 float velocidad = 3.2;
 boolean estaActivo = true;
@@ -145,6 +249,7 @@ void draw() {
   posicionX += velocidad; // Movimiento continuo
   println(nombre + " vidas: " + vidas);
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Si sumas o divides enteros (int), Java truncará los decimales (5 / 2 = 2). Si necesitas decimales usa float (5.0 / 2.0 = 2.5).',
       },
       {
@@ -153,6 +258,36 @@ void draw() {
         summary: 'Las variables globales viven fuera de las funciones y persisten entre fotogramas; las locales mueren al cerrar la llave }.',
         explanation: 'Si declaras una variable dentro de draw(), se reiniciará a su valor inicial en cada fotograma. Para animar un valor acumulativo, la variable DEBE ser global (declarada arriba de setup).',
         codeSnippet: `// Variable GLOBAL: persiste entre fotogramas
+let x = 0;
+
+function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  // Variable LOCAL: solo vive dentro de este fotograma
+  let diametro = 30;
+  
+  ellipse(x, 100, diametro, diametro);
+  x += 2; // Incrementa en cada fotograma
+}`,
+        codeSnippetP5: `// Variable GLOBAL: persiste entre fotogramas
+let x = 0;
+
+function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  // Variable LOCAL: solo vive dentro de este fotograma
+  let diametro = 30;
+  
+  ellipse(x, 100, diametro, diametro);
+  x += 2; // Incrementa en cada fotograma
+}`,
+        codeSnippetJava: `// Variable GLOBAL: persiste entre fotogramas
 float x = 0;
 
 void setup() {
@@ -167,6 +302,7 @@ void draw() {
   ellipse(x, 100, diametro, diametro);
   x += 2; // Incrementa en cada fotograma
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Si declaras "float x = 0;" dentro de draw(), tu figura nunca se moverá porque se reiniciará 60 veces por segundo.',
       },
       {
@@ -174,7 +310,31 @@ void draw() {
         title: 'El tipo de dato color en Processing',
         summary: 'Processing introduce el tipo nativo color para manejar canales RGBA (Rojo, Verde, Azul, Alfa).',
         explanation: 'Puedes guardar un color en una variable usando la función color(r, g, b) o color(r, g, b, alpha) para transparencias.',
-        codeSnippet: `color fondo = color(245, 245, 248);
+        codeSnippet: `let fondo = color(245, 245, 248);
+let pelaje = color(226, 102, 26); // Naranja
+
+function setup() {
+  createCanvas(300, 300);
+}
+
+function draw() {
+  background(fondo);
+  fill(pelaje);
+  circle(width / 2, height / 2, 80);
+}`,
+        codeSnippetP5: `let fondo = color(245, 245, 248);
+let pelaje = color(226, 102, 26); // Naranja
+
+function setup() {
+  createCanvas(300, 300);
+}
+
+function draw() {
+  background(fondo);
+  fill(pelaje);
+  circle(width / 2, height / 2, 80);
+}`,
+        codeSnippetJava: `color fondo = color(245, 245, 248);
 color pelaje = color(226, 102, 26); // Naranja
 
 void setup() {
@@ -186,6 +346,7 @@ void draw() {
   fill(pelaje);
   circle(width / 2, height / 2, 80);
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'El valor de alpha va de 0 (completamente transparente) a 255 (totalmente opaco).',
       },
     ],
@@ -222,7 +383,47 @@ void draw() {
         title: 'El algoritmo de rebote',
         summary: 'Invertir la dirección cuando la coordenada sobrepasa los límites de la ventana.',
         explanation: 'Al multiplicar la velocidad por -1 cuando la posición supera width o 0, el movimiento cambia de sentido.',
-        codeSnippet: `float x = 200;
+        codeSnippet: `let x = 200;
+let velocidad = 4;
+let radio = 20;
+
+function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  x += velocidad;
+
+  // Si toca el borde derecho o el izquierdo:
+  if (x > width - radio || x < radio) {
+    velocidad = velocidad * -1; // Invierte el sentido
+  }
+
+  fill(0, 102, 153);
+  circle(x, 100, radio * 2);
+}`,
+        codeSnippetP5: `let x = 200;
+let velocidad = 4;
+let radio = 20;
+
+function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  x += velocidad;
+
+  // Si toca el borde derecho o el izquierdo:
+  if (x > width - radio || x < radio) {
+    velocidad = velocidad * -1; // Invierte el sentido
+  }
+
+  fill(0, 102, 153);
+  circle(x, 100, radio * 2);
+}`,
+        codeSnippetJava: `float x = 200;
 float velocidad = 4;
 float radio = 20;
 
@@ -242,6 +443,7 @@ void draw() {
   fill(0, 102, 153);
   circle(x, 100, radio * 2);
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'El operador || significa O lógico. Basta con que una de las dos condiciones sea verdadera para ejecutar el bloque.',
       },
       {
@@ -249,7 +451,37 @@ void draw() {
         title: 'Interacción con el mouse',
         summary: 'La variable booleana del sistema mousePressed indica si el usuario mantiene pulsado el botón.',
         explanation: 'Puedes usar condicionales para alterar el color, tamaño o estado de los objetos según la interacción del usuario.',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(300, 300);
+}
+
+function draw() {
+  background(240);
+
+  if (mouseIsPressed) {
+    fill(226, 102, 26); // Si se hace clic: naranja
+  } else {
+    fill(0, 102, 153);   // En reposo: azul
+  }
+
+  circle(mouseX, mouseY, 60);
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(300, 300);
+}
+
+function draw() {
+  background(240);
+
+  if (mouseIsPressed) {
+    fill(226, 102, 26); // Si se hace clic: naranja
+  } else {
+    fill(0, 102, 153);   // En reposo: azul
+  }
+
+  circle(mouseX, mouseY, 60);
+}`,
+        codeSnippetJava: `void setup() {
   size(300, 300);
 }
 
@@ -264,6 +496,7 @@ void draw() {
 
   circle(mouseX, mouseY, 60);
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'En Java, la comparación de igualdad se escribe con doble igual (==); un solo igual (=) es para asignar valores.',
       },
     ],
@@ -284,7 +517,35 @@ void draw() {
         title: 'Estructura del bucle for',
         summary: 'Inicialización, condición de continuación e incremento en una sola línea compacta.',
         explanation: 'El bucle for repite un bloque de código modificando un índice i en cada paso.',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(500, 150);
+}
+
+function draw() {
+  background(255);
+  fill(0, 102, 153);
+
+  // Dibuja 10 círculos espaciados uniformemente
+  for (let i = 0; i < 10; i++) {
+    let x = 50 + i * 45;
+    circle(x, height / 2, 25);
+  }
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(500, 150);
+}
+
+function draw() {
+  background(255);
+  fill(0, 102, 153);
+
+  // Dibuja 10 círculos espaciados uniformemente
+  for (let i = 0; i < 10; i++) {
+    let x = 50 + i * 45;
+    circle(x, height / 2, 25);
+  }
+}`,
+        codeSnippetJava: `void setup() {
   size(500, 150);
 }
 
@@ -298,6 +559,7 @@ void draw() {
     circle(x, height / 2, 25);
   }
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'i * 45 calcula la distancia entre cada círculo; es la base de todo espaciado procedimental.',
       },
       {
@@ -305,7 +567,35 @@ void draw() {
         title: 'Grillas bidimensionales (Bucles anidados)',
         summary: 'Un bucle for para las filas (Y) dentro de otro bucle for para las columnas (X).',
         explanation: 'Combinar dos bucles genera automáticamente una matriz de coordenadas cartesianas para patrones textiles o mapas.',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(300, 300);
+}
+
+function draw() {
+  background(255);
+
+  for (let x = 20; x < width; x += 30) {
+    for (let y = 20; y < height; y += 30) {
+      fill(226, 102, 26);
+      rect(x, y, 15, 15);
+    }
+  }
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(300, 300);
+}
+
+function draw() {
+  background(255);
+
+  for (let x = 20; x < width; x += 30) {
+    for (let y = 20; y < height; y += 30) {
+      fill(226, 102, 26);
+      rect(x, y, 15, 15);
+    }
+  }
+}`,
+        codeSnippetJava: `void setup() {
   size(300, 300);
 }
 
@@ -319,6 +609,7 @@ void draw() {
     }
   }
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'El bucle interior (y) completa toda su columna antes de que el bucle exterior (x) avance al siguiente paso.',
       },
     ],
@@ -339,7 +630,43 @@ void draw() {
         title: 'Definición de funciones con void',
         summary: 'void indica que la función ejecuta una tarea o dibujo pero no devuelve ningún valor numérico o texto.',
         explanation: 'Las funciones permiten encapsular dibujos complejos en una sola palabra que puedes llamar cuantas veces quieras pasándole parámetros de posición.',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  // Reutilizamos la función en dos posiciones distintas:
+  dibujarCasa(50, 120);
+  dibujarCasa(220, 120);
+}
+
+// Función personalizada con parámetros
+function dibujarCasa(x, y) {
+  fill(200);
+  rect(x, y, 60, 50); // Pared
+  fill(226, 102, 26);
+  triangle(x, y, x + 30, y - 30, x + 60, y); // Techo
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(400, 200);
+}
+
+function draw() {
+  background(255);
+  // Reutilizamos la función en dos posiciones distintas:
+  dibujarCasa(50, 120);
+  dibujarCasa(220, 120);
+}
+
+// Función personalizada con parámetros
+function dibujarCasa(x, y) {
+  fill(200);
+  rect(x, y, 60, 50); // Pared
+  fill(226, 102, 26);
+  triangle(x, y, x + 30, y - 30, x + 60, y); // Techo
+}`,
+        codeSnippetJava: `void setup() {
   size(400, 200);
 }
 
@@ -357,6 +684,7 @@ void dibujarCasa(float x, float y) {
   fill(226, 102, 26);
   triangle(x, y, x + 30, y - 30, x + 60, y); // Techo
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Nombrar tus funciones con verbos descriptivos (dibujarCasa, calcularDistancia) hace que tu código sea legible por sí mismo.',
       },
       {
@@ -364,7 +692,27 @@ void dibujarCasa(float x, float y) {
         title: 'Funciones que retornan valores',
         summary: 'Si una función calcula un resultado, sustituye void por el tipo de dato que devuelve (float, int, etc.).',
         explanation: 'Usa la palabra return para enviar el resultado de vuelta a quien llamó la función.',
-        codeSnippet: `void setup() {
+        codeSnippet: `function setup() {
+  createCanvas(200, 200);
+  let precioFinal = aplicarDescuento(100.0, 0.15);
+  console.log("Precio con descuento: " + precioFinal);
+}
+
+aplicarDescuento(precio, tasa) {
+  let ahorro = precio * tasa;
+  return precio - ahorro; // Devuelve un float
+}`,
+        codeSnippetP5: `function setup() {
+  createCanvas(200, 200);
+  let precioFinal = aplicarDescuento(100.0, 0.15);
+  console.log("Precio con descuento: " + precioFinal);
+}
+
+aplicarDescuento(precio, tasa) {
+  let ahorro = precio * tasa;
+  return precio - ahorro; // Devuelve un float
+}`,
+        codeSnippetJava: `void setup() {
   size(200, 200);
   float precioFinal = aplicarDescuento(100.0, 0.15);
   println("Precio con descuento: " + precioFinal);
@@ -374,6 +722,7 @@ float aplicarDescuento(float precio, float tasa) {
   float ahorro = precio * tasa;
   return precio - ahorro; // Devuelve un float
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Si declaras que una función retorna float, estás obligado por Java a tener al menos una instrucción "return <valor>;".',
       },
     ],
@@ -396,6 +745,42 @@ float aplicarDescuento(float precio, float tasa) {
         explanation: 'Una clase es un molde o plantilla. Dentro de sus llaves { } se agrupan ordenadamente las variables (campos), la función de nacimiento (constructor) y las acciones (métodos).',
         codeSnippet: `class Gato {
   // 1. CAMPOS (Atributos)
+  let nombre;
+  x, y;
+
+  // 2. CONSTRUCTOR (Mismo nombre de la clase, sin void)
+  constructor(nombreTemp, xTemp, yTemp) {
+    nombre = nombreTemp;
+    x = xTemp;
+    y = yTemp;
+  }
+
+  // 3. MÉTODOS (Comportamiento con void o tipo de retorno)
+  function dibujar() {
+    fill(226, 102, 26);
+    circle(x, y, 40);
+  }
+}`,
+        codeSnippetP5: `class Gato {
+  // 1. CAMPOS (Atributos)
+  let nombre;
+  x, y;
+
+  // 2. CONSTRUCTOR (Mismo nombre de la clase, sin void)
+  constructor(nombreTemp, xTemp, yTemp) {
+    nombre = nombreTemp;
+    x = xTemp;
+    y = yTemp;
+  }
+
+  // 3. MÉTODOS (Comportamiento con void o tipo de retorno)
+  function dibujar() {
+    fill(226, 102, 26);
+    circle(x, y, 40);
+  }
+}`,
+        codeSnippetJava: `class Gato {
+  // 1. CAMPOS (Atributos)
   String nombre;
   float x, y;
 
@@ -412,6 +797,7 @@ float aplicarDescuento(float precio, float tasa) {
     circle(x, y, 40);
   }
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'El constructor NUNCA lleva tipo de retorno, ni siquiera void. Si le pones void, Java creerá que es un método ordinario y no lo usará como constructor.',
       },
       {
@@ -420,6 +806,32 @@ float aplicarDescuento(float precio, float tasa) {
         summary: 'Declarar la variable del tipo de la clase y llamar al constructor con la palabra reservada new.',
         explanation: 'Tener la clase Gato escrita en una pestaña no dibuja nada por sí sola. En el sketch principal debes crear un objeto concreto usando new Gato(...) en setup() y llamar a sus métodos en draw().',
         codeSnippet: `Gato miGato; // 1. Declarar variable objeto
+
+function setup() {
+  createCanvas(400, 400);
+  // 2. Instanciar en memoria con 'new' y argumentos
+  miGato = new Gato("Michi", 200, 200);
+}
+
+function draw() {
+  background(255);
+  // 3. Invocar método mediante operador punto (.)
+  miGato.dibujar();
+}`,
+        codeSnippetP5: `Gato miGato; // 1. Declarar variable objeto
+
+function setup() {
+  createCanvas(400, 400);
+  // 2. Instanciar en memoria con 'new' y argumentos
+  miGato = new Gato("Michi", 200, 200);
+}
+
+function draw() {
+  background(255);
+  // 3. Invocar método mediante operador punto (.)
+  miGato.dibujar();
+}`,
+        codeSnippetJava: `Gato miGato; // 1. Declarar variable objeto
 
 void setup() {
   size(400, 400);
@@ -432,6 +844,7 @@ void draw() {
   // 3. Invocar método mediante operador punto (.)
   miGato.dibujar();
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'El orden y tipo de los argumentos en "new Gato("Michi", 200, 200)" debe coincidir exactamente con los parámetros del constructor.',
       },
     ],
@@ -456,7 +869,18 @@ void draw() {
 // Gato gato1, gato2, gato3, gato4, gato5;
 
 // ✅ ESCALA: Un arreglo homogéneo de referencias a Gato
+let camada = []; // 60 ranuras reservadas en memoria`,
+        codeSnippetP5: `// ❌ NO ESCALA: Declarar variables individuales
+// Gato gato1, gato2, gato3, gato4, gato5;
+
+// ✅ ESCALA: Un arreglo homogéneo de referencias a Gato
+let camada = []; // 60 ranuras reservadas en memoria`,
+        codeSnippetJava: `// ❌ NO ESCALA: Declarar variables individuales
+// Gato gato1, gato2, gato3, gato4, gato5;
+
+// ✅ ESCALA: Un arreglo homogéneo de referencias a Gato
 Gato[] camada = new Gato[60]; // 60 ranuras reservadas en memoria`,
+        defaultLanguage: 'p5',
         didacticTip: 'El corchete [] después del tipo de dato (Gato[]) le indica a Java que no estás creando un gato, sino un contenedor de gatos.',
         commonMistake: 'Confundir el tamaño total del arreglo con el último índice: si el tamaño es 60, los índices van de 0 a 59 (camada[60] lanzará ArrayIndexOutOfBoundsException).',
       },
@@ -465,7 +889,31 @@ Gato[] camada = new Gato[60]; // 60 ranuras reservadas en memoria`,
         title: '2. Anatomía en Memoria y el temido NullPointerException',
         summary: 'new Gato[N] solo reserva casillas vacías (null); debes instanciar cada casilla individualmente.',
         explanation: 'El error más común en Processing ocurre al declarar "Gato[] camada = new Gato[10];" e inmediatamente intentar llamar a "camada[0].dibujar();". El programa colapsa con "NullPointerException" porque la casilla [0] está vacía (apunta a null). Para que exista un gato real, debes ejecutar "camada[0] = new Gato(...)".',
-        codeSnippet: `Gato[] camada = new Gato[5]; // Las 5 casillas contienen 'null'
+        codeSnippet: `let camada = []; // Las 5 casillas contienen 'null'
+
+function setup() {
+  createCanvas(400, 300);
+  
+  // ⚠️ ERROR CLÁSICO:
+  // camada[0].dibujar(); // ¡Lanza NullPointerException!
+
+  // ✅ SOLUCIÓN: Construir el objeto antes de usarlo
+  camada[0] = new Gato("Michi Alfa", 100, 150);
+  camada[0].dibujar(); // ¡Ahora sí funciona!
+}`,
+        codeSnippetP5: `let camada = []; // Las 5 casillas contienen 'null'
+
+function setup() {
+  createCanvas(400, 300);
+  
+  // ⚠️ ERROR CLÁSICO:
+  // camada[0].dibujar(); // ¡Lanza NullPointerException!
+
+  // ✅ SOLUCIÓN: Construir el objeto antes de usarlo
+  camada[0] = new Gato("Michi Alfa", 100, 150);
+  camada[0].dibujar(); // ¡Ahora sí funciona!
+}`,
+        codeSnippetJava: `Gato[] camada = new Gato[5]; // Las 5 casillas contienen 'null'
 
 void setup() {
   size(400, 300);
@@ -477,6 +925,7 @@ void setup() {
   camada[0] = new Gato("Michi Alfa", 100, 150);
   camada[0].dibujar(); // ¡Ahora sí funciona!
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Piensa en el arreglo como un casillero de estacionamiento: "new Gato[10]" construye los 10 cajones vacíos. "new Gato(...)" estaciona el automóvil en cada cajón.',
         commonMistake: 'Olvidar el bucle for en setup() que rellena cada casilla con un new Gato(...).',
       },
@@ -485,7 +934,43 @@ void setup() {
         title: '3. El Bucle Canónico de Dos Tiempos (setup y draw)',
         summary: 'Tiempo 1 en setup() para instanciar con new; Tiempo 2 en draw() para actualizar y dibujar en bucle.',
         explanation: 'El patrón arquitectónico universal en Processing para arreglos de objetos consta de dos bucles for idénticos: el primero en setup() usa "camada[i] = new Gato(...)" para dar vida a cada elemento. El segundo en draw() usa "camada[i].actualizar(); camada[i].dibujar();" en cada fotograma.',
-        codeSnippet: `Gato[] camada = new Gato[40];
+        codeSnippet: `let camada = [];
+
+function setup() {
+  createCanvas(600, 400);
+  // TIEMPO 1: Inicialización masiva en bucle
+  for (let i = 0; i < camada.length; i++) {
+    camada[i] = new Gato("Gato" + i, random(width), random(height));
+  }
+}
+
+function draw() {
+  background(255);
+  // TIEMPO 2: Actualización y render continuo
+  for (let i = 0; i < camada.length; i++) {
+    camada[i].mover();
+    camada[i].dibujar();
+  }
+}`,
+        codeSnippetP5: `let camada = [];
+
+function setup() {
+  createCanvas(600, 400);
+  // TIEMPO 1: Inicialización masiva en bucle
+  for (let i = 0; i < camada.length; i++) {
+    camada[i] = new Gato("Gato" + i, random(width), random(height));
+  }
+}
+
+function draw() {
+  background(255);
+  // TIEMPO 2: Actualización y render continuo
+  for (let i = 0; i < camada.length; i++) {
+    camada[i].mover();
+    camada[i].dibujar();
+  }
+}`,
+        codeSnippetJava: `Gato[] camada = new Gato[40];
 
 void setup() {
   size(600, 400);
@@ -503,6 +988,7 @@ void draw() {
     camada[i].dibujar();
   }
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Usa siempre "camada.length" (sin paréntesis) para la condición del bucle for. Así, si luego cambias el tamaño de 40 a 200, todo tu código se adaptará automáticamente.',
         commonMistake: 'Escribir "camada.length()" con paréntesis. En Java, los arreglos nativos usan la propiedad .length sin paréntesis; las cadenas String usan .length().',
       },
@@ -511,7 +997,57 @@ void draw() {
         title: '4. Colecciones Dinámicas con ArrayList<Gato>',
         summary: 'Para sistemas de partículas o entidades que nacen y mueren continuamente, ArrayList permite crecer y decrecer.',
         explanation: 'Los arreglos normales Gato[] tienen un tamaño estático que no puede cambiar. Si un usuario hace clic para crear gatos o las partículas desaparecen al envejecer, usamos ArrayList<Gato>. Sus métodos clave son: .add(nuevoObjeto), .get(i) para leer, .size() para saber cuántos hay, y .remove(i) para eliminar.',
-        codeSnippet: `ArrayList<Gato> gatos = new ArrayList<Gato>();
+        codeSnippet: `let gatos = [];
+
+function setup() {
+  createCanvas(600, 400);
+}
+
+function draw() {
+  background(255);
+  // Recorrido inverso seguro para poder remover sin saltar índices:
+  for (let i = gatos.length - 1; i >= 0; i--) {
+    let g = gatos[i];
+    g.mover();
+    g.dibujar();
+    
+    // Si el gato sale de la pantalla o expira, se elimina:
+    if (g.haMuerto()) {
+      gatos.splice(i, 1);
+    }
+  }
+}
+
+function mousePressed() {
+  // Cada clic añade un nuevo gato en el puntero del mouse:
+  gatos.push(new Gato("Gatito", mouseX, mouseY));
+}`,
+        codeSnippetP5: `let gatos = [];
+
+function setup() {
+  createCanvas(600, 400);
+}
+
+function draw() {
+  background(255);
+  // Recorrido inverso seguro para poder remover sin saltar índices:
+  for (let i = gatos.length - 1; i >= 0; i--) {
+    let g = gatos[i];
+    g.mover();
+    g.dibujar();
+    
+    // Si el gato sale de la pantalla o expira, se elimina:
+    if (g.haMuerto()) {
+      gatos.splice(i, 1);
+    }
+  }
+}
+
+function mousePressed() {
+  // Cada clic añade un nuevo gato en el puntero del mouse:
+  gatos.push(new Gato("Gatito", mouseX, mouseY));
+}`,
+        codeSnippetJava: `ArrayList<Gato> gatos = new ArrayList<Gato>();
 
 void setup() {
   size(600, 400);
@@ -536,6 +1072,7 @@ void mousePressed() {
   // Cada clic añade un nuevo gato en el puntero del mouse:
   gatos.add(new Gato("Gatito", mouseX, mouseY));
 }`,
+        defaultLanguage: 'p5',
         didacticTip: 'Cuando elimines elementos con .remove(i) dentro de un bucle for, SIEMPRE recorre la lista de atrás hacia adelante (i = gatos.size() - 1; i >= 0; i--). Si recorres hacia adelante, al borrar un elemento los siguientes se desplazan y el bucle se saltará uno.',
         commonMistake: 'Intentar acceder con corchetes "gatos[i]" a un ArrayList. En ArrayList debes usar siempre el método "gatos.get(i)".',
       },

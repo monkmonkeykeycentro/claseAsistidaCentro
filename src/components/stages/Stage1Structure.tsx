@@ -35,24 +35,24 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
   return (
     <div className="space-y-8">
       {/* Stage Header */}
-      <div className="border-b border-[#E1E7E1] pb-6">
+      <div className="border-b border-[#DCE7F2] pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#407B5D] bg-[#E8EEE8] px-2.5 py-0.5 rounded-full inline-block mb-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#006699] bg-[#E2EEF8] px-2.5 py-0.5 rounded-full inline-block mb-1.5">
               Etapa 01
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#232A24]">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0C2233]">
               Reconocer la estructura de una clase
             </h2>
           </div>
           {isCompleted && (
-            <div className="flex items-center gap-1.5 text-xs text-[#407B5D] font-semibold py-1 bg-[#E8EEE8] px-3 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs text-[#006699] font-semibold py-1 bg-[#E2EEF8] px-3 rounded-full">
               <Check className="w-3.5 h-3.5" />
               <span>Estructura reconocida</span>
             </div>
           )}
         </div>
-        <p className="text-sm text-[#59645C] mt-2 max-w-2xl leading-relaxed">
+        <p className="text-sm text-[#4A6076] mt-2 max-w-2xl leading-relaxed">
           Una clase en Processing Java actúa como molde para crear objetos. Revisa cada una de sus tres secciones principales para comprender su función y sintaxis.
         </p>
       </div>
@@ -61,7 +61,7 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Sections List (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="text-xs font-bold uppercase tracking-wider text-[#59645C]">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#4A6076]">
             Partes de la clase
           </div>
 
@@ -74,21 +74,21 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
                   onClick={() => handleSelectSection(sec.id)}
                   className={`w-full min-h-[56px] text-left p-4 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer ${
                     isSelected
-                      ? 'bg-[#407B5D] border-[#407B5D] text-white shadow-xs font-semibold'
-                      : 'bg-white border-[#E1E7E1] text-[#232A24] hover:bg-[#E8EEE8]'
+                      ? 'bg-[#006699] border-[#006699] text-white shadow-xs font-semibold'
+                      : 'bg-white border-[#DCE7F2] text-[#0C2233] hover:bg-[#E2EEF8]'
                   }`}
                 >
                   <div className="space-y-0.5 min-w-0">
                     <div className="font-semibold text-sm truncate">
                       {sec.title}
                     </div>
-                    <div className={`text-xs line-clamp-1 ${isSelected ? 'text-white/80' : 'text-[#59645C]'}`}>
+                    <div className={`text-xs line-clamp-1 ${isSelected ? 'text-white/80' : 'text-[#4A6076]'}`}>
                       {sec.badge}
                     </div>
                   </div>
                   <ChevronRight
                     className={`w-4 h-4 shrink-0 transition-transform ${
-                      isSelected ? 'text-[#E6B65A] translate-x-0.5' : 'text-[#59645C]'
+                      isSelected ? 'text-[#E6B65A] translate-x-0.5' : 'text-[#4A6076]'
                     }`}
                   />
                 </button>
@@ -97,8 +97,8 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
           </div>
 
           {/* Clean Didactic Note */}
-          <div className="p-4 bg-white border border-[#E1E7E1] rounded-2xl space-y-1.5 text-xs text-[#59645C] shadow-xs">
-            <div className="flex items-center gap-2 text-[#407B5D] font-bold">
+          <div className="p-4 bg-white border border-[#DCE7F2] rounded-2xl space-y-1.5 text-xs text-[#4A6076] shadow-xs">
+            <div className="flex items-center gap-2 text-[#006699] font-bold">
               <Info className="w-4 h-4 shrink-0" />
               <span>{ORGANIZATIONAL_DIDACTIC_NOTE.title}</span>
             </div>
@@ -112,10 +112,10 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
         <div className="lg:col-span-7 space-y-6">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-bold uppercase tracking-wider text-[#59645C]">
+              <div className="text-xs font-bold uppercase tracking-wider text-[#4A6076]">
                 Esquema canónico
               </div>
-              <span className="text-xs font-mono text-[#59645C]">Gato.pde</span>
+              <span className="text-xs font-mono text-[#4A6076]">Gato.pde</span>
             </div>
 
             <ProcessingCodeBlock
@@ -136,43 +136,43 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
           </div>
 
           {/* Concise explanation of the active section */}
-          <div className="bg-white border border-[#E1E7E1] rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-3">
-              <h3 className="font-bold text-base text-[#232A24]">
+          <div className="bg-white border border-[#DCE7F2] rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3">
+              <h3 className="font-bold text-base text-[#0C2233]">
                 {selectedSection.title}
               </h3>
-              <span className="text-xs font-mono text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-md font-semibold">
+              <span className="text-xs font-mono text-[#006699] bg-[#E2EEF8] px-2.5 py-1 rounded-md font-semibold">
                 {selectedSection.badge}
               </span>
             </div>
 
-            <div className="space-y-3 text-sm text-[#232A24]">
+            <div className="space-y-3 text-sm text-[#0C2233]">
               <div>
-                <span className="font-bold text-[#59645C] block mb-0.5 text-xs uppercase tracking-wider">
+                <span className="font-bold text-[#4A6076] block mb-0.5 text-xs uppercase tracking-wider">
                   ¿Qué representa?
                 </span>
-                <p className="leading-relaxed text-[#232A24] text-xs sm:text-sm">
+                <p className="leading-relaxed text-[#0C2233] text-xs sm:text-sm">
                   {selectedSection.whatItIs}
                 </p>
               </div>
 
               <div>
-                <span className="font-bold text-[#59645C] block mb-0.5 text-xs uppercase tracking-wider">
+                <span className="font-bold text-[#4A6076] block mb-0.5 text-xs uppercase tracking-wider">
                   ¿Cómo se escribe?
                 </span>
-                <p className="leading-relaxed text-[#232A24] text-xs sm:text-sm">
+                <p className="leading-relaxed text-[#0C2233] text-xs sm:text-sm">
                   {selectedSection.howToWrite}
                 </p>
               </div>
 
               <div>
-                <span className="font-bold text-[#59645C] block mb-1 text-xs uppercase tracking-wider">
+                <span className="font-bold text-[#4A6076] block mb-1 text-xs uppercase tracking-wider">
                   Elementos que contiene:
                 </span>
-                <ul className="space-y-1 text-xs sm:text-sm text-[#59645C] pl-1">
+                <ul className="space-y-1 text-xs sm:text-sm text-[#4A6076] pl-1">
                   {selectedSection.whatItContains.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="text-[#407B5D] select-none font-bold">•</span>
+                      <span className="text-[#006699] select-none font-bold">•</span>
                       <span>{item}</span>
                     </li>
                   ))}
@@ -180,10 +180,10 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
               </div>
 
               <div className="pt-2">
-                <span className="font-bold text-[#59645C] block mb-1 text-xs uppercase tracking-wider">
+                <span className="font-bold text-[#4A6076] block mb-1 text-xs uppercase tracking-wider">
                   Ejemplo en Gato:
                 </span>
-                <pre className="p-3 bg-[#F7F8F4] rounded-xl text-[#232A24] font-mono text-xs overflow-x-auto border border-[#E1E7E1]">
+                <pre className="p-3 bg-[#F4F8FB] rounded-xl text-[#0C2233] font-mono text-xs overflow-x-auto border border-[#DCE7F2]">
                   {selectedSection.example}
                 </pre>
               </div>
@@ -194,7 +194,7 @@ export const Stage1Structure: React.FC<Stage1Props> = ({
           <div className="flex items-center justify-end pt-2">
             <button
               onClick={onGoNext}
-              className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+              className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#006699] hover:bg-[#00507A] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <span>Ir a Etapa 2: Ubicar partes</span>
               <ArrowRight className="w-4 h-4" />

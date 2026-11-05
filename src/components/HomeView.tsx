@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TOPICS_DATA, TopicItem } from '../data/topicsData';
 import { UserProgress, StageId } from '../types/classStructure';
 import { AppUser } from '../services/firebase';
-import { GenerativeHeroCanvas } from './generative/GenerativeHeroCanvas';
 import { GenerativeArtwork } from './generative/GenerativeArtwork';
+import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 import { VariationSeries } from './generative/VariationSeries';
 import { VideoAsciiSplitCanvas } from './generative/VideoAsciiSplitCanvas';
 import { CmsSiteContentCombined } from '../types/cms';
@@ -15,14 +15,25 @@ import {
   RotateCcw,
   Sparkles,
   Layers,
-  Play,
-  Heart,
+  Code2,
+  Sliders,
+  PenTool,
+  Compass,
+  Film,
+  Maximize2,
+  Minimize2,
+  Grid,
+  CheckCircle,
 } from 'lucide-react';
 
 interface HomeViewProps {
   onOpenWorkshop: (stage?: StageId) => void;
   onOpenOopLab?: () => void;
   onNavigateOopLab?: () => void;
+  onOpenPilot?: () => void;
+  onOpenUnits?: (unitId?: 'u1' | 'u2' | 'u3', exerciseId?: string) => void;
+  onOpenClassDesigner?: () => void;
+  onNavigateHorse?: () => void;
   onSelectTopic: (topicId: string) => void;
   progress?: UserProgress;
   classesProgress?: UserProgress;
@@ -34,10 +45,16 @@ interface HomeViewProps {
   topics?: TopicItem[];
 }
 
+type TabFilter = 'all' | 'horse' | 'units' | 'pilot' | 'topics' | 'tools';
+
 export const HomeView: React.FC<HomeViewProps> = ({
   onOpenWorkshop,
   onOpenOopLab,
   onNavigateOopLab,
+  onOpenPilot,
+  onOpenUnits,
+  onOpenClassDesigner,
+  onNavigateHorse,
   onSelectTopic,
   progress,
   classesProgress,
@@ -48,6 +65,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onNavigateAdmin,
   topics,
 }) => {
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
+  const [showAsciiCanvas, setShowAsciiCanvas] = useState(true);
+
   const allCurriculumTopics = topics ?? TOPICS_DATA;
   const activeProgress = progress || classesProgress || {
     stageCompleted: { 1: false, 2: false, 3: false, 4: false },
@@ -57,76 +77,110 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   const handleOpenOop = onNavigateOopLab || onOpenOopLab || (() => {});
-
   const completedStagesCount = Object.values(activeProgress.stageCompleted).filter(Boolean).length;
   const workshopPercentage = Math.round((completedStagesCount / 4) * 100);
 
   return (
-    <div className="space-y-12 sm:space-y-16 animate-in fade-in duration-200">
-      {/* 1. Friendly Hero Section — Learning & Creative Coding */}
+    <div className="space-y-10 sm:space-y-14 animate-in fade-in duration-200">
+      {/* 1. HERO SECTION: Limpio, ordenado y con jerarquía editorial */}
       <section className="space-y-6 pt-2">
         {/* Soft Ribbon Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3 text-xs text-[#59645C]">
           <div className="flex items-center gap-2 font-medium">
             <span className="font-bold text-[#232A24] tracking-wide">Código Creativo</span>
             <span className="text-[#E1E7E1]">/</span>
-            <span className="text-[#407B5D] font-semibold bg-[#E8EEE8] px-2 py-0.5 rounded-md">
+            <span className="text-[#407B5D] font-semibold bg-[#E8EEE8] px-2.5 py-0.5 rounded-md">
               Processing Java
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-medium">
             <span className="w-2 h-2 rounded-full bg-[#407B5D]" />
-            <span className="text-[#59645C]">Plataforma de aprendizaje accesible</span>
+            <span className="text-[#59645C]">Laboratorio didáctico interactivo</span>
           </div>
         </div>
 
-        {/* Editorial Intro & CTAs */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT: Friendly Editorial Area */}
-          <div className="lg:col-span-7 space-y-5">
-            <div className="space-y-2.5">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-2.5 py-1 rounded-full">
+        {/* Editorial Headline & Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          {/* Main Title & Intro (7 cols) */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-3 py-1 rounded-full">
                 <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
                 <span>{siteContent?.heroBadge || 'Laboratorio de Código Creativo'}</span>
               </span>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-[#232A24] leading-[1.15]">
+              <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-extrabold tracking-tight text-[#232A24] leading-[1.18]">
                 {siteContent?.heroHeadline || 'Aprende a programar creando arte y sistemas visuales.'}
               </h1>
 
-              <p className="text-base sm:text-lg text-[#59645C] leading-relaxed pt-1">
+              <p className="text-sm sm:text-base text-[#59645C] leading-relaxed pt-1">
                 {siteContent?.heroSubtitle ||
                   'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.'}
               </p>
             </div>
 
-            {/* CTAs */}
-            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <button
-                onClick={handleOpenOop}
-                className="min-h-[44px] px-6 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs active:scale-98 cursor-pointer"
-              >
-                <span>Entrar al Laboratorio POO</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            {/* Quick Action Navigation Buttons */}
+            <div className="pt-2 flex flex-wrap items-center gap-2.5">
+              {onOpenUnits && (
+                <button
+                  onClick={() => onOpenUnits('u1')}
+                  className="min-h-[42px] px-5 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer text-xs"
+                >
+                  <Layers className="w-4 h-4" />
+                  <span>Unidades Curriculares (14 Prácticas)</span>
+                </button>
+              )}
+
+              {onOpenPilot && (
+                <button
+                  onClick={onOpenPilot}
+                  className="min-h-[42px] px-4 py-2.5 border border-[#407B5D] bg-white hover:bg-[#E8EEE8] text-[#407B5D] font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
+                >
+                  <Compass className="w-4 h-4" />
+                  <span>Módulo Piloto (3 Ejercicios)</span>
+                </button>
+              )}
 
               <button
-                onClick={() => onOpenWorkshop()}
-                className="min-h-[44px] px-5 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8]/40 text-[#232A24] font-semibold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+                onClick={() => {
+                  setActiveTab('horse');
+                  const el = document.getElementById('caballo-galope');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="min-h-[42px] px-4 py-2.5 border border-[#407B5D] bg-[#E8EEE8]/70 hover:bg-[#E8EEE8] text-[#407B5D] font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
               >
-                <span>Taller de Anatomía de Clases</span>
+                <Film className="w-4 h-4 text-[#407B5D]" />
+                <span>Caballo al Galope (1878)</span>
+              </button>
+
+              {onOpenClassDesigner && (
+                <button
+                  onClick={onOpenClassDesigner}
+                  className="min-h-[42px] px-4 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#F7F8F4] text-[#232A24] font-semibold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
+                >
+                  <PenTool className="w-4 h-4 text-[#407B5D]" />
+                  <span>Diseñador de Clases</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleOpenOop}
+                className="min-h-[42px] px-4 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#F7F8F4] text-[#232A24] font-semibold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
+              >
+                <Sliders className="w-4 h-4 text-[#407B5D]" />
+                <span>Laboratorio POO</span>
               </button>
             </div>
           </div>
 
-          {/* RIGHT: Generative Principle Chain */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="p-5 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-3 shadow-xs">
+          {/* Generative Principles & Student Profile (5 cols) */}
+          <div className="lg:col-span-5 space-y-3.5">
+            <div className="p-4 sm:p-5 bg-white border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
               <span className="text-xs font-bold text-[#232A24] block">
                 {siteContent?.generativeQuestion || '¿Cómo funciona el pensamiento generativo?'}
               </span>
-              <div className="flex items-center gap-2 flex-wrap text-xs">
+              <div className="flex items-center gap-1.5 flex-wrap text-xs">
                 {(siteContent?.generativePrinciples || [
                   '1. Código',
                   '2. Sistema',
@@ -135,312 +189,680 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   '5. Forma',
                 ]).map((principle, idx, arr) => (
                   <React.Fragment key={idx}>
-                    <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                    <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg text-[11px]">
                       {principle}
                     </span>
                     {idx < arr.length - 1 && (
-                      <span className="text-[#59645C] font-semibold">→</span>
+                      <span className="text-[#8E8E89] font-semibold text-[11px]">→</span>
                     )}
                   </React.Fragment>
                 ))}
               </div>
               <p className="text-[11px] text-[#59645C] leading-relaxed pt-1">
-                Desde instrucciones aritméticas hasta la descomposición de señales de video en caracteres tipográficos ordenados por luminancia.
+                De instrucciones lógicas elementales a composiciones paramétricas complejas.
               </p>
             </div>
 
-            {/* Student session bar */}
+            {/* Session / Account Status */}
             <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl flex items-center justify-between text-xs text-[#59645C]">
               <div className="flex items-center gap-2 font-medium">
                 <User className="w-4 h-4 text-[#407B5D]" />
-                <span>
-                  {currentUser ? `${currentUser.displayName} (${currentUser.email})` : 'Modo Invitado (progreso guardado localmente)'}
+                <span className="truncate max-w-[210px] sm:max-w-none">
+                  {currentUser ? `${currentUser.displayName} (${currentUser.email})` : 'Modo Invitado (progreso en este navegador)'}
                 </span>
               </div>
               {!currentUser && onOpenAuth && (
                 <button
                   onClick={onOpenAuth}
-                  className="text-[#407B5D] hover:underline font-semibold cursor-pointer"
+                  className="text-[#407B5D] hover:underline font-bold cursor-pointer text-xs shrink-0"
                 >
-                  Conectar cuenta
+                  Conectar
                 </button>
               )}
             </div>
           </div>
         </div>
+      </section>
 
-        {/* PRIMARY HERO ELEMENT: Video ASCII Split-Screen Installation */}
-        <div className="space-y-3 pt-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E1E7E1] pb-2.5">
-            <div className="space-y-0.5">
+      {/* 2. SECTION NAVIGATOR & FILTER BAR */}
+      <section className="border-b border-[#E1E7E1] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1 text-xs">
+            {[
+              { id: 'all', label: 'Todo el Laboratorio' },
+              { id: 'horse', label: 'Caballo al Galope (1878)' },
+              { id: 'units', label: 'Unidades Curriculares (14)' },
+              { id: 'pilot', label: 'Módulo Piloto (3)' },
+              { id: 'topics', label: 'Temario 01 al 07' },
+              { id: 'tools', label: 'Herramientas de Autoría' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabFilter)}
+                className={`min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-[#407B5D] text-white shadow-xs font-bold'
+                    : 'bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="text-xs text-[#59645C] font-mono shrink-0">
+            {allCurriculumTopics.length} Temas · 14 Prácticas · 3 Herramientas
+          </div>
+        </div>
+      </section>
+
+      {/* 3. PILAR 1: UNIDADES CURRICULARES (U1, U2, U3) */}
+      {(activeTab === 'all' || activeTab === 'units') && (
+        <section className="space-y-5 animate-in fade-in duration-150">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
+            <div>
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
-                <span className="text-xs font-bold uppercase tracking-wider text-[#407B5D]">
-                  Elemento Principal de Experimentación
+                <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
+                  Pilar 1 · Ruta Pedagógica
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
-                Discretización de Video a Caracteres ASCII con División Interactiva
+                Plan de Unidades Curriculares
               </h2>
             </div>
             <p className="text-xs text-[#59645C] max-w-md leading-relaxed">
-              Arrastra la línea divisoria central <code className="bg-[#E8EEE8] px-1.5 py-0.5 rounded text-[#232A24] font-bold">&lt;&gt;</code> para comparar en tiempo real el fotograma original contra la cuantización tipográfica en Processing Java.
+              Secuencia didáctica de 14 prácticas progresivas con formulación de hipótesis, comprobación visual y evidencias de logro.
             </p>
           </div>
 
-          <VideoAsciiSplitCanvas defaultVideoSrc="/video.mp4" />
-        </div>
-      </section>
-
-      {/* 2. Interactive Experimentation Modules (Laboratorio de Objetos & Taller) */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-2">
-          <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
-            <span className="w-2 h-2 rounded-full bg-[#407B5D]" />
-            <span>Módulos de Práctica y Laboratorios Interactivos</span>
-          </div>
-
-          {completedStagesCount > 0 && onResetProgress && (
-            <button
-              onClick={onResetProgress}
-              className="text-xs text-[#59645C] hover:text-[#232A24] flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reiniciar avance</span>
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Card A: Laboratorio de Objetos (Pelota & Burbuja) */}
-          <div className="bg-[#FFFFFF] border border-[#E1E7E1] hover:border-[#407B5D]/60 transition-all rounded-2xl p-6 sm:p-7 flex flex-col justify-between space-y-6 shadow-xs hover:shadow-md">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-[#59645C]">
-                <span className="bg-[#E8EEE8] text-[#407B5D] font-bold px-2.5 py-0.5 rounded-full">
-                  LABORATORIO INTERACTIVO
-                </span>
-                <span className="font-medium">Módulo 1 & 2 · Processing Java</span>
-              </div>
-
-              <h2 className="text-2xl font-bold text-[#232A24] tracking-tight">
-                {siteContent?.oopLabTitle || 'Laboratorio de Objetos: Pelota, Burbuja y Arreglos'}
-              </h2>
-
-              <p className="text-sm text-[#59645C] leading-relaxed">
-                {siteContent?.oopLabSummary ||
-                  'Aprende Programación Orientada a Objetos en Processing Java mediante la construcción progresiva: campos espaciales, constructor con argumentos, 7 métodos de estado, movimiento fluido bidimensional con ruido Perlin (noise()) y control sobre arreglos colectivos.'}
-              </p>
-
-              {/* Generative illustration thumbnail */}
-              <div className="border border-[#E1E7E1] p-3 bg-[#F7F8F4] rounded-xl flex items-center justify-center">
-                <GenerativeArtwork
-                  topicNumber={6}
-                  width={340}
-                  height={110}
-                  interactive={true}
-                  caption="Representación generativa de dos instancias autónomas con vectores de velocidad"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2.5 pt-1 text-xs text-[#232A24]">
-                <div className="p-2.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
-                  <span className="text-[10px] text-[#59645C] block font-semibold">MÓDULO 1</span>
-                  <span className="font-bold">Pelota</span>
-                </div>
-                <div className="p-2.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
-                  <span className="text-[10px] text-[#59645C] block font-semibold">MÓDULO 2</span>
-                  <span className="font-bold">Burbuja</span>
-                </div>
-                <div className="p-2.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
-                  <span className="text-[10px] text-[#59645C] block font-semibold">COLECCIÓN</span>
-                  <span className="font-bold">Arreglos[]</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-[#E1E7E1] flex items-center justify-between">
-              <span className="text-xs font-medium text-[#59645C]">
-                Lienzo a 60 FPS con telemetría
-              </span>
-              <button
-                onClick={handleOpenOop}
-                className="min-h-[40px] px-5 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs active:scale-98 cursor-pointer"
-              >
-                <span>Entrar al Laboratorio</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Card B: Taller Guiado de Estructura de Clases */}
-          <div className="bg-[#FFFFFF] border border-[#E1E7E1] hover:border-[#407B5D]/60 transition-all rounded-2xl p-6 sm:p-7 flex flex-col justify-between space-y-6 shadow-xs hover:shadow-md">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-[#59645C]">
-                <span className="bg-[#FFF4DC] text-[#9A6700] font-bold px-2.5 py-0.5 rounded-full">
-                  TALLER CONCEPTUAL
-                </span>
-                <span className="font-medium">Tema 06 · Anatomía POO</span>
-              </div>
-
-              <h2 className="text-2xl font-bold text-[#232A24] tracking-tight">
-                {siteContent?.workshopTitle || 'Anatomía y Estructura de una Clase en Processing'}
-              </h2>
-
-              <p className="text-sm text-[#59645C] leading-relaxed">
-                {siteContent?.workshopSummary ||
-                  'Recorrido didáctico en 4 etapas para comprender las partes anatómicas de una clase: declaración del molde, asignación de campos en memoria, inicialización del constructor y firma de métodos.'}
-              </p>
-
-              {/* 4 Steps Checklist */}
-              <div className="grid grid-cols-2 gap-2.5 pt-2">
-                {[
-                  { step: '01', title: 'Estructura', done: activeProgress.stageCompleted[1] },
-                  { step: '02', title: 'Ubicar partes', done: activeProgress.stageCompleted[2] },
-                  { step: '03', title: 'Sintaxis', done: activeProgress.stageCompleted[3] },
-                  { step: '04', title: 'Construir', done: activeProgress.stageCompleted[4] },
-                ].map((s) => (
-                  <div
-                    key={s.step}
-                    className={`p-3 border rounded-xl text-xs flex items-center justify-between transition-colors ${
-                      s.done
-                        ? 'border-[#407B5D] bg-[#E8EEE8] text-[#407B5D] font-bold'
-                        : 'border-[#E1E7E1] bg-[#FFFFFF] text-[#59645C]'
-                    }`}
-                  >
-                    <span>{s.step}. {s.title}</span>
-                    {s.done && <Check className="w-4 h-4 text-[#407B5D]" strokeWidth={2.5} />}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-[#E1E7E1] flex items-center justify-between">
-              <span className="text-xs font-medium text-[#59645C]">
-                {completedStagesCount === 4 ? 'Taller completado al 100%' : `${workshopPercentage}% completado`}
-              </span>
-              <button
-                onClick={() => onOpenWorkshop()}
-                className="min-h-[40px] px-5 py-2 border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8]/40 text-[#232A24] text-xs font-bold rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
-              >
-                <span>{completedStagesCount > 0 ? 'Continuar Taller' : 'Iniciar Taller'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Systematic Variation Series */}
-      <section className="space-y-4">
-        <VariationSeries
-          title="Serie de Variaciones Generativas: Familia de Repetición y Módulos"
-          systemDescription="Un mismo algoritmo ejecutado bajo 4 configuraciones paramétricas distintas. Observa cómo el cambio de escala, rotación angular y modulación senoidal genera lenguajes gráficos totalmente diversos a partir de una única regla formal."
-          family="repetition"
-        />
-      </section>
-
-      {/* 4. Complete Curriculum Topics Section with Generative Graphic Identity */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-2">
-          <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
-            <span className="w-2 h-2 rounded-full bg-[#E6B65A]" />
-            <span>Temario Curricular Completo</span>
-          </div>
-          <span className="text-xs text-[#59645C] font-medium">7 temas con modelos visuales</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {allCurriculumTopics.map((topic) => {
-            const isClasses = topic.id === 'classes';
-
-            return (
-              <div
-                key={topic.id}
-                className="bg-[#FFFFFF] border border-[#E1E7E1] hover:border-[#407B5D]/60 transition-all rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xs hover:shadow-md"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs text-[#59645C]">
-                    <span className="font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded-md">
-                      TEMA 0{topic.number}
-                    </span>
-                    <span className="font-medium">{topic.estimatedTime}</span>
-                  </div>
-
-                  {/* Generative Diagram Thumbnail connected to topic concept */}
-                  <div className="border border-[#E1E7E1] bg-[#F7F8F4] rounded-xl flex items-center justify-center p-1.5">
-                    <GenerativeArtwork
-                      topicNumber={topic.number}
-                      width={280}
-                      height={125}
-                      interactive={true}
-                    />
-                  </div>
-
-                  <h3 className="text-base font-bold text-[#232A24] line-clamp-1">
-                    {topic.title}
-                  </h3>
-
-                  <p className="text-xs text-[#59645C] line-clamp-2 leading-relaxed">
-                    {topic.summary}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
-                  <span className="text-xs text-[#59645C] font-medium">
-                    {topic.category}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* UNIDAD 1 */}
+            <div className="p-5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 shadow-xs transition-all group">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="px-2.5 py-0.5 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                    UNIDAD 1
                   </span>
+                  <span className="text-[#8E8E89]">3 Prácticas</span>
+                </div>
+                <h3 className="text-base font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  Fundamentos de programación y código creativo
+                </h3>
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  Descubre cómo una imagen se construye siguiendo instrucciones secuenciales precisas y cómo una regla origina múltiples variaciones.
+                </p>
+                <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
+                  <li
+                    onClick={() => onOpenUnits?.('u1', 'u1-e1')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U1-E1</span>
+                    <span>Secuencia de instrucciones</span>
+                  </li>
+                  <li
+                    onClick={() => onOpenUnits?.('u1', 'u1-e2')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U1-E2</span>
+                    <span>Una regla, múltiples variaciones</span>
+                  </li>
+                  <li
+                    onClick={() => onOpenUnits?.('u1', 'u1-e3')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U1-E3</span>
+                    <span>Del boceto a un procedimiento</span>
+                  </li>
+                </ul>
+              </div>
+              {onOpenUnits && (
+                <button
+                  onClick={() => onOpenUnits('u1')}
+                  className="w-full min-h-[36px] px-3 py-1.5 bg-[#F7F8F4] hover:bg-[#E8EEE8] border border-[#E1E7E1] hover:border-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>Iniciar Unidad 1</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#407B5D]" />
+                </button>
+              )}
+            </div>
 
-                  {isClasses ? (
-                    <button
-                      onClick={() => onOpenWorkshop()}
-                      className="min-h-[36px] px-3.5 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                    >
-                      <span>Taller POO</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  ) : topic.id === 'object-arrays' ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleOpenOop}
-                        className="min-h-[36px] px-3 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
-                        <span>Laboratorio</span>
-                      </button>
-                      <button
-                        onClick={() => onSelectTopic('object-arrays')}
-                        className="min-h-[36px] px-2.5 py-1.5 border border-[#E1E7E1] hover:bg-[#E8EEE8]/40 text-[#232A24] text-xs font-semibold rounded-xl transition-all cursor-pointer"
-                      >
-                        Teoría
-                      </button>
+            {/* UNIDAD 2 */}
+            <div className="p-5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 shadow-xs transition-all group">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="px-2.5 py-0.5 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                    UNIDAD 2
+                  </span>
+                  <span className="text-[#8E8E89]">6 Prácticas</span>
+                </div>
+                <h3 className="text-base font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  Primeros pasos con Processing
+                </h3>
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  Sistema de coordenadas, funciones con parámetros, primitivas 2D, espacios RGB/HSB y consulta de referencias oficiales.
+                </p>
+                <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
+                  <li
+                    onClick={() => onOpenUnits?.('u2', 'u2-e1')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U2-E1</span>
+                    <span>Primer recorrido por Processing</span>
+                  </li>
+                  <li
+                    onClick={() => onOpenUnits?.('u2', 'u2-e2')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U2-E2</span>
+                    <span>Del espacio a la forma</span>
+                  </li>
+                  <li
+                    onClick={() => onOpenUnits?.('u2', 'u2-e3')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U2-E3</span>
+                    <span>Funciones y comentarios</span>
+                  </li>
+                </ul>
+              </div>
+              {onOpenUnits && (
+                <button
+                  onClick={() => onOpenUnits('u2')}
+                  className="w-full min-h-[36px] px-3 py-1.5 bg-[#F7F8F4] hover:bg-[#E8EEE8] border border-[#E1E7E1] hover:border-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>Iniciar Unidad 2</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#407B5D]" />
+                </button>
+              )}
+            </div>
+
+            {/* UNIDAD 3 */}
+            <div className="p-5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 shadow-xs transition-all group">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="px-2.5 py-0.5 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg">
+                    UNIDAD 3
+                  </span>
+                  <span className="text-[#8E8E89]">5 Prácticas</span>
+                </div>
+                <h3 className="text-base font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  Variables, transformaciones y dinamismo
+                </h3>
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  Variables de usuario, variables del sistema (mouseX, mouseY), interactividad en tiempo real y traslaciones con push/popMatrix.
+                </p>
+                <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
+                  <li
+                    onClick={() => onOpenUnits?.('u3', 'u3-e1')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U3-E1</span>
+                    <span>Valores fijos vs valores que cambian</span>
+                  </li>
+                  <li
+                    onClick={() => onOpenUnits?.('u3', 'u3-e2')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U3-E2</span>
+                    <span>Variables del sistema en tiempo real</span>
+                  </li>
+                  <li
+                    onClick={() => onOpenUnits?.('u3', 'u3-e3')}
+                    className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="text-[#407B5D] font-bold">U3-E3</span>
+                    <span>Declaración y asignación en memoria</span>
+                  </li>
+                </ul>
+              </div>
+              {onOpenUnits && (
+                <button
+                  onClick={() => onOpenUnits('u3')}
+                  className="w-full min-h-[36px] px-3 py-1.5 bg-[#F7F8F4] hover:bg-[#E8EEE8] border border-[#E1E7E1] hover:border-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>Iniciar Unidad 3</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#407B5D]" />
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 4. PILAR 2: MÓDULO PILOTO Y EJEMPLO FUNDAMENTAL DEL CABALLO */}
+      {(activeTab === 'all' || activeTab === 'pilot' || activeTab === 'horse') && (
+        <section id="caballo-galope" className="p-6 sm:p-7 bg-white border border-[#E1E7E1] rounded-3xl space-y-6 shadow-xs hover:border-[#407B5D]/60 transition-all animate-in fade-in duration-150 scroll-mt-20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+                <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
+                  Pilar 2 · Módulo Piloto &amp; Instalación Audiovisual
+                </span>
+                <span className="text-[10px] font-bold uppercase font-mono bg-[#E8EEE8] text-[#407B5D] px-2 py-0.5 rounded">
+                  Caballo al Galope (1878)
+                </span>
+              </div>
+              <h2 className="text-2xl font-extrabold text-[#232A24] tracking-tight">
+                {siteContent?.pilotModuleTitle || 'Exploraciones con Processing'}
+              </h2>
+              <p className="text-xs text-[#59645C] max-w-2xl leading-relaxed">
+                {siteContent?.pilotModuleDescription ||
+                  'Secuencia pedagógica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar, coronada por la instalación audiovisual del caballo de Muybridge.'}
+              </p>
+            </div>
+            {onOpenPilot && (
+              <button
+                onClick={onOpenPilot}
+                className="min-h-[42px] px-5 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0"
+              >
+                <span>Abrir Módulo Piloto</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* 3 Progressive Exercise Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+            {/* Ejercicio 1 */}
+            <div
+              onClick={onOpenPilot}
+              className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-3 cursor-pointer transition-all group"
+            >
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded">
+                  EJERCICIO 01 · COORDENADAS
+                </span>
+                <h3 className="text-sm font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  {siteContent?.pilotEx1Title || 'Sistemas de coordenadas: Del espacio a la forma'}
+                </h3>
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  {siteContent?.pilotEx1Objective ||
+                    'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.'}
+                </p>
+              </div>
+              <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <span>Practicar coordenadas</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+
+            {/* Ejercicio 2 */}
+            <div
+              onClick={onOpenPilot}
+              className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-3 cursor-pointer transition-all group"
+            >
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded">
+                  EJERCICIO 02 · CONDICIONALES
+                </span>
+                <h3 className="text-sm font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  {siteContent?.pilotEx2Title || 'Estructuras condicionales: Decisiones visuales'}
+                </h3>
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  {siteContent?.pilotEx2Objective ||
+                    'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.'}
+                </p>
+              </div>
+              <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <span>Practicar condicionales</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+
+            {/* Ejercicio 3 */}
+            <div className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-3 transition-all group">
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded">
+                  EJERCICIO 03 · AUDIOVISUAL
+                </span>
+                <h3 className="text-sm font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  {siteContent?.pilotEx3Title || 'Discretización audiovisual: Video a ASCII'}
+                </h3>
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  Cuantización tipográfica en tiempo real. Divide el lienzo con la barra central &lt;&gt; para comparar el fotograma original contra la salida en caracteres.
+                </p>
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <a
+                  href="#caballo-galope"
+                  className="text-xs font-bold text-[#407B5D] hover:underline flex items-center gap-1"
+                >
+                  <Film className="w-3.5 h-3.5" />
+                  <span>Ver instalación abajo</span>
+                </a>
+                {onOpenPilot && (
+                  <button
+                    onClick={onOpenPilot}
+                    className="text-xs text-[#59645C] hover:text-[#232A24] cursor-pointer flex items-center gap-1"
+                  >
+                    <span>Ver en módulo</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Destacado: Instalación Audiovisual del Caballo de Muybridge (Siempre Visible) */}
+          <div className="pt-4 border-t border-[#E1E7E1] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Film className="w-4 h-4 text-[#407B5D]" />
+                <span className="text-xs sm:text-sm font-bold text-[#232A24]">
+                  Ejemplo Fundamental: Discretización de Video — Caballo al Galope (Muybridge 1878)
+                </span>
+              </div>
+              <span className="text-[11px] text-[#59645C] font-mono">
+                Lienzo interactivo en vivo · Arrastra &lt;&gt; para comparar
+              </span>
+            </div>
+            <VideoAsciiSplitCanvas defaultVideoSrc="/video.mp4" />
+          </div>
+        </section>
+      )}
+
+      {/* 5. PILAR 3: TEMARIO CURRICULAR COMPLETO (01 AL 07) */}
+      {(activeTab === 'all' || activeTab === 'topics') && (
+        <section className="space-y-6 animate-in fade-in duration-150">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#E6B65A]" />
+                <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#8A6318]">
+                  Pilar 3 · Catálogo Temático
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
+                Temario y Conceptos Fundamentales
+              </h2>
+            </div>
+            <span className="text-xs text-[#59645C] font-mono">
+              {allCurriculumTopics.length} Temas con modelos visuales interactivos
+            </span>
+          </div>
+          {allCurriculumTopics.length === 0 ? (
+            <div className="bg-white border border-dashed border-[#E1E7E1] rounded-2xl p-8 text-center space-y-2">
+              <p className="text-sm font-semibold text-[#232A24]">No hay temas disponibles en este momento.</p>
+              <p className="text-xs text-[#59645C]">Puedes explorar las Unidades Curriculares o los Ejercicios Piloto desde las pestañas superiores.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allCurriculumTopics.map((topic) => {
+              const isClasses = topic.id === 'classes';
+
+              return (
+                <div
+                  key={topic.id}
+                  className="bg-white border border-[#E1E7E1] hover:border-[#407B5D]/60 transition-all rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xs hover:shadow-md"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs text-[#59645C]">
+                      <span className="font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded-md">
+                        TEMA 0{topic.number}
+                      </span>
+                      <span className="font-medium">{topic.estimatedTime}</span>
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => onSelectTopic(topic.id)}
-                      className="min-h-[36px] px-3.5 py-1.5 border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/30 text-[#232A24] text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <span>Ver tema</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#59645C]" />
-                    </button>
-                  )}
+
+                    {/* Generative Diagram Thumbnail */}
+                    <div className="border border-[#E1E7E1] bg-[#F7F8F4] rounded-xl flex items-center justify-center p-1.5 overflow-hidden">
+                      <P5LiveThumbnail
+                        p5Code={topic.thumbnailP5 || topic.concepts[0]?.codeSnippetP5}
+                        fallbackTopicNumber={topic.number}
+                        width={280}
+                        height={125}
+                        interactive={true}
+                      />
+                    </div>
+
+                    <h3 className="text-base font-bold text-[#232A24] line-clamp-1">
+                      {topic.title}
+                    </h3>
+
+                    <p className="text-xs text-[#59645C] line-clamp-2 leading-relaxed">
+                      {topic.summary}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
+                    <span className="text-xs text-[#59645C] font-medium">
+                      {topic.category}
+                    </span>
+
+                    {isClasses ? (
+                      <button
+                        onClick={() => onOpenWorkshop()}
+                        className="min-h-[36px] px-3.5 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <span>Taller POO</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    ) : topic.id === 'object-arrays' ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleOpenOop}
+                          className="min-h-[36px] px-3 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
+                          <span>Laboratorio</span>
+                        </button>
+                        <button
+                          onClick={() => onSelectTopic('object-arrays')}
+                          className="min-h-[36px] px-2.5 py-1.5 border border-[#E1E7E1] hover:bg-[#E8EEE8]/40 text-[#232A24] text-xs font-semibold rounded-xl transition-all cursor-pointer"
+                        >
+                          Teoría
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => onSelectTopic(topic.id)}
+                        className="min-h-[36px] px-3.5 py-1.5 border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/30 text-[#232A24] text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <span>Ver tema</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#59645C]" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          )}
+        </section>
+      )}
+
+      {/* 6. PILAR 4: HERRAMIENTAS DE AUTORÍA Y CREACIÓN (Consolidada sin duplicados) */}
+      {(activeTab === 'all' || activeTab === 'tools') && (
+        <section className="space-y-5 animate-in fade-in duration-150">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+                <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
+                  Pilar 4 · Creación y Experimentación
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
+                Herramientas de Autoría y Producción
+              </h2>
+            </div>
+            <p className="text-xs text-[#59645C] max-w-md leading-relaxed">
+              Módulos interactivos autónomos para diseñar arquitecturas de clases, simular instancias dinámicas y exportar código Processing Java.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Card 1: Diseñador de Clases */}
+            <div
+              onClick={onOpenClassDesigner}
+              className="p-5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 cursor-pointer transition-all group shadow-xs hover:shadow-md"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg font-mono flex items-center gap-1.5 text-[11px]">
+                    <PenTool className="w-3.5 h-3.5" />
+                    <span>HERRAMIENTA POO</span>
+                  </span>
+                  <span className="text-[#8E8E89] text-[11px] font-mono">6 Etapas</span>
+                </div>
+
+                <h3 className="text-base font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  Diseñador de Clases
+                </h3>
+
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  Diseña los campos, constructores y métodos de tus objetos y genera su estructura inicial en Processing Java.
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-[#232A24]">
+                  <div className="p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                    <span className="text-[10px] text-[#59645C] block font-semibold">1. DISEÑO</span>
+                    <span className="font-bold">Abstracción</span>
+                  </div>
+                  <div className="p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                    <span className="text-[10px] text-[#59645C] block font-semibold">2. CAMPOS</span>
+                    <span className="font-bold">Memoria</span>
+                  </div>
+                  <div className="p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                    <span className="text-[10px] text-[#59645C] block font-semibold">3. PDE TABS</span>
+                    <span className="font-bold">Código</span>
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </section>
 
-      {/* 5. Friendly Creative Coding Philosophy Note */}
-      <section className="p-6 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#232A24]">
-          <Heart className="w-4 h-4 text-[#407B5D]" />
-          <span>{siteContent?.philosophyTitle || 'Filosofía de Código Creativo · Generative Design'}</span>
-        </div>
-        <p className="text-xs sm:text-sm text-[#59645C] leading-relaxed max-w-3xl">
-          {siteContent?.footerText ||
-            'Inspirado en los principios de Generative Design, este laboratorio aborda la programación como un medio artístico y constructivo. La riqueza visual no surge del adorno superficial, sino de la combinación disciplinada de reglas matemáticas sencillas: iteración, modulación senoidal, ruido Perlin y la arquitectura orientada a objetos de Processing.'}
-        </p>
-      </section>
+              <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#59645C]">
+                  Plantilla Resorte incluida
+                </span>
+                <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span>Diseñar clase</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </div>
+
+            {/* Card 2: Laboratorio de Objetos (Pelota & Burbuja) */}
+            <div
+              onClick={handleOpenOop}
+              className="p-5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 cursor-pointer transition-all group shadow-xs hover:shadow-md"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg font-mono flex items-center gap-1.5 text-[11px]">
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>SIMULADOR 60 FPS</span>
+                  </span>
+                  <span className="text-[#8E8E89] text-[11px] font-mono">2 Entidades</span>
+                </div>
+
+                <h3 className="text-base font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  {siteContent?.oopLabTitle || 'Laboratorio de Objetos: Pelota y Burbuja'}
+                </h3>
+
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  {siteContent?.oopLabSummary ||
+                    'Experimenta en tiempo real con instancias activas, métodos interactivos de estado y control simultáneo sobre arreglos de objetos.'}
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-[#232A24]">
+                  <div className="p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                    <span className="text-[10px] text-[#59645C] block font-semibold">ESTADO</span>
+                    <span className="font-bold">7 Métodos</span>
+                  </div>
+                  <div className="p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                    <span className="text-[10px] text-[#59645C] block font-semibold">FÍSICA</span>
+                    <span className="font-bold">noise() Perlin</span>
+                  </div>
+                  <div className="p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-center">
+                    <span className="text-[10px] text-[#59645C] block font-semibold">ARREGLOS</span>
+                    <span className="font-bold">Colección[]</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#59645C]">
+                  Telemetría en tiempo real
+                </span>
+                <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span>Entrar al laboratorio</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </div>
+
+            {/* Card 3: Taller Guiado de Estructura de Clases */}
+            <div
+              onClick={() => onOpenWorkshop()}
+              className="p-5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 cursor-pointer transition-all group shadow-xs hover:shadow-md"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="px-2.5 py-1 bg-[#FFF4DC] text-[#9A6700] font-bold rounded-lg font-mono text-[11px]">
+                    TALLER DIDÁCTICO
+                  </span>
+                  <span className="text-[#8E8E89] text-[11px] font-mono">
+                    {completedStagesCount}/4 Completado
+                  </span>
+                </div>
+
+                <h3 className="text-base font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
+                  {siteContent?.workshopTitle || 'Anatomía de una Clase en Processing'}
+                </h3>
+
+                <p className="text-xs text-[#59645C] leading-relaxed">
+                  {siteContent?.workshopSummary ||
+                    'Recorrido didáctico en 4 etapas: declaración del molde, asignación de campos en memoria, constructor y firma de métodos.'}
+                </p>
+
+                {/* 4 Steps compact indicators */}
+                <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                  {[
+                    { step: '01', title: 'Estructura', done: activeProgress.stageCompleted[1] },
+                    { step: '02', title: 'Partes', done: activeProgress.stageCompleted[2] },
+                    { step: '03', title: 'Sintaxis', done: activeProgress.stageCompleted[3] },
+                    { step: '04', title: 'Construir', done: activeProgress.stageCompleted[4] },
+                  ].map((s) => (
+                    <div
+                      key={s.step}
+                      className={`p-1.5 border rounded-lg text-[10px] flex items-center justify-between ${
+                        s.done
+                          ? 'border-[#407B5D] bg-[#E8EEE8] text-[#407B5D] font-bold'
+                          : 'border-[#E1E7E1] bg-[#F7F8F4] text-[#59645C]'
+                      }`}
+                    >
+                      <span>{s.step}. {s.title}</span>
+                      {s.done && <Check className="w-3 h-3 text-[#407B5D]" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#59645C]">
+                  {completedStagesCount === 4 ? '100% completado' : `${workshopPercentage}% completado`}
+                </span>
+                <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span>{completedStagesCount > 0 ? 'Continuar' : 'Iniciar'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 7. SERIE DE VARIACIONES GENERATIVAS (Demostración de Principios) */}
+      {(activeTab === 'all' || activeTab === 'topics') && (
+        <section className="space-y-4 pt-2">
+          <VariationSeries
+            title="Serie de Variaciones Generativas: Familia de Repetición y Módulos"
+            systemDescription="Un mismo algoritmo ejecutado bajo 4 configuraciones paramétricas distintas. Observa cómo el cambio de escala, rotación angular y modulación senoidal genera lenguajes gráficos totalmente diversos a partir de una única regla formal."
+            family="repetition"
+          />
+        </section>
+      )}
     </div>
   );
 };

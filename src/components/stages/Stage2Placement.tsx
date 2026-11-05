@@ -78,37 +78,37 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
   return (
     <div className="space-y-8">
       {/* Stage Header */}
-      <div className="border-b border-[#E1E7E1] pb-6">
+      <div className="border-b border-[#DCE7F2] pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#407B5D] bg-[#E8EEE8] px-2.5 py-0.5 rounded-full inline-block mb-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#006699] bg-[#E2EEF8] px-2.5 py-0.5 rounded-full inline-block mb-1.5">
               Etapa 02
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#232A24]">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0C2233]">
               Ubicar las partes de la clase
             </h2>
           </div>
           {isCompleted && (
-            <div className="flex items-center gap-1.5 text-xs text-[#407B5D] font-semibold py-1 bg-[#E8EEE8] px-3 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs text-[#006699] font-semibold py-1 bg-[#E2EEF8] px-3 rounded-full">
               <Check className="w-3.5 h-3.5" />
               <span>Partes organizadas</span>
             </div>
           )}
         </div>
-        <p className="text-sm text-[#59645C] mt-2 max-w-2xl leading-relaxed">
+        <p className="text-sm text-[#4A6076] mt-2 max-w-2xl leading-relaxed">
           Ubica cada bloque de código en su sección dentro de la clase Gato usando los botones o arrastrándolos. Selecciona cualquier ficha para consultar su rol sintáctico.
         </p>
       </div>
 
       {feedbackMsg && (
-        <div className="p-3.5 rounded-xl border border-[#E1E7E1] bg-white text-xs text-[#232A24] flex items-center justify-between shadow-xs">
+        <div className="p-3.5 rounded-xl border border-[#DCE7F2] bg-white text-xs text-[#0C2233] flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-[#407B5D] shrink-0" />
+            <Info className="w-4 h-4 text-[#006699] shrink-0" />
             <span>{feedbackMsg}</span>
           </div>
           <button
             onClick={() => setFeedbackMsg(null)}
-            className="text-[#59645C] hover:text-[#232A24] text-xs ml-4 cursor-pointer"
+            className="text-[#4A6076] hover:text-[#0C2233] text-xs ml-4 cursor-pointer"
           >
             ✕
           </button>
@@ -120,13 +120,13 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
         {/* Left Column: Cards to position & Token Inspector (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#59645C] flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-[#407B5D]" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#4A6076] flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[#006699]" />
               <span>Bloques a ubicar</span>
             </h3>
             <button
               onClick={handleResetPlacements}
-              className="text-xs text-[#59645C] hover:text-[#232A24] flex items-center gap-1 cursor-pointer font-medium"
+              className="text-xs text-[#4A6076] hover:text-[#0C2233] flex items-center gap-1 cursor-pointer font-medium"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reiniciar</span>
@@ -146,34 +146,34 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                   onClick={() => setSelectedCardId(card.id)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-white border-[#407B5D] ring-2 ring-[#407B5D] shadow-xs'
-                      : 'bg-white border-[#E1E7E1] hover:border-[#407B5D]'
+                      ? 'bg-white border-[#006699] ring-2 ring-[#006699] shadow-xs'
+                      : 'bg-white border-[#DCE7F2] hover:border-[#006699]'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-xs text-[#232A24]">
+                    <span className="font-bold text-xs text-[#0C2233]">
                       {card.name}
                     </span>
                     {currentZone ? (
-                      <span className="text-[11px] font-mono text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded-full font-semibold">
+                      <span className="text-[11px] font-mono text-[#006699] bg-[#E2EEF8] px-2 py-0.5 rounded-full font-semibold">
                         {zones.find((z) => z.id === currentZone)?.title}
                       </span>
                     ) : (
-                      <span className="text-[11px] font-mono text-[#59645C] bg-[#F7F8F4] px-2 py-0.5 rounded-full border border-[#E1E7E1]">
+                      <span className="text-[11px] font-mono text-[#4A6076] bg-[#F4F8FB] px-2 py-0.5 rounded-full border border-[#DCE7F2]">
                         Pendiente
                       </span>
                     )}
                   </div>
 
-                  <div className="p-3 bg-[#F7F8F4] rounded-xl font-mono text-xs overflow-x-auto whitespace-pre border border-[#E1E7E1] my-2 leading-relaxed">
+                  <div className="p-3 bg-[#F4F8FB] rounded-xl font-mono text-xs overflow-x-auto whitespace-pre border border-[#DCE7F2] my-2 leading-relaxed">
                     {card.code.split('\n').map((line, lIdx) => (
                       <div key={lIdx}>{renderProcessingLine(line, lIdx)}</div>
                     ))}
                   </div>
 
                   {/* Placement buttons */}
-                  <div className="pt-2.5 border-t border-[#E1E7E1]">
-                    <div className="text-[11px] text-[#59645C] mb-2 font-medium">
+                  <div className="pt-2.5 border-t border-[#DCE7F2]">
+                    <div className="text-[11px] text-[#4A6076] mb-2 font-medium">
                       Colocar en:
                     </div>
                     <div className="grid grid-cols-3 gap-1.5">
@@ -186,8 +186,8 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                           }}
                           className={`min-h-[40px] px-2 py-1 text-xs rounded-xl transition-colors font-medium border cursor-pointer ${
                             currentZone === zone.id
-                              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
-                              : 'bg-white text-[#232A24] hover:bg-[#E8EEE8] border-[#E1E7E1]'
+                              ? 'bg-[#006699] text-white border-[#006699] font-bold shadow-xs'
+                              : 'bg-white text-[#0C2233] hover:bg-[#E2EEF8] border-[#DCE7F2]'
                           }`}
                         >
                           {zone.title.split(' ')[0]}
@@ -201,8 +201,8 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
           </div>
 
           {/* Tokens inspection card for selected block */}
-          <div className="bg-white border border-[#E1E7E1] rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
-            <span className="text-xs font-bold text-[#232A24] block">
+          <div className="bg-white border border-[#DCE7F2] rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+            <span className="text-xs font-bold text-[#0C2233] block">
               Tokens en {selectedCard.name}:
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -221,8 +221,8 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                     }}
                     className={`min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-mono transition-colors border cursor-pointer ${
                       isTokSelected
-                        ? 'bg-[#407B5D] border-[#407B5D] text-white font-bold shadow-xs'
-                        : 'bg-[#F7F8F4] border-[#E1E7E1] text-[#232A24] hover:bg-[#E8EEE8]'
+                        ? 'bg-[#006699] border-[#006699] text-white font-bold shadow-xs'
+                        : 'bg-[#F4F8FB] border-[#DCE7F2] text-[#0C2233] hover:bg-[#E2EEF8]'
                     }`}
                   >
                     {token.text}
@@ -232,16 +232,16 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
             </div>
 
             {selectedToken && (
-              <div className="p-3 bg-[#F7F8F4] rounded-xl border border-[#E1E7E1] space-y-1 text-xs mt-2">
+              <div className="p-3 bg-[#F4F8FB] rounded-xl border border-[#DCE7F2] space-y-1 text-xs mt-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-[#232A24]">
+                  <span className="font-mono font-bold text-[#0C2233]">
                     {selectedToken.text}
                   </span>
-                  <span className="text-[10px] text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded-full font-mono font-semibold uppercase">
+                  <span className="text-[10px] text-[#006699] bg-[#E2EEF8] px-2 py-0.5 rounded-full font-mono font-semibold uppercase">
                     {selectedToken.label}
                   </span>
                 </div>
-                <p className="text-[#59645C] text-xs leading-relaxed pt-1">
+                <p className="text-[#4A6076] text-xs leading-relaxed pt-1">
                   {selectedToken.explanation}
                 </p>
               </div>
@@ -253,17 +253,17 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
         <div className="lg:col-span-7 space-y-6">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#59645C]">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#4A6076]">
                 Esqueleto de la clase Gato
               </h3>
-              <span className="text-xs text-[#59645C] font-mono">
+              <span className="text-xs text-[#4A6076] font-mono">
                 {Object.keys(placements).length}/{ETAPA2_CARDS.length} ubicadas
               </span>
             </div>
 
-            <div className="bg-white border border-[#E1E7E1] rounded-2xl p-5 font-mono text-xs space-y-4 shadow-xs">
-              <div className="text-[#232A24] font-bold text-sm">
-                <span className="text-[#E6B65A] font-bold">class</span> Gato <span className="text-[#59645C] font-bold">{'{'}</span>
+            <div className="bg-white border border-[#DCE7F2] rounded-2xl p-5 font-mono text-xs space-y-4 shadow-xs">
+              <div className="text-[#0C2233] font-bold text-sm">
+                <span className="text-[#E6B65A] font-bold">class</span> Gato <span className="text-[#4A6076] font-bold">{'{'}</span>
               </div>
 
               {/* Drop Zones */}
@@ -284,21 +284,21 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                     }}
                     className={`p-4 rounded-xl border border-dashed transition-colors ml-2 sm:ml-4 ${
                       cardsInZone.length > 0
-                        ? 'border-[#407B5D] bg-[#E8EEE8]/30'
-                        : 'border-[#E1E7E1] bg-[#F7F8F4]/50 hover:border-[#407B5D]'
+                        ? 'border-[#006699] bg-[#E2EEF8]/30'
+                        : 'border-[#DCE7F2] bg-[#F4F8FB]/50 hover:border-[#006699]'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#59645C] italic text-[11px] font-sans">
+                      <span className="text-[#4A6076] italic text-[11px] font-sans">
                         {zone.label}
                       </span>
-                      <span className="text-[11px] text-[#407B5D] font-mono font-semibold">
+                      <span className="text-[11px] text-[#006699] font-mono font-semibold">
                         {cardsInZone.length} bloque(s)
                       </span>
                     </div>
 
                     {cardsInZone.length === 0 ? (
-                      <div className="py-4 text-center text-[#59645C] text-xs font-sans">
+                      <div className="py-4 text-center text-[#4A6076] text-xs font-sans">
                         Arrastra o pulsa un botón para ubicar aquí
                       </div>
                     ) : (
@@ -309,11 +309,11 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                             onClick={() => setSelectedCardId(card.id)}
                             className={`p-3 rounded-xl bg-white border transition-all cursor-pointer ${
                               selectedCardId === card.id
-                                ? 'border-[#407B5D] text-[#232A24] shadow-xs ring-1 ring-[#407B5D]'
-                                : 'border-[#E1E7E1] text-[#232A24] hover:border-[#407B5D]'
+                                ? 'border-[#006699] text-[#0C2233] shadow-xs ring-1 ring-[#006699]'
+                                : 'border-[#DCE7F2] text-[#0C2233] hover:border-[#006699]'
                             }`}
                           >
-                            <span className="text-xs font-sans font-bold text-[#232A24] block mb-1">
+                            <span className="text-xs font-sans font-bold text-[#0C2233] block mb-1">
                               {card.name}
                             </span>
                             <div className="text-xs whitespace-pre overflow-x-auto font-mono leading-relaxed">
@@ -329,7 +329,7 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
                 );
               })}
 
-              <div className="text-[#59645C] font-bold text-sm">{'}'}</div>
+              <div className="text-[#4A6076] font-bold text-sm">{'}'}</div>
             </div>
           </div>
 
@@ -352,7 +352,7 @@ export const Stage2Placement: React.FC<Stage2Props> = ({
           <div className="flex items-center justify-end pt-2">
             <button
               onClick={onGoNext}
-              className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+              className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#006699] hover:bg-[#00507A] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <span>Ir a Etapa 3: Completar sintaxis</span>
               <ArrowRight className="w-4 h-4" />

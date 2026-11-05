@@ -3,29 +3,30 @@
 @layer base {
   :root {
     color-scheme: light;
-    /* Processing Education */
-    --color-primary: #3169D8;
-    --color-primary-dark: #2447A4;
-    --color-primary-light: #B8D0FF;
+    /* Processing Official & Generative Design Palette */
+    --color-primary: #006699;
+    --color-primary-dark: #0C2233;
+    --color-primary-light: #E2EEF8;
 
-    /* Acentos generativos */
-    --color-lavender: #A78BE8;
-    --color-pink: #F3D9EA;
+    /* Processing Accents */
+    --color-accent-cyan: #0284C7;
+    --color-accent-amber: #E5A93C;
+    --color-accent-green: #10B981;
 
-    /* Superficies */
-    --color-background: #F6F8FF;
+    /* Surfaces */
+    --color-background: #F5F8FA;
     --color-surface: #FFFFFF;
-    --color-border: #DCE5F7;
+    --color-border: #DCE7F2;
 
-    /* Textos */
-    --color-text: #27365A;
-    --color-text-secondary: #5B6680;
+    /* Typography */
+    --color-text: #0C2233;
+    --color-text-secondary: #4A6076;
 
-    /* Tipografía */
+    /* Fonts */
     --font-interface: "Nunito", sans-serif;
     --font-code: "IBM Plex Mono", monospace;
 
-    /* Geometría */
+    /* Geometry */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
@@ -34,8 +35,8 @@
 
   body {
     font-family: var(--font-interface), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #F6F8FF;
-    color: #27365A;
+    background-color: #F5F8FA;
+    color: #0C2233;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -48,12 +49,12 @@
 
   /* Accessible and branded focus indicators */
   *:focus-visible {
-    outline: 2px solid #3169D8;
+    outline: 2px solid #006699;
     outline-offset: 2px;
   }
 }
 
-/* Subtle, elegant scrollbar for light theme */
+/* Subtle, elegant scrollbar for Processing light theme */
 pre::-webkit-scrollbar,
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
@@ -67,18 +68,18 @@ pre::-webkit-scrollbar-track,
 
 pre::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(39, 54, 90, 0.15);
+  background: rgba(12, 34, 51, 0.15);
   border-radius: 4px;
 }
 
 pre::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(39, 54, 90, 0.3);
+  background: rgba(12, 34, 51, 0.3);
 }
 
 /* Generative Design subtle dot grid */
 .generative-grid-subtle {
-  background-image: radial-gradient(#DCE5F7 1.5px, transparent 1.5px);
+  background-image: radial-gradient(#DCE7F2 1.5px, transparent 1.5px);
   background-size: 24px 24px;
 }
 
@@ -86,6 +87,6 @@ pre::-webkit-scrollbar-thumb:hover,
 .coord-tick {
   font-family: var(--font-code), monospace;
   font-size: 10px;
-  color: #5B6680;
+  color: #4A6076;
   letter-spacing: 0.05em;
 }

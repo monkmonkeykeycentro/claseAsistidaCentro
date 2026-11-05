@@ -15,6 +15,11 @@ import React from 'react';
 export const PROCESSING_KEYWORDS = new Set([
   'class',
   'void',
+  'function',
+  'let',
+  'const',
+  'var',
+  'constructor',
   'new',
   'this',
   'return',
@@ -58,6 +63,11 @@ export const PROCESSING_TYPES = new Set([
 export const PROCESSING_FUNCTIONS = new Set([
   'setup',
   'draw',
+  'createCanvas',
+  'createVector',
+  'createGraphics',
+  'windowWidth',
+  'windowHeight',
   'size',
   'background',
   'fill',

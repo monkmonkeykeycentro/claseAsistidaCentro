@@ -514,17 +514,17 @@ ${
   const currentGuide = STAGE_SKETCH_NOTES[currentStageIdx] || STAGE_SKETCH_NOTES[6];
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl overflow-hidden flex flex-col shadow-xs">
+    <div className="bg-[#FFFFFF] border border-[#DCE7F2] rounded-2xl overflow-hidden flex flex-col shadow-xs">
       {/* 1. Header with 2 Distinct Tabs & File Action Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-3 bg-[#F7F8F4] border-b border-[#E1E7E1]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-3 bg-[#F4F8FB] border-b border-[#DCE7F2]">
         {/* 2 Tabs: Main Sketch vs Class */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveTab('sketch')}
             className={`min-h-[36px] px-3.5 py-1 text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'sketch'
-                ? 'bg-[#407B5D] text-white font-bold shadow-xs'
-                : 'bg-[#FFFFFF] hover:bg-[#E8EEE8]/40 text-[#59645C] border border-[#E1E7E1]'
+                ? 'bg-[#006699] text-white font-bold shadow-xs'
+                : 'bg-[#FFFFFF] hover:bg-[#E2EEF8]/40 text-[#4A6076] border border-[#DCE7F2]'
             }`}
           >
             <Code2 className="w-4 h-4 text-white" />
@@ -536,8 +536,8 @@ ${
             onClick={() => setActiveTab('class')}
             className={`min-h-[36px] px-3.5 py-1 text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'class'
-                ? 'bg-[#407B5D] text-white font-bold shadow-xs'
-                : 'bg-[#FFFFFF] hover:bg-[#E8EEE8]/40 text-[#59645C] border border-[#E1E7E1]'
+                ? 'bg-[#006699] text-white font-bold shadow-xs'
+                : 'bg-[#FFFFFF] hover:bg-[#E2EEF8]/40 text-[#4A6076] border border-[#DCE7F2]'
             }`}
           >
             <FileCode className="w-4 h-4 text-[#E6B65A]" />
@@ -550,17 +550,17 @@ ${
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => handleCopy('active', currentCode)}
-            className="min-h-[36px] px-3 py-1 bg-[#FFFFFF] hover:bg-[#E8EEE8]/40 border border-[#E1E7E1] rounded-xl text-[#232A24] text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="min-h-[36px] px-3 py-1 bg-[#FFFFFF] hover:bg-[#E2EEF8]/40 border border-[#DCE7F2] rounded-xl text-[#0C2233] text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
             title={`Copiar ${activeTab === 'sketch' ? 'Sketch.pde' : className + '.pde'} al portapapeles`}
           >
             {copiedType === 'active' ? (
               <>
-                <Check className="w-3.5 h-3.5 text-[#407B5D]" />
-                <span className="font-bold text-[#407B5D]">¡Copiado!</span>
+                <Check className="w-3.5 h-3.5 text-[#006699]" />
+                <span className="font-bold text-[#006699]">¡Copiado!</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-[#59645C]" />
+                <Copy className="w-3.5 h-3.5 text-[#4A6076]" />
                 <span>Copiar {activeTab === 'sketch' ? 'Sketch' : className}</span>
               </>
             )}
@@ -568,7 +568,7 @@ ${
 
           <button
             onClick={handleDownloadActive}
-            className="min-h-[36px] px-3.5 py-1 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+            className="min-h-[36px] px-3.5 py-1 bg-[#006699] hover:bg-[#00507A] text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
             title={`Descargar archivo individual ${activeTab === 'sketch' ? 'Sketch.pde' : className + '.pde'}`}
           >
             <Download className="w-3.5 h-3.5" />
@@ -577,10 +577,10 @@ ${
 
           <button
             onClick={handleDownloadBoth}
-            className="min-h-[36px] px-3 py-1 bg-[#FFFFFF] hover:bg-[#E8EEE8]/40 border border-[#E1E7E1] rounded-xl text-[#232A24] text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="min-h-[36px] px-3 py-1 bg-[#FFFFFF] hover:bg-[#E2EEF8]/40 border border-[#DCE7F2] rounded-xl text-[#0C2233] text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
             title="Descargar ambos archivos separados (Sketch.pde y clase .pde) para Processing IDE"
           >
-            <Layers className="w-3.5 h-3.5 text-[#59645C]" />
+            <Layers className="w-3.5 h-3.5 text-[#4A6076]" />
             <span className="hidden sm:inline">Descargar Ambos</span>
             <span className="sm:hidden">Ambos</span>
           </button>
@@ -588,9 +588,9 @@ ${
       </div>
 
       {/* Processing Multi-Tab Architecture Explanatory Banner */}
-      <div className="px-4 py-2.5 bg-[#F7F8F4] border-b border-[#E1E7E1] text-xs flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[#59645C]">
-          <span className="bg-[#E8EEE8] text-[#407B5D] font-bold text-[10px] px-2 py-0.5 rounded-md shrink-0">
+      <div className="px-4 py-2.5 bg-[#F4F8FB] border-b border-[#DCE7F2] text-xs flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[#4A6076]">
+          <span className="bg-[#E2EEF8] text-[#006699] font-bold text-[10px] px-2 py-0.5 rounded-md shrink-0">
             ARQUITECTURA
           </span>
           <span className="text-xs leading-tight">
@@ -600,7 +600,7 @@ ${
               </>
             ) : (
               <>
-                <strong>{className}.pde:</strong> Archivo independiente de la clase. En Processing crea esta pestaña con <kbd className="bg-[#FFFFFF] px-1.5 py-0.5 border border-[#E1E7E1] rounded font-mono text-[10px]">Ctrl+Mayús+N</kbd>.
+                <strong>{className}.pde:</strong> Archivo independiente de la clase. En Processing crea esta pestaña con <kbd className="bg-[#FFFFFF] px-1.5 py-0.5 border border-[#DCE7F2] rounded font-mono text-[10px]">Ctrl+Mayús+N</kbd>.
               </>
             )}
           </span>
@@ -608,17 +608,17 @@ ${
       </div>
 
       {/* 2. Progressive Sketch & Class Evolution Guide Banner */}
-      <div className="px-4 py-2.5 bg-[#FFFFFF] border-b border-[#E1E7E1] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[#232A24]">
-          <span className="bg-[#E8EEE8] text-[#407B5D] text-[10px] font-bold px-2 py-0.5 rounded-md">
+      <div className="px-4 py-2.5 bg-[#FFFFFF] border-b border-[#DCE7F2] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[#0C2233]">
+          <span className="bg-[#E2EEF8] text-[#006699] text-[10px] font-bold px-2 py-0.5 rounded-md">
             Etapa 0{currentStageIdx + 1}
           </span>
           <span className="font-bold">{currentGuide.title}:</span>
-          <span className="text-[#59645C] truncate">{currentGuide.addition}</span>
+          <span className="text-[#4A6076] truncate">{currentGuide.addition}</span>
         </div>
 
-        <div className="text-xs text-[#59645C] flex items-center gap-1.5 shrink-0">
-          <Info className="w-3.5 h-3.5 text-[#59645C] shrink-0" />
+        <div className="text-xs text-[#4A6076] flex items-center gap-1.5 shrink-0">
+          <Info className="w-3.5 h-3.5 text-[#4A6076] shrink-0" />
           <span>{currentGuide.rationale}</span>
         </div>
       </div>
@@ -638,8 +638,8 @@ ${
                 key={idx}
                 className={`table-row transition-colors ${
                   isClassDecl || isNewInst
-                    ? 'bg-[#E8EEE8]/50 font-semibold'
-                    : 'hover:bg-[#F7F8F4]'
+                    ? 'bg-[#E2EEF8]/50 font-semibold'
+                    : 'hover:bg-[#F4F8FB]'
                 }`}
               >
                 {/* Line number */}
@@ -651,8 +651,8 @@ ${
                 <span
                   className={`table-cell whitespace-pre ${
                     isComment || isHeader
-                      ? 'text-[#59645C] font-mono text-[11px] italic'
-                      : 'text-[#232A24]'
+                      ? 'text-[#4A6076] font-mono text-[11px] italic'
+                      : 'text-[#0C2233]'
                   }`}
                 >
                   {highlightProcessingSyntax(line)}
@@ -664,11 +664,11 @@ ${
       </div>
 
       {/* 4. Footer Status Bar with Processing Architecture Note */}
-      <div className="px-4 py-2.5 bg-[#F7F8F4] border-t border-[#E1E7E1] text-xs text-[#59645C] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+      <div className="px-4 py-2.5 bg-[#F4F8FB] border-t border-[#DCE7F2] text-xs text-[#4A6076] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
-          <span className="text-[#232A24] font-semibold">Processing Java 4.3</span>
-          <span className="text-[#E1E7E1]">|</span>
+          <span className="w-2 h-2 rounded-full bg-[#006699] inline-block" />
+          <span className="text-[#0C2233] font-semibold">Processing Java 4.3</span>
+          <span className="text-[#DCE7F2]">|</span>
           <span>
             {activeTab === 'class'
               ? `Pestaña ${className}.pde (Definición independiente de la clase)`
@@ -676,7 +676,7 @@ ${
           </span>
         </div>
 
-        <div className="text-xs text-[#59645C]">
+        <div className="text-xs text-[#4A6076]">
           {activeTab === 'sketch' && 'setup() se ejecuta 1 vez · draw() se ejecuta a 60 fps'}
           {activeTab === 'class' && `${module.methods.length} métodos encapsulados en ${className}`}
         </div>
@@ -688,7 +688,7 @@ ${
 // Lightweight token highlighter for Processing Java
 function highlightProcessingSyntax(line: string): React.ReactNode {
   if (line.trim().startsWith('//')) {
-    return <span className="text-[#59645C] italic">{line}</span>;
+    return <span className="text-[#4A6076] italic">{line}</span>;
   }
 
   // Tokens regex including noise, frameCount, width, height
@@ -699,14 +699,14 @@ function highlightProcessingSyntax(line: string): React.ReactNode {
   return parts.map((part, pIdx) => {
     if (['class', 'new', 'for', 'if', 'else', 'return'].includes(part)) {
       return (
-        <span key={pIdx} className="text-[#407B5D] font-bold">
+        <span key={pIdx} className="text-[#006699] font-bold">
           {part}
         </span>
       );
     }
     if (['float', 'color', 'int', 'boolean', 'String', 'void'].includes(part)) {
       return (
-        <span key={pIdx} className="text-[#232A24] font-bold">
+        <span key={pIdx} className="text-[#0C2233] font-bold">
           {part}
         </span>
       );
@@ -733,14 +733,14 @@ function highlightProcessingSyntax(line: string): React.ReactNode {
       ].includes(part)
     ) {
       return (
-        <span key={pIdx} className="text-[#232A24] font-semibold underline decoration-[#E1E7E1] decoration-1">
+        <span key={pIdx} className="text-[#0C2233] font-semibold underline decoration-[#DCE7F2] decoration-1">
           {part}
         </span>
       );
     }
     if (['{', '}', '(', ')', ';', '=', '+', '-', '*', '/'].includes(part)) {
       return (
-        <span key={pIdx} className="text-[#59645C] font-bold">
+        <span key={pIdx} className="text-[#4A6076] font-bold">
           {part}
         </span>
       );

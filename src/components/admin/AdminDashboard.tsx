@@ -6,6 +6,9 @@ import {
   CmsMediaResource,
   CmsRevision,
   CurriculumExportData,
+  HeaderNavigationItem,
+  DEFAULT_HEADER_NAVIGATION,
+  NavigationTarget,
 } from '../../types/cms';
 import {
   getCmsModules,
@@ -26,10 +29,19 @@ import {
   importCurriculumBackup,
   getCmsRevisions,
   seedCmsFromExistingContentIfEmpty,
+  getHeaderNavigation,
+  saveHeaderNavigation,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
-import { AppUser, isUserAdmin } from '../../services/firebase';
+import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
+import { AppUser, isUserAdmin, db } from '../../services/firebase';
 import { describeCmsError } from '../../utils/cmsErrors';
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import {
+  PilotEvidenceRecord,
+  CoordinateEvidence,
+  ConditionalEvidence,
+} from '../../types/pilotExercises';
 import {
   Layers,
   BookOpen,
@@ -58,12 +70,21 @@ import {
   Save,
   RotateCcw,
   User,
+  FileCheck,
+  Compass,
+  Code2,
+  Filter,
+  Check,
+  Menu,
+  Film,
+  Sliders,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
   currentUser: AppUser | null;
   onExitAdmin: () => void;
   onPreviewAsStudent: () => void;
+  onOpenExerciseInRunner?: (unitId: 'u1' | 'u2' | 'u3', exerciseId: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
@@ -75,8 +96,15 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   onExitAdmin,
   onPreviewAsStudent,
+  onOpenExerciseInRunner,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'site_texts' | 'media' | 'history'>('content');
+  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'navigation' | 'content' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
+  const [navItems, setNavItems] = useState<HeaderNavigationItem[]>(DEFAULT_HEADER_NAVIGATION);
+  const [isSavingNav, setIsSavingNav] = useState<boolean>(false);
+  const [navSuccessMessage, setNavSuccessMessage] = useState<string>('');
+  const [evidenceList, setEvidenceList] = useState<PilotEvidenceRecord[]>([]);
+  const [evidenceFilter, setEvidenceFilter] = useState<'all' | 'coordinates' | 'conditionals'>('all');
+  const [selectedEvidence, setSelectedEvidence] = useState<PilotEvidenceRecord | null>(null);
   const [modules, setModules] = useState<CmsModule[]>([]);
   const [lessons, setLessons] = useState<CmsLesson[]>([]);
   const [siteContent, setSiteContent] = useState<Record<string, CmsSiteContent>>({});
@@ -166,6 +194,14 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       });
       setSiteTextDrafts(drafts);
 
+      // 3b. Load Header Navigation
+      try {
+        const nav = await getHeaderNavigation();
+        setNavItems(nav);
+      } catch (navErr) {
+        console.warn('Could not load header navigation:', navErr);
+      }
+
       // 4. Load media & revisions
       operation = 'cargar los recursos multimedia';
       const media = await getCmsMediaResources();
@@ -173,6 +209,93 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       operation = 'cargar el historial administrativo';
       const revs = await getCmsRevisions();
       setRevisions(revs);
+
+      // 6. Load Student Evidences
+      try {
+        const loadedEvidences: PilotEvidenceRecord[] = [];
+        try {
+          const usersSnap = await getDocs(collection(db, 'users'));
+          for (const uDoc of usersSnap.docs) {
+            const uData = uDoc.data();
+            try {
+              const coordSnap = await getDoc(
+                doc(db, 'users', uDoc.id, 'pilot_evidences', 'coordinates')
+              );
+              if (coordSnap.exists()) {
+                const cData = coordSnap.data();
+                loadedEvidences.push({
+                  id: `ev_coord_${uDoc.id}`,
+                  exerciseId: 'coordinates',
+                  userId: uDoc.id,
+                  userEmail: uData.email || 'Estudiante',
+                  userName: uData.displayName || 'Estudiante',
+                  data: cData as CoordinateEvidence,
+                  submittedAt: cData.submittedAt || cData.updatedAt || new Date().toISOString(),
+                });
+              }
+              const condSnap = await getDoc(
+                doc(db, 'users', uDoc.id, 'pilot_evidences', 'conditionals')
+              );
+              if (condSnap.exists()) {
+                const cnData = condSnap.data();
+                loadedEvidences.push({
+                  id: `ev_cond_${uDoc.id}`,
+                  exerciseId: 'conditionals',
+                  userId: uDoc.id,
+                  userEmail: uData.email || 'Estudiante',
+                  userName: uData.displayName || 'Estudiante',
+                  data: cnData as ConditionalEvidence,
+                  submittedAt: cnData.submittedAt || cnData.updatedAt || new Date().toISOString(),
+                });
+              }
+            } catch {
+              // ignore subcollection error
+            }
+          }
+        } catch {
+          // ignore users listing error
+        }
+
+        // Also merge local storage evidence for instant preview
+        try {
+          const locCoord = localStorage.getItem('pilot_coordinate_evidence');
+          if (locCoord) {
+            const pCoord = JSON.parse(locCoord);
+            if (!loadedEvidences.some((e) => e.exerciseId === 'coordinates')) {
+              loadedEvidences.push({
+                id: 'ev_coord_local',
+                exerciseId: 'coordinates',
+                userId: currentUser?.uid || 'local',
+                userEmail: currentUser?.email || 'estudiante.demo@centro.edu.mx',
+                userName: currentUser?.displayName || 'Estudiante de Prueba',
+                data: pCoord,
+                submittedAt: pCoord.updatedAt || new Date().toISOString(),
+              });
+            }
+          }
+          const locCond = localStorage.getItem('pilot_conditional_evidence');
+          if (locCond) {
+            const pCond = JSON.parse(locCond);
+            if (!loadedEvidences.some((e) => e.exerciseId === 'conditionals')) {
+              loadedEvidences.push({
+                id: 'ev_cond_local',
+                exerciseId: 'conditionals',
+                userId: currentUser?.uid || 'local',
+                userEmail: currentUser?.email || 'estudiante.demo@centro.edu.mx',
+                userName: currentUser?.displayName || 'Estudiante de Prueba',
+                data: pCond,
+                submittedAt: pCond.updatedAt || new Date().toISOString(),
+              });
+            }
+          }
+        } catch {
+          // ignore
+        }
+
+        setEvidenceList(loadedEvidences);
+      } catch (evErr) {
+        console.warn('Could not load student evidences:', evErr);
+      }
     } catch (e) {
       console.error('Error loading CMS data:', e);
       setActionError(describeCmsError(e, operation));
@@ -184,6 +307,61 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     loadAll();
   }, []);
+
+  // Navigation & Apartados actions
+  const handleMoveNav = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= navItems.length) return;
+    const copy = [...navItems];
+    const [moved] = copy.splice(index, 1);
+    copy.splice(targetIndex, 0, moved);
+    setNavItems(copy.map((item, idx) => ({ ...item, position: idx })));
+  };
+
+  const handleUpdateNavItem = (index: number, updates: Partial<HeaderNavigationItem>) => {
+    setNavItems((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, ...updates } : item))
+    );
+  };
+
+  const handleAddNavItem = () => {
+    const newItem: HeaderNavigationItem = {
+      id: `nav_custom_${Date.now()}`,
+      label: 'Nuevo Apartado',
+      target: 'home',
+      visibleInHeader: true,
+      position: navItems.length,
+      description: 'Descripción del apartado',
+    };
+    setNavItems((prev) => [...prev, newItem]);
+  };
+
+  const handleDeleteNavItem = (index: number) => {
+    setNavItems((prev) =>
+      prev.filter((_, idx) => idx !== index).map((item, idx) => ({ ...item, position: idx }))
+    );
+  };
+
+  const handleResetNavItems = () => {
+    if (window.confirm('¿Deseas restaurar los apartados del header a su configuración predeterminada?')) {
+      setNavItems(DEFAULT_HEADER_NAVIGATION);
+    }
+  };
+
+  const handleSaveNav = async () => {
+    try {
+      setIsSavingNav(true);
+      setNavSuccessMessage('');
+      await saveHeaderNavigation(navItems);
+      setNavSuccessMessage('¡Configuración de apartados y header guardada exitosamente!');
+      setTimeout(() => setNavSuccessMessage(''), 4000);
+    } catch (err) {
+      console.error('Error saving navigation:', err);
+      alert('No se pudo guardar la configuración de navegación. Verifica tus permisos de administrador.');
+    } finally {
+      setIsSavingNav(false);
+    }
+  };
 
   // Module actions
   const handleOpenNewModule = () => {
@@ -502,7 +680,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           setEditingLesson(null);
           loadAll();
         }}
-        onLessonUpdated={(updated) => {
+        onLessonUpdated={(updated: CmsLesson) => {
           setEditingLesson(updated);
           setLessons(lessons.map((l) => (l.id === updated.id ? updated : l)));
         }}
@@ -597,7 +775,10 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="lg:col-span-3 space-y-4">
           <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
             {[
-              { id: 'content', label: 'Módulos y Lecciones', icon: Layers, count: modules.length },
+              { id: 'curriculum_units', label: 'Propuesta Unidades 1–3', icon: BookOpen, count: 14 },
+              { id: 'navigation', label: 'Apartados y Header', icon: Menu, count: navItems.length },
+              { id: 'content', label: 'Módulos y Lecciones (CMS)', icon: Layers, count: modules.length },
+              { id: 'evidences', label: 'Evidencias de Estudiantes', icon: FileCheck, count: evidenceList.length },
               { id: 'overview', label: 'Resumen & Estadísticas', icon: Sparkles },
               { id: 'site_texts', label: 'Textos Generales', icon: FileText },
               { id: 'media', label: 'Recursos Multimedia', icon: ImageIcon, count: mediaList.length },
@@ -648,6 +829,250 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Right Main Content Area (9 cols) */}
         <div className="lg:col-span-9 space-y-6">
+          {/* ========================================================================= */}
+          {/* TAB 0: PROPUESTA CURRICULAR U1–U3 (REVISIÓN DOCENTE)                     */}
+          {/* ========================================================================= */}
+          {activeTab === 'curriculum_units' && (
+            <AdminCurriculumUnitsView
+              adminEmail={currentUser?.email || undefined}
+              onPreviewAsStudent={onPreviewAsStudent}
+              onOpenExerciseInRunner={(uId, exId) => {
+                if (onOpenExerciseInRunner) {
+                  onOpenExerciseInRunner(uId, exId);
+                } else {
+                  window.location.hash = `#${exId}`;
+                }
+              }}
+            />
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: APARTADOS Y NAVEGACIÓN DEL HEADER                                    */}
+          {/* ========================================================================= */}
+          {activeTab === 'navigation' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              {/* Header Box */}
+              <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
+                    <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
+                      Estructura y Menús
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-extrabold text-[#232A24] tracking-tight">
+                    Personalización de Apartados y Header
+                  </h2>
+                  <p className="text-xs text-[#59645C] max-w-2xl leading-relaxed">
+                    Define qué apartados aparecen en la barra de navegación superior (computadora y móvil), con qué nombre visible y a qué contenido conducen.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={handleAddNavItem}
+                    className="min-h-[38px] px-3.5 py-1.5 rounded-xl border border-[#407B5D] text-[#407B5D] hover:bg-[#E8EEE8] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Agregar Apartado</span>
+                  </button>
+                  <button
+                    onClick={handleResetNavItems}
+                    className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] text-[#59645C] hover:text-[#232A24] hover:bg-[#F7F8F4] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Restaurar a los apartados iniciales"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Restaurar</span>
+                  </button>
+                  <button
+                    onClick={handleSaveNav}
+                    disabled={isSavingNav}
+                    className="min-h-[38px] px-4 py-1.5 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isSavingNav ? 'Guardando...' : 'Guardar Cambios'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {navSuccessMessage && (
+                <div className="p-3.5 bg-[#E8EEE8] border border-[#407B5D] text-[#232A24] text-xs font-semibold rounded-xl flex items-center gap-2 shadow-xs animate-in fade-in">
+                  <CheckCircle className="w-4 h-4 text-[#407B5D]" />
+                  <span>{navSuccessMessage}</span>
+                </div>
+              )}
+
+              {/* Real-time Header Preview Mockup */}
+              <div className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-2">
+                <div className="flex items-center justify-between text-xs text-[#59645C]">
+                  <span className="font-bold text-[#232A24] flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-[#407B5D]" />
+                    <span>Vista previa en vivo del Header</span>
+                  </span>
+                  <span className="font-mono text-[11px]">
+                    {navItems.filter((i) => i.visibleInHeader).length} de {navItems.length} apartados visibles
+                  </span>
+                </div>
+
+                <div className="bg-white border border-[#E1E7E1] rounded-xl p-3 shadow-2xs overflow-x-auto custom-scrollbar">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-[#407B5D] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                      CC
+                    </div>
+                    <span className="font-bold text-xs text-[#232A24] shrink-0 mr-2">Código Creativo</span>
+                    <div className="flex items-center gap-1.5">
+                      {navItems
+                        .filter((item) => item.visibleInHeader)
+                        .map((item, idx) => (
+                          <div
+                            key={item.id}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border whitespace-nowrap ${
+                              idx === 0
+                                ? 'bg-[#E8EEE8] text-[#407B5D] border-[#407B5D]/30 font-bold'
+                                : 'bg-[#F7F8F4] text-[#232A24] border-[#E1E7E1]'
+                            }`}
+                          >
+                            <span>{item.label}</span>
+                            {item.badge && (
+                              <span className="text-[10px] bg-white text-[#59645C] px-1.5 py-0.2 rounded border border-[#E1E7E1]">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* List of Configurable Apartados */}
+              <div className="space-y-3">
+                {navItems.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="p-4 bg-white border border-[#E1E7E1] hover:border-[#407B5D]/60 rounded-2xl shadow-xs space-y-3 transition-all"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3">
+                      {/* Left: Position & Reorder */}
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-6 h-6 rounded-lg bg-[#F7F8F4] border border-[#E1E7E1] text-[11px] font-mono font-bold text-[#59645C] flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleMoveNav(index, 'up')}
+                            disabled={index === 0}
+                            className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Mover arriba"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleMoveNav(index, 'down')}
+                            disabled={index === navItems.length - 1}
+                            className="p-1.5 rounded-lg border border-[#E1E7E1] hover:bg-[#E8EEE8] disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Mover abajo"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Visibility Toggle */}
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold ml-2">
+                          <input
+                            type="checkbox"
+                            checked={item.visibleInHeader}
+                            onChange={(e) => handleUpdateNavItem(index, { visibleInHeader: e.target.checked })}
+                            className="rounded border-[#E1E7E1] text-[#407B5D] focus:ring-[#407B5D] cursor-pointer"
+                          />
+                          <span className={item.visibleInHeader ? 'text-[#407B5D]' : 'text-[#8E8E89]'}>
+                            {item.visibleInHeader ? 'Visible en cabecera' : 'Oculto en cabecera'}
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDeleteNavItem(index)}
+                          className="p-1.5 rounded-lg border border-[#E1E7E1] text-[#8E8E89] hover:text-red-600 hover:border-red-300 transition-colors cursor-pointer"
+                          title="Eliminar apartado"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Field Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-1">
+                      {/* Name in header (4 cols) */}
+                      <div className="lg:col-span-4 space-y-1">
+                        <label className="text-[11px] font-bold text-[#232A24] block">
+                          Nombre visible en el Header
+                        </label>
+                        <input
+                          type="text"
+                          value={item.label}
+                          onChange={(e) => handleUpdateNavItem(index, { label: e.target.value })}
+                          placeholder="Ej. Caballo al Galope, Inicio, etc."
+                          className="w-full px-3 py-1.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] font-medium focus:outline-none focus:border-[#407B5D]"
+                        />
+                      </div>
+
+                      {/* Target selection (5 cols) */}
+                      <div className="lg:col-span-5 space-y-1">
+                        <label className="text-[11px] font-bold text-[#232A24] block">
+                          ¿Qué contiene / a qué conduce este apartado?
+                        </label>
+                        <select
+                          value={item.target}
+                          onChange={(e) => handleUpdateNavItem(index, { target: e.target.value as NavigationTarget })}
+                          className="w-full px-3 py-1.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] font-medium focus:outline-none focus:border-[#407B5D]"
+                        >
+                          <option value="home">Inicio (Vista Principal del Laboratorio)</option>
+                          <option value="horse">El Caballo al Galope (Muybridge 1878 - Discretización ASCII)</option>
+                          <option value="units">Unidades Curriculares 1, 2 y 3 (14 Prácticas)</option>
+                          <option value="oop-lab">Laboratorio POO (Pelota, Burbuja y Ruido Perlin)</option>
+                          <option value="class-designer">Diseñador de Clases (POO)</option>
+                          <option value="pilot">Módulo Piloto (Coordenadas, Condicionales y Video)</option>
+                          <option value="catalogue">Temario Curricular Completo (01 al 07)</option>
+                        </select>
+                      </div>
+
+                      {/* Badge / Tag (3 cols) */}
+                      <div className="lg:col-span-3 space-y-1">
+                        <label className="text-[11px] font-bold text-[#232A24] block">
+                          Insignia / Badge (opcional)
+                        </label>
+                        <input
+                          type="text"
+                          value={item.badge || ''}
+                          onChange={(e) => handleUpdateNavItem(index, { badge: e.target.value })}
+                          placeholder="Ej. 1878, 14, Nuevo"
+                          className="w-full px-3 py-1.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] font-mono focus:outline-none focus:border-[#407B5D]"
+                        />
+                      </div>
+
+                      {/* Description (12 cols) */}
+                      <div className="lg:col-span-12 space-y-1 pt-1">
+                        <label className="text-[11px] font-bold text-[#59645C] block">
+                          Descripción breve del contenido (mostrada en el menú móvil y ayuda)
+                        </label>
+                        <input
+                          type="text"
+                          value={item.description || ''}
+                          onChange={(e) => handleUpdateNavItem(index, { description: e.target.value })}
+                          placeholder="Breve resumen de lo que el estudiante encontrará aquí..."
+                          className="w-full px-3 py-1.5 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs text-[#59645C] focus:outline-none focus:border-[#407B5D]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ========================================================================= */}
           {/* TAB 1: MÓDULOS Y LECCIONES                                                */}
           {/* ========================================================================= */}
@@ -1303,6 +1728,185 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 6: EVIDENCIAS DE ESTUDIANTES (PILOTO)                                 */}
+          {/* ========================================================================= */}
+          {activeTab === 'evidences' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
+                <div>
+                  <h3 className="text-base font-bold text-[#232A24]">
+                    Evidencias de Estudiantes · Exploraciones con Processing
+                  </h3>
+                  <p className="text-xs text-[#59645C]">
+                    Revisa las hipótesis, código Processing Java escrito, pruebas de frontera y reflexiones pedagógicas registradas por los estudiantes.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center border border-[#E1E7E1] bg-white rounded-xl p-1 text-xs">
+                    <button
+                      onClick={() => setEvidenceFilter('all')}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        evidenceFilter === 'all'
+                          ? 'bg-[#407B5D] text-white'
+                          : 'text-[#59645C] hover:text-[#232A24]'
+                      }`}
+                    >
+                      Todos ({evidenceList.length})
+                    </button>
+                    <button
+                      onClick={() => setEvidenceFilter('coordinates')}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        evidenceFilter === 'coordinates'
+                          ? 'bg-[#407B5D] text-white'
+                          : 'text-[#59645C] hover:text-[#232A24]'
+                      }`}
+                    >
+                      01. Coordenadas ({evidenceList.filter((e) => e.exerciseId === 'coordinates').length})
+                    </button>
+                    <button
+                      onClick={() => setEvidenceFilter('conditionals')}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        evidenceFilter === 'conditionals'
+                          ? 'bg-[#407B5D] text-white'
+                          : 'text-[#59645C] hover:text-[#232A24]'
+                      }`}
+                    >
+                      02. Condicionales ({evidenceList.filter((e) => e.exerciseId === 'conditionals').length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {evidenceList.filter((e) => evidenceFilter === 'all' || e.exerciseId === evidenceFilter).length === 0 ? (
+                <div className="p-8 text-center text-xs text-[#59645C] bg-[#F7F8F4] rounded-2xl border border-dashed border-[#E1E7E1] space-y-2">
+                  <FileCheck className="w-8 h-8 text-[#8E8E89] mx-auto opacity-50" />
+                  <p className="font-semibold">No se encontraron evidencias registradas para este filtro.</p>
+                  <p className="text-[11px] text-[#8E8E89]">
+                    Cuando los estudiantes completen los ejercicios en &quot;Exploraciones con Processing&quot; y guarden su avance, aparecerán aquí automáticamente.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {evidenceList
+                    .filter((e) => evidenceFilter === 'all' || e.exerciseId === evidenceFilter)
+                    .map((ev) => {
+                      const isCoord = ev.exerciseId === 'coordinates';
+                      const coordData = isCoord ? (ev.data as CoordinateEvidence) : null;
+                      const condData = !isCoord ? (ev.data as ConditionalEvidence) : null;
+
+                      return (
+                        <div
+                          key={ev.id}
+                          className="p-5 bg-white border border-[#E1E7E1] rounded-2xl shadow-xs space-y-4 hover:border-[#407B5D]/60 transition-all"
+                        >
+                          {/* Header bar */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md ${
+                                    isCoord ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-[#EBF1FA] text-[#2868D9]'
+                                  }`}
+                                >
+                                  {isCoord ? 'EJERCICIO 01 · COORDENADAS' : 'EJERCICIO 02 · CONDICIONALES'}
+                                </span>
+                                <span className="text-xs font-bold text-[#232A24]">
+                                  {ev.userName} ({ev.userEmail})
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-[#59645C] font-mono">
+                                Enviado: {new Date(ev.submittedAt).toLocaleString()} · Etapa: {ev.data.currentStage || 'documentar'}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                                ev.data.completed
+                                  ? 'bg-[#E8EEE8] text-[#407B5D]'
+                                  : 'bg-[#FFF9EE] text-[#8A6318]'
+                              }`}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>{ev.data.completed ? 'Completado al 100%' : 'En Progreso'}</span>
+                            </span>
+                          </div>
+
+                          {/* Content details grid */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
+                            {/* Left Column: Prediction & Reflections */}
+                            <div className="space-y-3">
+                              <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1">
+                                <span className="font-bold text-[#232A24] block">1. Predicción del Estudiante:</span>
+                                <p className="text-[#59645C] leading-relaxed">
+                                  {ev.data.prediction || 'Sin respuesta de predicción.'}
+                                </p>
+                              </div>
+
+                              <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1">
+                                <span className="font-bold text-[#232A24] block">2. Reflexión Escrita:</span>
+                                <p className="text-[#59645C] leading-relaxed">
+                                  {ev.data.reflection || 'Sin reflexión registrada.'}
+                                </p>
+                              </div>
+
+                              {/* Testing verification indicators */}
+                              {isCoord && coordData && (
+                                <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1.5">
+                                  <span className="font-bold text-[#232A24] block">Metas de Coordenadas:</span>
+                                  <div className="grid grid-cols-3 gap-2 font-mono text-[10px]">
+                                    <div className={`p-1.5 rounded text-center font-bold ${coordData.targetHits?.circleAtCenter ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-white text-[#8E8E89]'}`}>
+                                      Centro: {coordData.targetHits?.circleAtCenter ? '✓' : '✗'}
+                                    </div>
+                                    <div className={`p-1.5 rounded text-center font-bold ${coordData.targetHits?.rectAtZone ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-white text-[#8E8E89]'}`}>
+                                      Rect (100,80): {coordData.targetHits?.rectAtZone ? '✓' : '✗'}
+                                    </div>
+                                    <div className={`p-1.5 rounded text-center font-bold ${coordData.targetHits?.lineAcross ? 'bg-[#E8EEE8] text-[#407B5D]' : 'bg-white text-[#8E8E89]'}`}>
+                                      Línea Y=200: {coordData.targetHits?.lineAcross ? '✓' : '✗'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {!isCoord && condData && condData.boundaryTests && (
+                                <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1.5">
+                                  <span className="font-bold text-[#232A24] block">Pruebas de Límites Ejecutadas:</span>
+                                  <div className="grid grid-cols-3 gap-1.5 font-mono text-[10px]">
+                                    {[199, 200, 201, 399, 400, 401].map((bx) => {
+                                      const t = condData.boundaryTests[bx];
+                                      return (
+                                        <div
+                                          key={bx}
+                                          className={`p-1 rounded text-center ${
+                                            t?.passed ? 'bg-[#E8EEE8] text-[#407B5D] font-bold' : 'bg-white text-[#8E8E89]'
+                                          }`}
+                                        >
+                                          X={bx}: {t?.passed ? 'OK ✓' : 'Pendiente'}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right Column: Processing Java Code Written */}
+                            <div className="space-y-1.5">
+                              <span className="font-bold text-[#232A24] block">Código Processing Java Enviado:</span>
+                              <pre className="p-3 bg-[#141414] text-[#FAF9F5] border border-[#232A24] rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto max-h-[220px]">
+                                <code>{ev.data.code || '// Sin código'}</code>
+                              </pre>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

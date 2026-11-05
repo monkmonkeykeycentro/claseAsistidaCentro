@@ -9,11 +9,16 @@ import { INITIAL_BUILDER_STATE } from './data/stageData';
 import { TOPICS_DATA, TopicItem } from './data/topicsData';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { FocusedWorkshopView } from './components/FocusedWorkshopView';
 import { TopicsCatalogueModal } from './components/TopicsCatalogueModal';
 import { TopicViewer } from './components/TopicViewer';
 import { AuthModal } from './components/AuthModal';
 import { OopLabView } from './components/oopLab/OopLabView';
+import { PilotExercisesView } from './components/pilot/PilotExercisesView';
+import { UnitActivitiesView } from './components/curriculum/UnitActivitiesView';
+import { ClassDesignerRoot } from './components/classDesigner/ClassDesignerRoot';
+import { VideoAsciiSplitCanvas } from './components/generative/VideoAsciiSplitCanvas';
 import {
   AppUser,
   subscribeToAuth,
@@ -44,7 +49,7 @@ const DEFAULT_PROGRESS: UserProgress = {
   stage4BuilderCustomized: false,
 };
 
-type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'admin';
+type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin' | 'class-designer' | 'horse';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>('home');
@@ -77,6 +82,9 @@ export default function App() {
   const dynamicTopic = displayedTopics.find((topic) => topic.id === currentTopicId) || null;
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [selectedCurriculumUnit, setSelectedCurriculumUnit] = useState<'u1' | 'u2' | 'u3'>('u1');
+  const [selectedCurriculumExercise, setSelectedCurriculumExercise] = useState<string | undefined>(undefined);
+
   const handleNavigateAdmin = () => {
     if (!canAdmin) return;
     setActiveView('admin');
@@ -94,7 +102,7 @@ export default function App() {
     }
   };
 
-  // URL route detection (#admin, #cms, ?admin, /admin) and keyboard shortcut (Ctrl+Shift+A)
+  // URL route detection (#admin, #cms, ?admin, /admin, #unidades, #u1, #u2, #u3) and keyboard shortcut (Ctrl+Shift+A)
   useEffect(() => {
     const checkAdminRoute = () => {
       const hash = window.location.hash.toLowerCase();
@@ -110,6 +118,64 @@ export default function App() {
         pathname.endsWith('/cms')
       )) {
         setActiveView('admin');
+        return;
+      }
+
+      if (
+        hash === '#unidades' ||
+        hash === '#unidad-1' ||
+        hash === '#unidad-2' ||
+        hash === '#unidad-3' ||
+        hash === '#u1' ||
+        hash === '#u2' ||
+        hash === '#u3' ||
+        hash === '#actividades' ||
+        search.has('units') ||
+        search.has('unidades')
+      ) {
+        if (hash === '#unidad-2' || hash === '#u2') setSelectedCurriculumUnit('u2');
+        else if (hash === '#unidad-3' || hash === '#u3') setSelectedCurriculumUnit('u3');
+        else if (hash === '#unidad-1' || hash === '#u1') setSelectedCurriculumUnit('u1');
+        setActiveView('units');
+        return;
+      }
+
+      if (
+        hash === '#exploraciones' ||
+        hash === '#piloto' ||
+        hash === '#coordenadas' ||
+        hash === '#condicionales' ||
+        hash === '#audiovisual' ||
+        search.has('pilot') ||
+        search.has('exploraciones')
+      ) {
+        setActiveView('pilot');
+        return;
+      }
+
+      if (
+        hash === '#disenador-clases' ||
+        hash === '#disenador' ||
+        hash === '#class-designer' ||
+        hash === '#herramientas' ||
+        search.has('disenador') ||
+        search.has('designer')
+      ) {
+        setActiveView('class-designer');
+        return;
+      }
+
+      if (
+        hash === '#caballo' ||
+        hash === '#caballo-galope' ||
+        hash === '#muybridge' ||
+        hash === '#horse' ||
+        hash === '#video-ascii' ||
+        search.has('horse') ||
+        search.has('caballo')
+      ) {
+        setActiveView('horse');
+        return;
       }
     };
 
@@ -361,17 +427,41 @@ export default function App() {
 
       <Header
         currentView={activeView === 'admin' && !canAdmin ? 'home' : activeView}
-        onNavigateHome={() => setActiveView('home')}
+        onNavigateHome={() => {
+          setActiveView('home');
+          if (window.location.hash.includes('caballo') || window.location.hash.includes('horse')) {
+            try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch { window.location.hash = ''; }
+          }
+        }}
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
         onNavigateOopLab={() => setActiveView('oop-lab')}
+        onNavigatePilot={() => setActiveView('pilot')}
+        onNavigateHorse={() => {
+          setActiveView('horse');
+          window.location.hash = '#caballo';
+        }}
+        onNavigateUnits={() => {
+          setSelectedCurriculumExercise(undefined);
+          setActiveView('units');
+          window.location.hash = '#unidades';
+        }}
+        onNavigateClassDesigner={() => {
+          setActiveView('class-designer');
+          window.location.hash = '#disenador-clases';
+        }}
         onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         isSyncing={isSyncing}
         topicCount={displayedTopics.length}
+        navigationItems={siteContent?.headerNavigation}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <ErrorBoundary
+          fallbackTitle="Se produjo un error al cargar la vista activa"
+          onReset={() => setActiveView('home')}
+        >
         {/* VIEW 0: CMS Admin Dashboard */}
         {activeView === 'admin' && canAdmin && (
           <AdminDashboard
@@ -380,6 +470,12 @@ export default function App() {
             onPreviewAsStudent={() => {
               setIsStudentPreviewMode(true);
               setActiveView('home');
+            }}
+            onOpenExerciseInRunner={(uId, exId) => {
+              setSelectedCurriculumUnit(uId);
+              setSelectedCurriculumExercise(exId);
+              setActiveView('units');
+              window.location.hash = `#${exId}`;
             }}
           />
         )}
@@ -401,6 +497,21 @@ export default function App() {
               }
             }}
             onOpenOopLab={() => setActiveView('oop-lab')}
+            onOpenPilot={() => setActiveView('pilot')}
+            onOpenUnits={(unitId, exId) => {
+              if (unitId) setSelectedCurriculumUnit(unitId);
+              if (exId) setSelectedCurriculumExercise(exId);
+              setActiveView('units');
+              window.location.hash = unitId ? `#${unitId}` : '#unidades';
+            }}
+            onOpenClassDesigner={() => {
+              setActiveView('class-designer');
+              window.location.hash = '#disenador-clases';
+            }}
+            onNavigateHorse={() => {
+              setActiveView('horse');
+              window.location.hash = '#caballo';
+            }}
             progress={progress}
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -454,6 +565,142 @@ export default function App() {
             onOpenCatalogue={() => setIsCatalogueOpen(true)}
           />
         )}
+
+        {/* VIEW 5: Exploraciones con Processing (Secuencia Piloto de 3 Ejercicios) */}
+        {activeView === 'pilot' && (
+          <PilotExercisesView
+            onBackToHome={() => setActiveView('home')}
+            currentUser={currentUser}
+            configs={{
+              coordinates: {
+                id: 'coordinates',
+                title: siteContent?.pilotEx1Title || 'Sistemas de coordenadas',
+                subtitle: 'Del espacio a la forma',
+                objective:
+                  siteContent?.pilotEx1Objective ||
+                  'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+                instructions:
+                  'Explora la retícula cartesiana, predice posiciones, completa el código y valida las 3 metas.',
+                order: 0,
+                visible: true,
+                status: 'published',
+              },
+              conditionals: {
+                id: 'conditionals',
+                title: siteContent?.pilotEx2Title || 'Estructuras condicionales',
+                subtitle: 'Decisiones visuales',
+                objective:
+                  siteContent?.pilotEx2Objective ||
+                  'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.',
+                instructions:
+                  'Observa las tres zonas, anticipa el valor límite en X=200, escribe las bifurcaciones y ejecuta las 6 pruebas de frontera.',
+                order: 1,
+                visible: true,
+                status: 'published',
+              },
+              audiovisual: {
+                id: 'audiovisual',
+                title: siteContent?.pilotEx3Title || 'Discretización audiovisual: Video a ASCII',
+                subtitle: 'Instalación Interactiva Completa',
+                objective: 'Cuantización tipográfica de video en tiempo real.',
+                instructions:
+                  'Arrastra la división central <> para comparar original contra cuantización tipográfica.',
+                order: 2,
+                visible: true,
+                status: 'published',
+              },
+            }}
+          />
+        )}
+        {/* VIEW 6: Unidades y Actividades Curriculares (Unidad 1, 2 y 3) */}
+        {activeView === 'units' && (
+          <UnitActivitiesView
+            onBackToHome={() => setActiveView('home')}
+            currentUser={currentUser}
+            initialUnitId={selectedCurriculumUnit}
+            initialExerciseId={selectedCurriculumExercise}
+            isStudentPreviewMode={isStudentPreviewMode}
+          />
+        )}
+
+        {/* VIEW 7: Diseñador de Clases (POO) */}
+        {activeView === 'class-designer' && (
+          <ClassDesignerRoot
+            onBackToHome={() => {
+              setActiveView('home');
+              if (
+                window.location.hash === '#disenador-clases' ||
+                window.location.hash === '#disenador' ||
+                window.location.hash === '#class-designer' ||
+                window.location.hash === '#herramientas'
+              ) {
+                try {
+                  window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                } catch {
+                  window.location.hash = '';
+                }
+              }
+            }}
+            currentUser={currentUser}
+            onOpenCatalogue={() => setIsCatalogueOpen(true)}
+          />
+        {/* VIEW 8: Ejemplo Fundamental: El Caballo al Galope (Muybridge 1878) */}
+        {activeView === 'horse' && (
+          <section className="space-y-6 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setActiveView('home');
+                      window.location.hash = '';
+                    }}
+                    className="text-xs font-bold text-[#407B5D] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>← Inicio</span>
+                  </button>
+                  <span className="text-[#8E8E89]">/</span>
+                  <span className="text-[11px] font-mono font-bold uppercase bg-[#E8EEE8] text-[#407B5D] px-2.5 py-0.5 rounded">
+                    Ejemplo Fundamental · 1878
+                  </span>
+                  <span className="text-[11px] font-mono text-[#8A6318] bg-[#FDF5E6] px-2 py-0.5 rounded">
+                    Sallie Gardner at a Gallop
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#232A24] tracking-tight">
+                  El Caballo al Galope: Discretización de Video a ASCII
+                </h1>
+                <p className="text-xs sm:text-sm text-[#59645C] max-w-3xl leading-relaxed">
+                  Instalación interactiva basada en el histórico estudio de movimiento de Eadweard Muybridge. Arrastra la barra divisoria <code className="bg-[#E8EEE8] px-1.5 py-0.5 rounded font-mono font-bold text-[#232A24]">&lt;&gt;</code> para comparar el metraje original contra la cuantización tipográfica en Processing Java.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setActiveView('pilot');
+                    window.location.hash = '#piloto';
+                  }}
+                  className="px-3.5 py-2 border border-[#E1E7E1] hover:bg-[#E8EEE8] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer"
+                >
+                  Ver módulo piloto completo
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveView('home');
+                    window.location.hash = '';
+                  }}
+                  className="px-4 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+                >
+                  Volver al inicio
+                </button>
+              </div>
+            </div>
+
+            <VideoAsciiSplitCanvas defaultVideoSrc="/video.mp4" />
+          </section>
+        )}
+        </ErrorBoundary>
       </main>
 
       {/* Topics Catalogue Modal */}
@@ -466,6 +713,11 @@ export default function App() {
           Object.values(progress.stageCompleted).filter(Boolean).length
         }
         topics={displayedTopics}
+        onNavigateUnits={() => {
+          setSelectedCurriculumExercise(undefined);
+          setActiveView('units');
+          window.location.hash = '#unidades';
+        }}
       />
 
       {/* Auth Modal */}
@@ -493,6 +745,27 @@ export default function App() {
             </button>
             <span className="text-[#E1E7E1]">·</span>
             <button
+              onClick={() => {
+                setActiveView('class-designer');
+                window.location.hash = '#disenador-clases';
+              }}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors font-semibold"
+            >
+              Diseñador de Clases
+            </button>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
+              onClick={() => {
+                setSelectedCurriculumExercise(undefined);
+                setActiveView('units');
+                window.location.hash = '#unidades';
+              }}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors font-semibold"
+            >
+              Unidades 1-3
+            </button>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
               onClick={() => setIsCatalogueOpen(true)}
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
@@ -504,6 +777,13 @@ export default function App() {
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Laboratorio POO
+            </button>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
+              onClick={() => setActiveView('pilot')}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
+            >
+              Exploraciones
             </button>
           </div>
         </div>

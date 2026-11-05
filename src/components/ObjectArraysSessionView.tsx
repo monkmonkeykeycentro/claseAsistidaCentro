@@ -1041,33 +1041,33 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
   return (
     <div className="space-y-8 animate-in fade-in duration-150">
       {/* Top Breadcrumb Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E1E7E1]">
-        <div className="flex items-center gap-2 text-xs text-[#59645C]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DCE7F2]">
+        <div className="flex items-center gap-2 text-xs text-[#4A6076]">
           <button
             onClick={onNavigateHome}
-            className="hover:text-[#232A24] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-3 py-1.5 rounded-xl bg-white hover:bg-[#E8EEE8] text-[#232A24] border border-[#E1E7E1] cursor-pointer shadow-xs"
+            className="hover:text-[#0C2233] transition-colors font-medium flex items-center gap-1 min-h-[38px] px-3 py-1.5 rounded-xl bg-white hover:bg-[#E2EEF8] text-[#0C2233] border border-[#DCE7F2] cursor-pointer shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Inicio</span>
           </button>
-          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-[#DCE7F2]">/</span>
           <button
             onClick={onOpenCatalogue}
-            className="hover:text-[#232A24] transition-colors font-medium flex items-center gap-1 cursor-pointer"
+            className="hover:text-[#0C2233] transition-colors font-medium flex items-center gap-1 cursor-pointer"
           >
-            <BookOpen className="w-3.5 h-3.5 text-[#407B5D]" />
+            <BookOpen className="w-3.5 h-3.5 text-[#006699]" />
             <span>Temario</span>
           </button>
-          <span className="text-[#E1E7E1]">/</span>
-          <span className="text-[#59645C]">Programación Orientada a Objetos</span>
-          <span className="text-[#E1E7E1]">/</span>
-          <span className="text-[#232A24] font-bold">Tema 07 · Sesión Completa</span>
+          <span className="text-[#DCE7F2]">/</span>
+          <span className="text-[#4A6076]">Programación Orientada a Objetos</span>
+          <span className="text-[#DCE7F2]">/</span>
+          <span className="text-[#0C2233] font-bold">Tema 07 · Sesión Completa</span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigateTopic('classes')}
-            className="min-h-[38px] px-4 py-2 border border-[#E1E7E1] bg-[#FFFFFF] hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="min-h-[38px] px-4 py-2 border border-[#DCE7F2] bg-[#FFFFFF] hover:bg-[#E2EEF8] text-xs font-semibold text-[#0C2233] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <span>Taller previo: Anatomía de Clase (Tema 6)</span>
           </button>
@@ -1076,42 +1076,42 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
 
       {/* Hero Section */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#59645C]">
-          <span className="text-xs text-[#407B5D] font-bold bg-[#E8EEE8] px-2.5 py-0.5 rounded-full">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#4A6076]">
+          <span className="text-xs text-[#006699] font-bold bg-[#E2EEF8] px-2.5 py-0.5 rounded-full">
             Módulo Canónico 07
           </span>
-          <span className="text-[#E1E7E1]">·</span>
-          <span className="text-[#59645C] bg-[#FFFFFF] border border-[#E1E7E1] px-2.5 py-0.5 rounded-full font-mono text-[11px]">
+          <span className="text-[#DCE7F2]">·</span>
+          <span className="text-[#4A6076] bg-[#FFFFFF] border border-[#DCE7F2] px-2.5 py-0.5 rounded-full font-mono text-[11px]">
             Gato[] y ArrayList&lt;Gato&gt;
           </span>
-          <span className="text-[#E1E7E1]">·</span>
+          <span className="text-[#DCE7F2]">·</span>
           <span>Estudio & Laboratorio Interactivo</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#232A24]">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0C2233]">
           Arreglos y Colecciones de Objetos
         </h1>
 
-        <p className="text-sm sm:text-base text-[#59645C] max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base text-[#4A6076] max-w-3xl leading-relaxed">
           Diseña la clase con sus campos, constructor y métodos, programa reglas lógicas con{' '}
-          <code className="text-xs bg-[#FFFFFF] border border-[#E1E7E1] px-1.5 py-0.5 rounded-md font-mono text-[#232A24]">if</code>, conecta eventos de{' '}
-          <code className="text-xs bg-[#FFFFFF] border border-[#E1E7E1] px-1.5 py-0.5 rounded-md font-mono text-[#232A24]">mousePressed()</code> y{' '}
-          <code className="text-xs bg-[#FFFFFF] border border-[#E1E7E1] px-1.5 py-0.5 rounded-md font-mono text-[#232A24]">keyPressed()</code>, y alimenta el
+          <code className="text-xs bg-[#FFFFFF] border border-[#DCE7F2] px-1.5 py-0.5 rounded-md font-mono text-[#0C2233]">if</code>, conecta eventos de{' '}
+          <code className="text-xs bg-[#FFFFFF] border border-[#DCE7F2] px-1.5 py-0.5 rounded-md font-mono text-[#0C2233]">mousePressed()</code> y{' '}
+          <code className="text-xs bg-[#FFFFFF] border border-[#DCE7F2] px-1.5 py-0.5 rounded-md font-mono text-[#0C2233]">keyPressed()</code>, y alimenta el
           arreglo para simular enjambres vivos en Processing.
         </p>
       </div>
 
       {/* Segmented Tab Navigation Bar */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl max-w-full overflow-x-auto text-xs shadow-xs">
+      <div className="flex items-center gap-1.5 p-1.5 bg-[#FFFFFF] border border-[#DCE7F2] rounded-2xl max-w-full overflow-x-auto text-xs shadow-xs">
         <button
           onClick={() => setActiveTab('builder')}
           className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'builder'
-              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
-              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
+              ? 'bg-[#006699] text-white border-[#006699] font-bold shadow-xs'
+              : 'text-[#4A6076] hover:text-[#0C2233] border-transparent hover:bg-[#E2EEF8]'
           }`}
         >
-          <Sliders className={`w-4 h-4 ${activeTab === 'builder' ? 'text-white' : 'text-[#407B5D]'}`} />
+          <Sliders className={`w-4 h-4 ${activeTab === 'builder' ? 'text-white' : 'text-[#006699]'}`} />
           <span>Diseñar Clase & Eventos</span>
         </button>
 
@@ -1119,11 +1119,11 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
           onClick={() => setActiveTab('lab')}
           className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'lab'
-              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
-              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
+              ? 'bg-[#006699] text-white border-[#006699] font-bold shadow-xs'
+              : 'text-[#4A6076] hover:text-[#0C2233] border-transparent hover:bg-[#E2EEF8]'
           }`}
         >
-          <Sparkles className={`w-4 h-4 ${activeTab === 'lab' ? 'text-[#E6B65A]' : 'text-[#407B5D]'}`} />
+          <Sparkles className={`w-4 h-4 ${activeTab === 'lab' ? 'text-[#E6B65A]' : 'text-[#006699]'}`} />
           <span>Laboratorio de Enjambres</span>
         </button>
 
@@ -1131,8 +1131,8 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
           onClick={() => setActiveTab('memory')}
           className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'memory'
-              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
-              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
+              ? 'bg-[#006699] text-white border-[#006699] font-bold shadow-xs'
+              : 'text-[#4A6076] hover:text-[#0C2233] border-transparent hover:bg-[#E2EEF8]'
           }`}
         >
           <Cpu className="w-4 h-4" />
@@ -1143,8 +1143,8 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
           onClick={() => setActiveTab('guide')}
           className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'guide'
-              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
-              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
+              ? 'bg-[#006699] text-white border-[#006699] font-bold shadow-xs'
+              : 'text-[#4A6076] hover:text-[#0C2233] border-transparent hover:bg-[#E2EEF8]'
           }`}
         >
           <Code2 className="w-4 h-4" />
@@ -1155,8 +1155,8 @@ for (int i = particulas.size() - 1; i >= 0; i--) {
           onClick={() => setActiveTab('challenges')}
           className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'challenges'
-              ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
-              : 'text-[#59645C] hover:text-[#232A24] border-transparent hover:bg-[#E8EEE8]'
+              ? 'bg-[#006699] text-white border-[#006699] font-bold shadow-xs'
+              : 'text-[#4A6076] hover:text-[#0C2233] border-transparent hover:bg-[#E2EEF8]'
           }`}
         >
           <HelpCircle className="w-4 h-4" />

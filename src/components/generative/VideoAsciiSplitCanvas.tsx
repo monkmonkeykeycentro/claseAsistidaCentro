@@ -457,7 +457,7 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
         for (let i = 0; i < 7; i++) {
           const ox = offW * (0.15 + (i * 0.12)) + Math.sin(t * 1.5 + i) * 30;
           const oy = offH * 0.5 + Math.cos(t * 2 + i * 0.8) * 70;
-          offCtx.fillStyle = i % 2 === 0 ? '#407B5D' : '#E6B65A';
+          offCtx.fillStyle = i % 2 === 0 ? '#006699' : '#E6B65A';
           offCtx.beginPath();
           offCtx.arc(ox, oy, 16 + i * 4, 0, Math.PI * 2);
           offCtx.fill();
@@ -550,7 +550,7 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
       ctx.arc(division, midY, 16, 0, Math.PI * 2);
       ctx.fillStyle = '#FFFFFF';
       ctx.fill();
-      ctx.strokeStyle = '#232A24';
+      ctx.strokeStyle = '#0C2233';
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -574,7 +574,7 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative bg-[#111612] text-white rounded-2xl overflow-hidden shadow-lg border border-[#232A24] flex flex-col ${className}`}
+      className={`relative bg-[#111612] text-white rounded-2xl overflow-hidden shadow-lg border border-[#0C2233] flex flex-col ${className}`}
     >
       {/* Hidden HTML5 video element for pixel extraction */}
       <video
@@ -589,28 +589,28 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
         className="hidden"
       />
 
-      {/* Top Header / Bar */}
-      <div className="px-4 py-3 bg-[#1A221C] border-b border-[#2B382F] flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* Top Header / Bar — Processing IDE Palette */}
+      <div className="px-4 py-3 bg-[#0C2233] border-b border-[#1A3A54] flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D] animate-pulse" />
-          <span className="font-bold tracking-wide uppercase text-[#E8EEE8] text-[11px]">
-            Instalación Interactiva: Video a ASCII en Tiempo Real
+          <span className="w-2.5 h-2.5 rounded-full bg-[#38BDF8] animate-pulse" />
+          <span className="font-bold tracking-wide uppercase text-white text-[11px]">
+            Ascii Art
           </span>
-          <span className="text-[#59645C]">·</span>
-          <span className="text-[11px] text-[#E6B65A] font-medium hidden md:inline">
+          <span className="text-[#4D7295]">·</span>
+          <span className="text-[11px] text-[#E5A93C] font-medium hidden md:inline">
             Crédito: <em>Sallie Gardner at a Gallop</em> (1878) de Eadweard Muybridge
           </span>
         </div>
 
         {/* Source Switcher & Code Button */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-[#111612] border border-[#2B382F] rounded-lg p-0.5">
+          <div className="flex items-center bg-[#071520] border border-[#1A3A54] rounded-lg p-0.5">
             <button
               onClick={handleSelectDefaultVideo}
               className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                 sourceType === 'video_file'
-                  ? 'bg-[#407B5D] text-white'
-                  : 'text-[#A4C4B5] hover:text-white'
+                  ? 'bg-[#006699] text-white shadow-xs'
+                  : 'text-[#8BB7D8] hover:text-white'
               }`}
               title="Cargar video del servidor (/public/video.mp4)"
             >
@@ -622,8 +622,8 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
               onClick={handleToggleCamera}
               className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                 sourceType === 'camera'
-                  ? 'bg-[#407B5D] text-white'
-                  : 'text-[#A4C4B5] hover:text-white'
+                  ? 'bg-[#006699] text-white shadow-xs'
+                  : 'text-[#8BB7D8] hover:text-white'
               }`}
               title="Usar tu cámara web en vivo"
             >
@@ -635,20 +635,20 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
               onClick={handleSelectProcedural}
               className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                 sourceType === 'procedural'
-                  ? 'bg-[#407B5D] text-white'
-                  : 'text-[#A4C4B5] hover:text-white'
+                  ? 'bg-[#006699] text-white shadow-xs'
+                  : 'text-[#8BB7D8] hover:text-white'
               }`}
               title="Modo Generativo de Respaldo"
             >
-              <Sparkles className="w-3 h-3" />
+              <Sparkles className="w-3 h-3 text-[#E5A93C]" />
               <span>Generativo</span>
             </button>
 
             <label
               className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                 sourceType === 'user_upload'
-                  ? 'bg-[#407B5D] text-white'
-                  : 'text-[#A4C4B5] hover:text-white'
+                  ? 'bg-[#006699] text-white shadow-xs'
+                  : 'text-[#8BB7D8] hover:text-white'
               }`}
               title="Seleccionar un archivo MP4 desde tu computadora"
             >
@@ -665,9 +665,9 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
           <button
             onClick={() => setIsCodeModalOpen(true)}
-            className="min-h-[30px] px-3 py-1 bg-[#232E26] hover:bg-[#2F3D33] border border-[#3A4B3F] text-[#E8EEE8] font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            className="min-h-[30px] px-3 py-1 bg-[#102B42] hover:bg-[#163B5B] border border-[#1A3A54] text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
-            <Code2 className="w-3.5 h-3.5 text-[#E6B65A]" />
+            <Code2 className="w-3.5 h-3.5 text-[#E5A93C]" />
             <span>Ver Código Java</span>
           </button>
         </div>
@@ -726,26 +726,26 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
         </div>
       </div>
 
-      {/* Bottom Controls Bar */}
-      <div className="p-3 bg-[#1A221C] border-t border-[#2B382F] flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* Bottom Controls Bar — Processing IDE Console Style */}
+      <div className="p-3 bg-[#0C2233] border-t border-[#1A3A54] flex flex-wrap items-center justify-between gap-3 text-xs">
         {/* Left: Play/Pause & Quick Split Presets */}
         <div className="flex items-center gap-2 flex-wrap">
           {sourceType !== 'procedural' && (
             <button
               onClick={togglePlayPause}
-              className="min-h-[30px] px-3 py-1 rounded-lg bg-[#232E26] hover:bg-[#2F3D33] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#3A4B3F]"
+              className="min-h-[30px] px-3 py-1 rounded-lg bg-[#102B42] hover:bg-[#163B5B] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#1A3A54]"
               title={isPlaying ? 'Pausar video' : 'Reproducir video en bucle'}
             >
               {isPlaying ? (
-                <Pause className="w-3.5 h-3.5 text-[#E6B65A]" />
+                <Pause className="w-3.5 h-3.5 text-[#E5A93C]" />
               ) : (
-                <Play className="w-3.5 h-3.5 text-[#407B5D]" />
+                <Play className="w-3.5 h-3.5 text-[#38BDF8]" />
               )}
               <span>{isPlaying ? 'Pausar' : 'Reproducir'}</span>
             </button>
           )}
 
-          <span className="text-[#A4C4B5] text-[11px] mr-1 hidden sm:inline">División:</span>
+          <span className="text-[#8BB7D8] text-[11px] mr-1 hidden sm:inline">División:</span>
           {[
             { label: '0% (Todo ASCII)', val: 0 },
             { label: '25%', val: 0.25 },
@@ -758,8 +758,8 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
               onClick={() => setDivisionRatio(preset.val)}
               className={`px-2 py-1 rounded-md text-[10px] font-mono transition-colors cursor-pointer ${
                 Math.abs(divisionRatio - preset.val) < 0.05
-                  ? 'bg-[#407B5D] text-white font-bold'
-                  : 'bg-[#232E26] hover:bg-[#2F3D33] text-[#A4C4B5]'
+                  ? 'bg-[#006699] text-white font-bold'
+                  : 'bg-[#102B42] hover:bg-[#163B5B] text-[#8BB7D8]'
               }`}
             >
               {preset.label}
@@ -769,8 +769,8 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
         {/* Right: Parameter slider toggles */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-[#111612] px-3 py-1 rounded-lg border border-[#2B382F]">
-            <span className="text-[11px] text-[#A4C4B5] font-mono">Escala: {escala}px</span>
+          <div className="flex items-center gap-2 bg-[#071520] px-3 py-1 rounded-lg border border-[#1A3A54]">
+            <span className="text-[11px] text-[#8BB7D8] font-mono">Escala: {escala}px</span>
             <input
               type="range"
               min={6}
@@ -778,7 +778,7 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
               step={1}
               value={escala}
               onChange={(e) => setEscala(Number(e.target.value))}
-              className="w-20 accent-[#407B5D] cursor-pointer"
+              className="w-20 accent-[#006699] cursor-pointer"
               title="Resolución de la cuadrícula ASCII"
             />
           </div>
@@ -787,8 +787,8 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
             onClick={() => setShowConfigPanel(!showConfigPanel)}
             className={`min-h-[30px] px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
               showConfigPanel
-                ? 'bg-[#407B5D] border-[#407B5D] text-white'
-                : 'bg-[#232E26] hover:bg-[#2F3D33] border-[#3A4B3F] text-[#A4C4B5]'
+                ? 'bg-[#006699] border-[#006699] text-white'
+                : 'bg-[#102B42] hover:bg-[#163B5B] border-[#1A3A54] text-[#8BB7D8]'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -797,7 +797,7 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
           <button
             onClick={handleToggleFullscreen}
-            className="p-1.5 rounded-lg bg-[#232E26] hover:bg-[#2F3D33] text-[#A4C4B5] hover:text-white transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg bg-[#102B42] hover:bg-[#163B5B] text-[#8BB7D8] hover:text-white transition-colors cursor-pointer"
             title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -806,33 +806,33 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
       </div>
 
       {/* Video Credit & Historical Note Bar */}
-      <div className="px-4 py-2.5 bg-[#141A15] border-t border-[#232E26] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-[#A4C4B5]">
+      <div className="px-4 py-2.5 bg-[#071520] border-t border-[#1A3A54] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-[#8BB7D8]">
         <div className="flex items-center gap-2">
-          <Film className="w-3.5 h-3.5 text-[#E6B65A] shrink-0" />
+          <Film className="w-3.5 h-3.5 text-[#E5A93C] shrink-0" />
           <span>
-            Crédito de video: <strong className="text-[#E8EEE8] font-semibold italic">Sallie Gardner at a Gallop</strong> (1878) de <strong className="text-[#E8EEE8]">Eadweard Muybridge</strong>.
+            Crédito de video: <strong className="text-white font-semibold italic">Sallie Gardner at a Gallop</strong> (1878) de <strong className="text-white">Eadweard Muybridge</strong>.
           </span>
         </div>
-        <span className="text-[10px] text-[#A4C4B5] font-mono">
+        <span className="text-[10px] text-[#8BB7D8] font-mono">
           Reproducción continua en bucle (loop) · Discretización en tiempo real
         </span>
       </div>
 
       {/* Expandable Advanced Adjustments Panel */}
       {showConfigPanel && (
-        <div className="p-4 bg-[#141A15] border-t border-[#2B382F] space-y-3 animate-in fade-in">
+        <div className="p-4 bg-[#071520] border-t border-[#1A3A54] space-y-3 animate-in fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex-1 space-y-1">
-              <label className="text-[11px] font-bold text-[#E8EEE8] block">
+              <label className="text-[11px] font-bold text-white block">
                 Conjunto de Caracteres ASCII (Cadena <code>frase</code>):
               </label>
               <input
                 type="text"
                 value={frase}
                 onChange={(e) => setFrase(e.target.value)}
-                className="w-full px-3 py-1.5 bg-[#1F2721] border border-[#2B382F] rounded-lg text-xs font-mono text-[#E8EEE8] focus:outline-none focus:border-[#407B5D]"
+                className="w-full px-3 py-1.5 bg-[#0C2233] border border-[#1A3A54] rounded-lg text-xs font-mono text-white focus:outline-none focus:border-[#006699]"
               />
-              <span className="text-[10px] text-[#A4C4B5]">
+              <span className="text-[10px] text-[#8BB7D8]">
                 Los caracteres se ordenan de menor a mayor luminosidad (brillo muestreado del pixel).
               </span>
             </div>
@@ -840,13 +840,13 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setFrase(DEFAULT_FRASE)}
-                className="px-2.5 py-1.5 bg-[#232E26] hover:bg-[#2F3D33] text-[11px] text-[#A4C4B5] rounded-lg cursor-pointer"
+                className="px-2.5 py-1.5 bg-[#102B42] hover:bg-[#163B5B] text-[11px] text-[#8BB7D8] rounded-lg cursor-pointer"
               >
                 Restablecer frase
               </button>
               <button
                 onClick={() => setFrase(' .:-=+*#%@')}
-                className="px-2.5 py-1.5 bg-[#232E26] hover:bg-[#2F3D33] text-[11px] text-[#A4C4B5] rounded-lg cursor-pointer"
+                className="px-2.5 py-1.5 bg-[#102B42] hover:bg-[#163B5B] text-[11px] text-[#8BB7D8] rounded-lg cursor-pointer"
               >
                 ASCII Estándar
               </button>
@@ -858,26 +858,26 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
       {/* Processing Java Code Modal */}
       {isCodeModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-[#1A221C] border border-[#2B382F] w-full max-w-3xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-[#0C2233] border border-[#1A3A54] w-full max-w-3xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl">
             {/* Modal Header */}
-            <div className="p-4 bg-[#232E26] border-b border-[#2B382F] flex items-center justify-between">
+            <div className="p-4 bg-[#071520] border-b border-[#1A3A54] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Code2 className="w-5 h-5 text-[#E6B65A]" />
-                <h3 className="font-bold text-sm text-[#E8EEE8]">
+                <Code2 className="w-5 h-5 text-[#E5A93C]" />
+                <h3 className="font-bold text-sm text-white">
                   Código Fuente Original en Processing Java
                 </h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCopyCode}
-                  className="px-3 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+                  className="px-3 py-1.5 bg-[#006699] hover:bg-[#00507A] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
                 >
                   {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{isCopied ? '¡Copiado!' : 'Copiar Código'}</span>
                 </button>
                 <button
                   onClick={() => setIsCodeModalOpen(false)}
-                  className="p-1.5 text-[#A4C4B5] hover:text-white cursor-pointer rounded-lg hover:bg-white/10"
+                  className="p-1.5 text-[#8BB7D8] hover:text-white cursor-pointer rounded-lg hover:bg-white/10"
                 >
                   ✕
                 </button>
@@ -886,20 +886,20 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
             {/* Modal Body: Code + Explanations */}
             <div className="p-5 overflow-y-auto space-y-4 text-xs font-mono">
-              <div className="p-3 bg-[#111612] border border-[#2B382F] rounded-xl text-[#A4C4B5] space-y-1 font-sans">
-                <span className="font-bold text-[#E8EEE8] block">💡 Cómo funciona este sketch:</span>
+              <div className="p-3 bg-[#071520] border border-[#1A3A54] rounded-xl text-[#8BB7D8] space-y-1 font-sans">
+                <span className="font-bold text-white block">💡 Cómo funciona este sketch:</span>
                 <p className="text-[11px] leading-relaxed">
-                  1. Muestrea el búfer continuo de píxeles del video mediante <code className="text-[#E6B65A]">video.loadPixels()</code>.
+                  1. Muestrea el búfer continuo de píxeles del video mediante <code className="text-[#E5A93C]">video.loadPixels()</code>.
                   <br />
-                  2. Calcula la luminancia promedio: <code className="text-[#E6B65A]">(red(c) + green(c) + blue(c)) / 3</code>.
+                  2. Calcula la luminancia promedio: <code className="text-[#E5A93C]">(red(c) + green(c) + blue(c)) / 3</code>.
                   <br />
-                  3. Cuantiza el brillo para seleccionar un carácter de la cadena <code className="text-[#E6B65A]">frase</code>.
+                  3. Cuantiza el brillo para seleccionar un carácter de la cadena <code className="text-[#E5A93C]">frase</code>.
                   <br />
-                  4. Utiliza <code className="text-[#E6B65A]">clip(division, 0, width - division, height)</code> para aplicar el efecto solo a la derecha del puntero.
+                  4. Utiliza <code className="text-[#E5A93C]">clip(division, 0, width - division, height)</code> para aplicar el efecto solo a la derecha del puntero.
                 </p>
               </div>
 
-              <pre className="p-4 bg-[#111612] border border-[#2B382F] rounded-xl overflow-x-auto text-[12px] leading-relaxed text-[#D0DED4]">
+              <pre className="p-4 bg-[#040D14] border border-[#1A3A54] rounded-xl overflow-x-auto text-[12px] leading-relaxed text-[#D2E4F3]">
                 <code>{PROCESSING_JAVA_CODE}</code>
               </pre>
             </div>

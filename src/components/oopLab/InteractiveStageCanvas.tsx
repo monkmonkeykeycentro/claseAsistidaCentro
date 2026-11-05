@@ -34,11 +34,11 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
 
       // 1. Clear background — Friendly Generative palette
       if (isPelota) {
-        ctx.fillStyle = '#F7F8F4'; // Gentle generative canvas tone
+        ctx.fillStyle = '#F4F8FB'; // Gentle generative canvas tone
         ctx.fillRect(0, 0, width, height);
 
         // Subtle coordinate grid (every 50px)
-        ctx.strokeStyle = '#E1E7E1';
+        ctx.strokeStyle = '#DCE7F2';
         ctx.lineWidth = 1;
 
         for (let x = 50; x < width; x += 50) {
@@ -209,7 +209,7 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
           ctx.fill();
 
           // Outline
-          ctx.strokeStyle = '#232A24';
+          ctx.strokeStyle = '#0C2233';
           ctx.lineWidth = 1.5;
           ctx.stroke();
 
@@ -248,7 +248,7 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
         // Floating Aura if flotar() is active
         if (inst.isFloating) {
           ctx.save();
-          ctx.strokeStyle = isPelota ? '#407B5D' : '#E6B65A';
+          ctx.strokeStyle = isPelota ? '#006699' : '#E6B65A';
           ctx.lineWidth = 1.5;
           ctx.setLineDash([3, 4]);
           ctx.beginPath();
@@ -259,8 +259,8 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
 
         // Selection Target & Coordinate Callout
         if (isSelected) {
-          // Outer hairline bounding circle in #407B5D
-          ctx.strokeStyle = '#407B5D';
+          // Outer hairline bounding circle in #006699
+          ctx.strokeStyle = '#006699';
           ctx.lineWidth = 1.5;
           ctx.setLineDash([4, 3]);
           ctx.beginPath();
@@ -269,7 +269,7 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
           ctx.setLineDash([]);
 
           // Center origin crosshairs
-          ctx.strokeStyle = '#407B5D';
+          ctx.strokeStyle = '#006699';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(inst.x - 6, inst.y);
@@ -289,16 +289,16 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
           const badgeY = inst.y - radius - 24;
           
           ctx.fillStyle = '#FFFFFF';
-          ctx.strokeStyle = '#E1E7E1';
+          ctx.strokeStyle = '#DCE7F2';
           ctx.lineWidth = 1;
           ctx.fillRect(badgeX, badgeY, textW, 18);
           ctx.strokeRect(badgeX, badgeY, textW, 18);
 
-          ctx.fillStyle = '#232A24';
+          ctx.fillStyle = '#0C2233';
           ctx.fillText(posLabel, inst.x, inst.y - radius - 11);
         } else if (instances.length > 1) {
           // Index label for other instances in array
-          ctx.fillStyle = isPelota ? '#59645C' : 'rgba(255, 255, 255, 0.7)';
+          ctx.fillStyle = isPelota ? '#4A6076' : 'rgba(255, 255, 255, 0.7)';
           ctx.font = '10px "IBM Plex Mono", monospace';
           ctx.textAlign = 'center';
           ctx.fillText(`[${idx}]`, inst.x, inst.y - radius - 6);
@@ -346,16 +346,16 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
   const selectedInst = instances[selectedIndex] || instances[0];
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#E1E7E1] rounded-2xl overflow-hidden shadow-xs flex flex-col font-sans">
+    <div className="bg-[#FFFFFF] border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-xs flex flex-col font-sans">
       {/* Canvas Top Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#F7F8F4] border-b border-[#E1E7E1] text-xs">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#F4F8FB] border-b border-[#DCE7F2] text-xs">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D] inline-block" />
-          <span className="font-bold text-[#232A24]">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#006699] inline-block" />
+          <span className="font-bold text-[#0C2233]">
             Lienzo Cartesiano
           </span>
-          <span className="text-[#E1E7E1]">/</span>
-          <span className="text-[#59645C] text-[11px]">
+          <span className="text-[#DCE7F2]">/</span>
+          <span className="text-[#4A6076] text-[11px]">
             {instances.length > 1 ? `${instances.length} instancias [${selectedIndex}]` : 'Instancia única activa'}
           </span>
         </div>
@@ -363,15 +363,15 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
         {/* Multi-instance tab selector if array exists */}
         {instances.length > 1 && (
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-[#59645C] mr-1 hidden sm:inline font-medium">Índice:</span>
+            <span className="text-[11px] text-[#4A6076] mr-1 hidden sm:inline font-medium">Índice:</span>
             {instances.map((_, i) => (
               <button
                 key={i}
                 onClick={() => onSelectInstance(i)}
                 className={`min-h-[28px] px-2.5 py-0.5 rounded-lg font-mono text-[11px] border transition-colors cursor-pointer ${
                   i === selectedIndex
-                    ? 'bg-[#407B5D] text-white border-[#407B5D] font-bold shadow-xs'
-                    : 'bg-[#FFFFFF] hover:bg-[#E8EEE8] text-[#232A24] border-[#E1E7E1]'
+                    ? 'bg-[#006699] text-white border-[#006699] font-bold shadow-xs'
+                    : 'bg-[#FFFFFF] hover:bg-[#E2EEF8] text-[#0C2233] border-[#DCE7F2]'
                 }`}
               >
                 [{i}]
@@ -382,7 +382,7 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
       </div>
 
       {/* HTML5 Canvas with Generative Coordinates */}
-      <div className="relative bg-[#F7F8F4] flex items-center justify-center cursor-crosshair">
+      <div className="relative bg-[#F4F8FB] flex items-center justify-center cursor-crosshair">
         <canvas
           ref={canvasRef}
           width={500}
@@ -392,29 +392,29 @@ export const InteractiveStageCanvas: React.FC<InteractiveStageCanvasProps> = ({
         />
 
         {/* Minimalist coordinate callout strip */}
-        <div className="absolute top-2.5 right-2.5 px-3 py-1.5 bg-[#FFFFFF]/95 backdrop-blur-xs border border-[#E1E7E1] rounded-xl font-mono text-[10px] text-[#59645C] shadow-xs flex items-center gap-2">
+        <div className="absolute top-2.5 right-2.5 px-3 py-1.5 bg-[#FFFFFF]/95 backdrop-blur-xs border border-[#DCE7F2] rounded-xl font-mono text-[10px] text-[#4A6076] shadow-xs flex items-center gap-2">
           <span>x:{Math.round(selectedInst.x)}</span>
-          <span className="text-[#E1E7E1]">|</span>
+          <span className="text-[#DCE7F2]">|</span>
           <span>y:{Math.round(selectedInst.y)}</span>
-          <span className="text-[#E1E7E1]">|</span>
+          <span className="text-[#DCE7F2]">|</span>
           <span>ø:{Math.round(selectedInst.diametro)}px</span>
-          <span className="text-[#E1E7E1]">|</span>
-          <span className="text-[#407B5D] font-semibold">tX:{(selectedInst.tX ?? 0).toFixed(1)}</span>
-          <span className="text-[#E1E7E1]">|</span>
-          <span className="text-[#407B5D] font-semibold">tY:{(selectedInst.tY ?? (isPelota ? 500 : 1000)).toFixed(1)}</span>
+          <span className="text-[#DCE7F2]">|</span>
+          <span className="text-[#006699] font-semibold">tX:{(selectedInst.tX ?? 0).toFixed(1)}</span>
+          <span className="text-[#DCE7F2]">|</span>
+          <span className="text-[#006699] font-semibold">tY:{(selectedInst.tY ?? (isPelota ? 500 : 1000)).toFixed(1)}</span>
         </div>
       </div>
 
       {/* Canvas Bottom Status Bar */}
-      <div className="px-4 py-2.5 bg-[#F7F8F4] border-t border-[#E1E7E1] text-[11px] text-[#59645C] flex items-center justify-between">
+      <div className="px-4 py-2.5 bg-[#F4F8FB] border-t border-[#DCE7F2] text-[11px] text-[#4A6076] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[#232A24] font-medium font-mono text-[11px]">500 × 320 px</span>
-          <span className="text-[#E1E7E1]">/</span>
+          <span className="text-[#0C2233] font-medium font-mono text-[11px]">500 × 320 px</span>
+          <span className="text-[#DCE7F2]">/</span>
           <span>Haz clic en el lienzo para reposicionar</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#407B5D] inline-block" />
-          <span className="text-[#232A24] font-mono text-[11px]">60 FPS</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#006699] inline-block" />
+          <span className="text-[#0C2233] font-mono text-[11px]">60 FPS</span>
         </div>
       </div>
     </div>

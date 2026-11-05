@@ -296,13 +296,13 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
   return (
     <div className="space-y-8">
       {/* Stage Header */}
-      <div className="border-b border-[#E1E7E1] pb-6">
+      <div className="border-b border-[#DCE7F2] pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#407B5D] bg-[#E8EEE8] px-2.5 py-0.5 rounded-full inline-block mb-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#006699] bg-[#E2EEF8] px-2.5 py-0.5 rounded-full inline-block mb-1.5">
               Etapa 04
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#232A24]">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0C2233]">
               Construir la clase en Processing Java
             </h2>
           </div>
@@ -310,20 +310,20 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={() => setShowReferenceModal(true)}
-              className="min-h-[40px] px-4 py-2 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-white hover:bg-[#E2EEF8] border border-[#DCE7F2] text-[#0C2233] text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <Eye className="w-3.5 h-3.5 text-[#407B5D]" />
+              <Eye className="w-3.5 h-3.5 text-[#006699]" />
               <span>Ver referencia</span>
             </button>
             {isCompleted && (
-              <div className="flex items-center gap-1.5 text-xs text-[#407B5D] font-semibold py-1 bg-[#E8EEE8] px-3 rounded-full">
+              <div className="flex items-center gap-1.5 text-xs text-[#006699] font-semibold py-1 bg-[#E2EEF8] px-3 rounded-full">
                 <Check className="w-3.5 h-3.5" />
                 <span>Clase construida</span>
               </div>
             )}
           </div>
         </div>
-        <p className="text-sm text-[#59645C] mt-2 max-w-2xl leading-relaxed">
+        <p className="text-sm text-[#4A6076] mt-2 max-w-2xl leading-relaxed">
           Configura los atributos, constructor y métodos de tu clase. El código Processing Java se actualizará en tiempo real a la derecha.
         </p>
       </div>
@@ -333,12 +333,12 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
         {/* Left Column: Form & Configuration (6 cols) */}
         <div className="lg:col-span-6 space-y-6">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#59645C]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#4A6076]">
               Partes de la clase
             </span>
             <button
               onClick={handleReset}
-              className="text-xs text-[#59645C] hover:text-[#232A24] flex items-center gap-1 cursor-pointer font-medium"
+              className="text-xs text-[#4A6076] hover:text-[#0C2233] flex items-center gap-1 cursor-pointer font-medium"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reiniciar</span>
@@ -346,40 +346,40 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
           </div>
 
           {/* Form Card */}
-          <div className="bg-white border border-[#E1E7E1] rounded-2xl p-5 sm:p-6 space-y-5 shadow-xs">
+          <div className="bg-white border border-[#DCE7F2] rounded-2xl p-5 sm:p-6 space-y-5 shadow-xs">
             {/* 1. Nombre de la clase */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#232A24] uppercase tracking-wider">
+                <label className="text-xs font-bold text-[#0C2233] uppercase tracking-wider">
                   Nombre de la clase
                 </label>
-                <span className="text-[11px] text-[#59645C] font-mono">PascalCase</span>
+                <span className="text-[11px] text-[#4A6076] font-mono">PascalCase</span>
               </div>
               <input
                 type="text"
                 value={builder.className}
                 onChange={(e) => handleClassNameChange(e.target.value)}
                 placeholder="Gato"
-                className="w-full min-h-[44px] bg-white border border-[#E1E7E1] rounded-xl px-3.5 py-2 text-xs font-mono text-[#232A24] placeholder:text-[#59645C]/60 focus:outline-none focus:ring-1 focus:ring-[#407B5D] focus:border-[#407B5D]"
+                className="w-full min-h-[44px] bg-white border border-[#DCE7F2] rounded-xl px-3.5 py-2 text-xs font-mono text-[#0C2233] placeholder:text-[#4A6076]/60 focus:outline-none focus:ring-1 focus:ring-[#006699] focus:border-[#006699]"
               />
             </div>
 
             {/* 2. Atributos o campos */}
-            <div className="space-y-3 pt-3 border-t border-[#E1E7E1]">
+            <div className="space-y-3 pt-3 border-t border-[#DCE7F2]">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-[#232A24] uppercase tracking-wider block">
+                  <label className="text-xs font-bold text-[#0C2233] uppercase tracking-wider block">
                     Atributos o campos
                   </label>
-                  <span className="text-[11px] text-[#59645C]">
+                  <span className="text-[11px] text-[#4A6076]">
                     Variables terminadas en ;
                   </span>
                 </div>
                 <button
                   onClick={handleAddField}
-                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#E2EEF8] border border-[#DCE7F2] text-[#0C2233] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
-                  <Plus className="w-3.5 h-3.5 text-[#407B5D]" />
+                  <Plus className="w-3.5 h-3.5 text-[#006699]" />
                   <span>Agregar campo</span>
                 </button>
               </div>
@@ -388,12 +388,12 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                 {builder.fields.map((f) => (
                   <div
                     key={f.id}
-                    className="flex items-center gap-2 bg-[#F7F8F4] p-2.5 rounded-xl border border-[#E1E7E1]"
+                    className="flex items-center gap-2 bg-[#F4F8FB] p-2.5 rounded-xl border border-[#DCE7F2]"
                   >
                     <select
                       value={f.type}
                       onChange={(e) => handleFieldChange(f.id, 'type', e.target.value)}
-                      className="min-h-[40px] bg-white border border-[#E1E7E1] rounded-lg px-2.5 py-1 text-xs text-[#232A24] font-mono focus:outline-none"
+                      className="min-h-[40px] bg-white border border-[#DCE7F2] rounded-lg px-2.5 py-1 text-xs text-[#0C2233] font-mono focus:outline-none"
                     >
                       <option value="int">int</option>
                       <option value="float">float</option>
@@ -407,15 +407,15 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                       value={f.name}
                       onChange={(e) => handleFieldChange(f.id, 'name', e.target.value)}
                       placeholder="nombreAtributo"
-                      className="flex-1 min-h-[40px] bg-white border border-[#E1E7E1] rounded-lg px-3 py-1 text-xs text-[#232A24] font-mono focus:outline-none focus:ring-1 focus:ring-[#407B5D]"
+                      className="flex-1 min-h-[40px] bg-white border border-[#DCE7F2] rounded-lg px-3 py-1 text-xs text-[#0C2233] font-mono focus:outline-none focus:ring-1 focus:ring-[#006699]"
                     />
 
-                    <span className="text-[#59645C] font-mono">;</span>
+                    <span className="text-[#4A6076] font-mono">;</span>
 
                     {builder.fields.length > 1 && (
                       <button
                         onClick={() => handleRemoveField(f.id)}
-                        className="min-h-[40px] min-w-[40px] flex items-center justify-center text-[#59645C] hover:text-[#232A24] cursor-pointer"
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center text-[#4A6076] hover:text-[#0C2233] cursor-pointer"
                         title="Eliminar campo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -427,21 +427,21 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             </div>
 
             {/* 3. Parámetros del Constructor */}
-            <div className="space-y-3 pt-3 border-t border-[#E1E7E1]">
+            <div className="space-y-3 pt-3 border-t border-[#DCE7F2]">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-[#232A24] uppercase tracking-wider block">
+                  <label className="text-xs font-bold text-[#0C2233] uppercase tracking-wider block">
                     Parámetros del Constructor
                   </label>
-                  <span className="text-[11px] text-[#59645C] font-mono">
+                  <span className="text-[11px] text-[#4A6076] font-mono">
                     {builder.className}(...)
                   </span>
                 </div>
                 <button
                   onClick={handleAddParam}
-                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#E2EEF8] border border-[#DCE7F2] text-[#0C2233] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
-                  <Plus className="w-3.5 h-3.5 text-[#407B5D]" />
+                  <Plus className="w-3.5 h-3.5 text-[#006699]" />
                   <span>Agregar parámetro</span>
                 </button>
               </div>
@@ -450,13 +450,13 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                 {builder.constructorParams.map((p) => (
                   <div
                     key={p.id}
-                    className="p-3 rounded-xl bg-[#F7F8F4] border border-[#E1E7E1] space-y-2"
+                    className="p-3 rounded-xl bg-[#F4F8FB] border border-[#DCE7F2] space-y-2"
                   >
                     <div className="flex items-center gap-2">
                       <select
                         value={p.type}
                         onChange={(e) => handleParamChange(p.id, 'type', e.target.value)}
-                        className="min-h-[40px] bg-white border border-[#E1E7E1] rounded-lg px-2.5 py-1 text-xs text-[#232A24] font-mono focus:outline-none"
+                        className="min-h-[40px] bg-white border border-[#DCE7F2] rounded-lg px-2.5 py-1 text-xs text-[#0C2233] font-mono focus:outline-none"
                       >
                         <option value="int">int</option>
                         <option value="float">float</option>
@@ -470,13 +470,13 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                         value={p.name}
                         onChange={(e) => handleParamChange(p.id, 'name', e.target.value)}
                         placeholder="tempParam"
-                        className="flex-1 min-h-[40px] bg-white border border-[#E1E7E1] rounded-lg px-3 py-1 text-xs text-[#232A24] font-mono focus:outline-none focus:ring-1 focus:ring-[#407B5D]"
+                        className="flex-1 min-h-[40px] bg-white border border-[#DCE7F2] rounded-lg px-3 py-1 text-xs text-[#0C2233] font-mono focus:outline-none focus:ring-1 focus:ring-[#006699]"
                       />
 
                       {builder.constructorParams.length > 1 && (
                         <button
                           onClick={() => handleRemoveParam(p.id)}
-                          className="min-h-[40px] min-w-[40px] flex items-center justify-center text-[#59645C] hover:text-[#232A24] cursor-pointer"
+                          className="min-h-[40px] min-w-[40px] flex items-center justify-center text-[#4A6076] hover:text-[#0C2233] cursor-pointer"
                           title="Eliminar parámetro"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -484,14 +484,14 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-[#59645C] font-mono pt-1">
+                    <div className="flex items-center gap-2 text-[11px] text-[#4A6076] font-mono pt-1">
                       <span>Asignar a atributo:</span>
                       <select
                         value={p.targetFieldId}
                         onChange={(e) =>
                           handleParamChange(p.id, 'targetFieldId', e.target.value)
                         }
-                        className="min-h-[36px] bg-white border border-[#E1E7E1] rounded-lg px-2.5 py-1 text-xs text-[#232A24] font-mono focus:outline-none"
+                        className="min-h-[36px] bg-white border border-[#DCE7F2] rounded-lg px-2.5 py-1 text-xs text-[#0C2233] font-mono focus:outline-none"
                       >
                         {builder.fields.map((f) => (
                           <option key={f.id} value={f.id}>
@@ -506,21 +506,21 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             </div>
 
             {/* 4. Métodos */}
-            <div className="space-y-3 pt-3 border-t border-[#E1E7E1]">
+            <div className="space-y-3 pt-3 border-t border-[#DCE7F2]">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold text-[#232A24] uppercase tracking-wider block">
+                  <label className="text-xs font-bold text-[#0C2233] uppercase tracking-wider block">
                     Métodos (void)
                   </label>
-                  <span className="text-[11px] text-[#59645C] font-mono">
+                  <span className="text-[11px] text-[#4A6076] font-mono">
                     void nombreAccion(...) {'{ ... }'}
                   </span>
                 </div>
                 <button
                   onClick={handleAddMethod}
-                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#E2EEF8] border border-[#DCE7F2] text-[#0C2233] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
-                  <Plus className="w-3.5 h-3.5 text-[#407B5D]" />
+                  <Plus className="w-3.5 h-3.5 text-[#006699]" />
                   <span>Agregar método</span>
                 </button>
               </div>
@@ -529,29 +529,29 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                 {builder.methods.map((m) => (
                   <div
                     key={m.id}
-                    className="p-3 rounded-xl bg-[#F7F8F4] border border-[#E1E7E1] space-y-1.5 text-xs font-mono"
+                    className="p-3 rounded-xl bg-[#F4F8FB] border border-[#DCE7F2] space-y-1.5 text-xs font-mono"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-[#407B5D] font-bold italic">void</span>
+                      <span className="text-[#006699] font-bold italic">void</span>
                       <input
                         type="text"
                         value={m.name}
                         onChange={(e) => handleMethodNameChange(m.id, e.target.value)}
                         placeholder="nombreMetodo"
-                        className="flex-1 min-h-[40px] bg-white border border-[#E1E7E1] rounded-lg px-3 py-1 text-xs text-[#232A24] font-mono focus:outline-none focus:ring-1 focus:ring-[#407B5D]"
+                        className="flex-1 min-h-[40px] bg-white border border-[#DCE7F2] rounded-lg px-3 py-1 text-xs text-[#0C2233] font-mono focus:outline-none focus:ring-1 focus:ring-[#006699]"
                       />
-                      <span className="text-[#59645C]">()</span>
+                      <span className="text-[#4A6076]">()</span>
                       {builder.methods.length > 1 && (
                         <button
                           onClick={() => handleRemoveMethod(m.id)}
-                          className="min-h-[40px] min-w-[40px] flex items-center justify-center text-[#59645C] hover:text-[#232A24] cursor-pointer"
+                          className="min-h-[40px] min-w-[40px] flex items-center justify-center text-[#4A6076] hover:text-[#0C2233] cursor-pointer"
                           title="Eliminar método"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
-                    <div className="text-[11px] text-[#59645C] font-sans italic">
+                    <div className="text-[11px] text-[#4A6076] font-sans italic">
                       // {m.comment}
                     </div>
                   </div>
@@ -565,7 +565,7 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleReviewStructure}
-                className="min-h-[44px] w-full py-2.5 px-3 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                className="min-h-[44px] w-full py-2.5 px-3 rounded-xl bg-[#006699] hover:bg-[#00507A] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Revisar estructura</span>
@@ -576,25 +576,25 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                   handleNextHint();
                   setShowHintModal(true);
                 }}
-                className="min-h-[44px] w-full py-2.5 px-3 rounded-xl bg-white hover:bg-[#E8EEE8] border border-[#E1E7E1] text-[#232A24] font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                className="min-h-[44px] w-full py-2.5 px-3 rounded-xl bg-white hover:bg-[#E2EEF8] border border-[#DCE7F2] text-[#0C2233] font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
-                <HelpCircle className="w-4 h-4 text-[#407B5D]" />
+                <HelpCircle className="w-4 h-4 text-[#006699]" />
                 <span>Pista ({hintIndex + 1}/5)</span>
               </button>
             </div>
 
             {/* Hint Box */}
             {showHintModal && (
-              <div className="p-4 bg-[#FFF9EE] border border-[#E6B65A] rounded-2xl text-xs text-[#232A24] flex items-start justify-between shadow-xs">
+              <div className="p-4 bg-[#FFF9EE] border border-[#E6B65A] rounded-2xl text-xs text-[#0C2233] flex items-start justify-between shadow-xs">
                 <div>
                   <span className="font-bold text-[#8A6318] block mb-0.5">
                     Pista pedagógica #{hintIndex + 1}:
                   </span>
-                  <p className="text-[#59645C] leading-relaxed text-[12px]">{HINTS[hintIndex]}</p>
+                  <p className="text-[#4A6076] leading-relaxed text-[12px]">{HINTS[hintIndex]}</p>
                 </div>
                 <button
                   onClick={() => setShowHintModal(false)}
-                  className="text-[#59645C] hover:text-[#232A24] text-xs ml-3 cursor-pointer"
+                  className="text-[#4A6076] hover:text-[#0C2233] text-xs ml-3 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -604,12 +604,12 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
 
           {/* Diagnostics Results */}
           {hasRunDiagnostics && (
-            <div className="bg-white border border-[#E1E7E1] rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
-              <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-2">
-                <span className="text-xs font-bold text-[#232A24]">
+            <div className="bg-white border border-[#DCE7F2] rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-2">
+                <span className="text-xs font-bold text-[#0C2233]">
                   Resultado de la revisión
                 </span>
-                <span className="text-[11px] text-[#59645C] font-mono">
+                <span className="text-[11px] text-[#4A6076] font-mono">
                   {diagnostics.length} observaciones
                 </span>
               </div>
@@ -620,17 +620,17 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
                     key={diag.id}
                     className={`p-3 rounded-xl border text-xs space-y-1 ${
                       diag.type === 'valid'
-                        ? 'border-[#407B5D] bg-[#E8EEE8]/40'
+                        ? 'border-[#006699] bg-[#E2EEF8]/40'
                         : 'border-[#E6B65A] bg-[#FFF9EE]'
                     }`}
                   >
-                    <div className="font-bold text-xs text-[#232A24] flex items-center gap-1.5">
-                      <span className="font-mono text-[11px] text-[#407B5D]">
+                    <div className="font-bold text-xs text-[#0C2233] flex items-center gap-1.5">
+                      <span className="font-mono text-[11px] text-[#006699]">
                         {diag.type === 'valid' ? '✓' : '·'}
                       </span>
                       <span>{diag.title}</span>
                     </div>
-                    <p className="text-[12px] leading-relaxed text-[#59645C]">
+                    <p className="text-[12px] leading-relaxed text-[#4A6076]">
                       {diag.message}
                     </p>
                   </div>
@@ -643,10 +643,10 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
         {/* Right Column: Real-Time Processing Code Viewer (6 cols) */}
         <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-24">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#59645C]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#4A6076]">
               Código Processing Java resultante
             </span>
-            <span className="text-xs text-[#407B5D] font-mono font-semibold bg-[#E8EEE8] px-2 py-0.5 rounded-full">
+            <span className="text-xs text-[#006699] font-mono font-semibold bg-[#E2EEF8] px-2 py-0.5 rounded-full">
               En vivo
             </span>
           </div>
@@ -656,8 +656,8 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             highlightedSection={activeHighlight}
           />
 
-          <div className="p-4 bg-white rounded-2xl border border-[#E1E7E1] text-xs text-[#59645C] space-y-1 shadow-xs">
-            <div className="flex items-center gap-2 text-[#407B5D] font-bold">
+          <div className="p-4 bg-white rounded-2xl border border-[#DCE7F2] text-xs text-[#4A6076] space-y-1 shadow-xs">
+            <div className="flex items-center gap-2 text-[#006699] font-bold">
               <Info className="w-4 h-4 shrink-0" />
               <span>Sintaxis en vivo</span>
             </div>
@@ -676,23 +676,23 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
       {/* Modal: Referencia Oficial */}
       {showReferenceModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white border border-[#E1E7E1] rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#E1E7E1] pb-3">
+          <div className="bg-white border border-[#DCE7F2] rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3">
               <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[#407B5D]" />
-                <h3 className="text-base font-bold text-[#232A24]">
+                <Eye className="w-4 h-4 text-[#006699]" />
+                <h3 className="text-base font-bold text-[#0C2233]">
                   Código de referencia: clase Gato
                 </h3>
               </div>
               <button
                 onClick={() => setShowReferenceModal(false)}
-                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-[#E1E7E1] text-[#59645C] hover:text-[#232A24] text-sm cursor-pointer shadow-xs"
+                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-[#DCE7F2] text-[#4A6076] hover:text-[#0C2233] text-sm cursor-pointer shadow-xs"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-[#59645C] leading-relaxed">
+            <p className="text-xs text-[#4A6076] leading-relaxed">
               Estructura canónica de la clase Gato en Processing Java:
             </p>
 
@@ -701,7 +701,7 @@ export const Stage4Builder: React.FC<Stage4Props> = ({
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowReferenceModal(false)}
-                className="min-h-[44px] px-5 py-2 rounded-xl bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                className="min-h-[44px] px-5 py-2 rounded-xl bg-[#006699] hover:bg-[#00507A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
               >
                 Volver a mi ejercicio
               </button>
