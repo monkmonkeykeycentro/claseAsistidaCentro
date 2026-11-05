@@ -644,6 +644,7 @@ export default function App() {
             currentUser={currentUser}
             onOpenCatalogue={() => setIsCatalogueOpen(true)}
           />
+        )}
         {/* VIEW 8: Ejemplo Fundamental: El Caballo al Galope (Muybridge 1878) */}
         {activeView === 'horse' && (
           <section className="space-y-6 animate-in fade-in duration-200">

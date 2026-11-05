@@ -84,7 +84,9 @@ service cloud.firestore {
     }
 
     match /cms_revisions/{revisionId} {
-      allow read, write: if isAdmin() && isValidId(revisionId);
+      // Collection queries cannot guarantee the format of every possible ID.
+      allow list: if isAdmin();
+      allow get, write: if isAdmin() && isValidId(revisionId);
     }
 
     // User profiles: each user can only read and write their own profile; admins can list and review

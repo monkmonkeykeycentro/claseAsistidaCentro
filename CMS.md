@@ -18,13 +18,15 @@ Con Firebase CLI instalada y una sesión autorizada en el proyecto:
 firebase deploy --only firestore:rules --project rugged-precept-406017
 ```
 
-También puedes copiar `firestore.rules` en Firebase Console → Firestore Database → seleccionar la base indicada → Rules → Publish. No basta con actualizar las reglas de la base `(default)`.
+Para esta base con nombre, utiliza Firebase CLI con la configuración del repositorio. Publicar las reglas de `(default)` no actualiza esta base; la [documentación de Firebase](https://firebase.google.com/docs/rules/manage-deploy) indica que la consola de Firebase solo admite desplegar reglas de Firestore en la base predeterminada.
 
 Las reglas permiten modificaciones del CMS solo a administradores. Las consultas públicas filtran publicaciones y visibilidad, y las reglas comprueban también el módulo, la lección y la sección correspondientes. Los borradores, contenidos archivados, secciones ocultas e historiales administrativos requieren permisos. Este diseño sigue las [condiciones de seguridad de Firestore](https://firebase.google.com/docs/firestore/security/rules-conditions) y sus [requisitos para consultas](https://firebase.google.com/docs/firestore/security/rules-query).
 
 ## Agregar contenido
 
 Si el panel no carga, el mensaje indica la operación que falló y conserva el código de Firebase. `permission-denied` requiere revisar la cuenta y las reglas publicadas en la base indicada; `unauthenticated` requiere renovar la sesión; `unavailable` o `deadline-exceeded` indican un problema de disponibilidad o conexión. Después de corregirlo, usa **Reintentar carga**. El mensaje anterior «Revisa tu conexión y las reglas de Firebase» era genérico y no permitía distinguir estas causas.
+
+Si falla **cargar el historial administrativo**, comprueba la regla de `cms_revisions`: el listado debe permitir `list` con `isAdmin()`, sin exigir `isValidId(revisionId)` para la consulta completa. La validación del ID se conserva en `get` y `write`. Una condición sobre todos los IDs posibles puede rechazar el listado aunque la cuenta sea administradora. Publica las reglas corregidas en la base con nombre indicada arriba y vuelve a cargar el panel.
 
 1. Inicia sesión con la cuenta administradora y abre **CMS**.
 2. Crea un módulo o selecciona uno existente. Los módulos nuevos empiezan como borrador; cambia su estado a **Publicado** cuando corresponda.
