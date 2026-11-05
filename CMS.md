@@ -24,6 +24,8 @@ Las reglas permiten modificaciones del CMS solo a administradores. Las consultas
 
 ## Agregar contenido
 
+Si el panel no carga, el mensaje indica la operación que falló y conserva el código de Firebase. `permission-denied` requiere revisar la cuenta y las reglas publicadas en la base indicada; `unauthenticated` requiere renovar la sesión; `unavailable` o `deadline-exceeded` indican un problema de disponibilidad o conexión. Después de corregirlo, usa **Reintentar carga**. El mensaje anterior «Revisa tu conexión y las reglas de Firebase» era genérico y no permitía distinguir estas causas.
+
 1. Inicia sesión con la cuenta administradora y abre **CMS**.
 2. Crea un módulo o selecciona uno existente. Los módulos nuevos empiezan como borrador; cambia su estado a **Publicado** cuando corresponda.
 3. Agrega una lección, sus secciones y los bloques de texto, código, notas, imágenes, videos, recursos o actividades.

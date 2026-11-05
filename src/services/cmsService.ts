@@ -312,7 +312,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
     return { seeded: true, moduleCount: TOPICS_DATA.length };
   } catch (err) {
     console.error('No se pudo inicializar el CMS:', err);
-    throw new Error('No se pudo inicializar el CMS en Firebase. Revisa tu conexión y los permisos.');
+    throw new Error('No se pudo inicializar el CMS en Firebase.', { cause: err });
   }
 }
 

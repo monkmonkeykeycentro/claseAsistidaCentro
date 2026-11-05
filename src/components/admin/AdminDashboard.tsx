@@ -29,6 +29,7 @@ import {
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
 import { AppUser, isUserAdmin } from '../../services/firebase';
+import { describeCmsError } from '../../utils/cmsErrors';
 import {
   Layers,
   BookOpen,
@@ -135,11 +136,14 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   // Load all data
   const loadAll = async () => {
     setIsLoading(true);
+    setActionError(null);
+    let operation = 'inicializar el temario';
     try {
       // 1. Seed if empty
       await seedCmsFromExistingContentIfEmpty();
 
       // 2. Load modules & lessons
+      operation = 'cargar los módulos y las lecciones';
       const modList = await getCmsModules(true);
       const lesList = await getCmsLessons(undefined, true);
       setModules(modList);
@@ -153,6 +157,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       setExpandedModules(initialExp);
 
       // 3. Load site content
+      operation = 'cargar los textos del sitio';
       const texts = await getAllSiteContent();
       setSiteContent(texts);
       const drafts: Record<string, string> = {};
@@ -162,13 +167,15 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       setSiteTextDrafts(drafts);
 
       // 4. Load media & revisions
+      operation = 'cargar los recursos multimedia';
       const media = await getCmsMediaResources();
       setMediaList(media);
+      operation = 'cargar el historial administrativo';
       const revs = await getCmsRevisions();
       setRevisions(revs);
     } catch (e) {
       console.error('Error loading CMS data:', e);
-      setActionError('No se pudo cargar el CMS. Revisa tu conexión y las reglas de Firebase.');
+      setActionError(describeCmsError(e, operation));
     } finally {
       setIsLoading(false);
     }
@@ -560,7 +567,14 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
         <ShieldCheck className="w-4 h-4 inline mr-2 text-[#407B5D]" />
         Administrador: <strong>{currentUser?.email}</strong>. Los cambios se confirman al guardarse en Firebase.
       </div>
-      {actionError && <div role="alert" className="p-4 bg-[#FFF9EE] border border-[#E6C687] rounded-xl text-sm text-[#8A6318]">{actionError}</div>}
+      {actionError && (
+        <div role="alert" className="p-4 bg-[#FFF9EE] border border-[#E6C687] rounded-xl text-sm text-[#8A6318] space-y-3">
+          <p>{actionError}</p>
+          <button disabled={isLoading || isWorking} onClick={() => loadAll()} className="px-3 py-2 rounded-lg border border-[#E6C687] text-xs font-semibold cursor-pointer disabled:opacity-50">
+            Reintentar carga
+          </button>
+        </div>
+      )}
 
       {toastMessage && (
         <div className="p-3.5 bg-[#E8EEE8] border border-[#407B5D] text-[#232A24] text-xs font-semibold rounded-xl flex items-center justify-between shadow-xs animate-in fade-in">

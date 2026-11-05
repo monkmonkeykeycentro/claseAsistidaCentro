@@ -57,6 +57,7 @@ const { TopicViewer } = await import('../src/components/TopicViewer.tsx');
 const { HomeView } = await import('../src/components/HomeView.tsx');
 const { TopicsCatalogueModal } = await import('../src/components/TopicsCatalogueModal.tsx');
 const { CmsBlockView } = await import('../src/components/CmsBlockView.tsx');
+const { describeCmsError } = await import('../src/utils/cmsErrors.ts');
 
 const account = (email, uid = 'user-1', emailVerified = true) => ({ uid, email, emailVerified, displayName: 'Test', photoURL: null });
 const administrator = () => { auth.currentUser = account('jmartineza@centro.edu.mx'); };
@@ -242,4 +243,32 @@ test('a missing administrator directory or a connectivity error fails closed', a
   state.readError = new Error('offline');
   await assert.rejects(identity.requireCmsAdmin, /offline/);
   assert.equal(state.writes.length, 0);
+});
+
+test('initialization retains the Firebase error code for diagnosis', async () => {
+  administrator();
+  const denied = Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' });
+  state.readError = denied;
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(cms.seedCmsFromExistingContentIfEmpty, (error) => {
+      assert.equal(error.cause, denied);
+      const message = describeCmsError(error, 'inicializar el temario');
+      assert.match(message, /permission-denied/);
+      assert.match(message, /ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f/);
+      assert.match(message, /rugged-precept-406017/);
+      return true;
+    });
+  } finally { console.error = originalError; }
+});
+
+test('connection and session failures give their own corrective instructions', () => {
+  const unavailable = describeCmsError(Object.assign(new Error('offline'), { code: 'unavailable' }));
+  assert.match(unavailable, /conexión/);
+  assert.doesNotMatch(unavailable, /firestore.rules/);
+  const unauthenticated = describeCmsError(Object.assign(new Error('expired'), { code: 'unauthenticated' }));
+  assert.match(unauthenticated, /inicia sesión/);
+  const unknown = describeCmsError(new Error('Unexpected document format'));
+  assert.match(unknown, /Unexpected document format/);
 });
