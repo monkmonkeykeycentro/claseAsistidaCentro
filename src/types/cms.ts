@@ -100,7 +100,89 @@ export interface CmsSiteContentCombined {
   pilotEx2Title?: string;
   pilotEx2Objective?: string;
   pilotEx3Title?: string;
+  headerNavigation?: HeaderNavigationItem[];
 }
+
+export type NavigationTarget =
+  | 'home'
+  | 'horse'
+  | 'units'
+  | 'oop-lab'
+  | 'class-designer'
+  | 'pilot'
+  | 'catalogue';
+
+export interface HeaderNavigationItem {
+  id: string;
+  label: string;
+  target: NavigationTarget;
+  visibleInHeader: boolean;
+  position: number;
+  badge?: string;
+  description?: string;
+}
+
+export const DEFAULT_HEADER_NAVIGATION: HeaderNavigationItem[] = [
+  {
+    id: 'nav_home',
+    label: 'Inicio',
+    target: 'home',
+    visibleInHeader: true,
+    position: 0,
+    description: 'Vista principal del Laboratorio de Código Creativo',
+  },
+  {
+    id: 'nav_horse',
+    label: 'Caballo al Galope',
+    target: 'horse',
+    visibleInHeader: true,
+    position: 1,
+    badge: '1878',
+    description: 'Instalación audiovisual interactiva de Eadweard Muybridge (Discretización ASCII)',
+  },
+  {
+    id: 'nav_units',
+    label: 'Unidades 1-3',
+    target: 'units',
+    visibleInHeader: true,
+    position: 2,
+    badge: '14',
+    description: '14 prácticas curriculares: Fundamentos, Geometría y Algoritmos',
+  },
+  {
+    id: 'nav_oop_lab',
+    label: 'Laboratorio POO',
+    target: 'oop-lab',
+    visibleInHeader: true,
+    position: 3,
+    description: 'Laboratorio de Objetos interactivo con Pelota, Burbuja y ruido Perlin',
+  },
+  {
+    id: 'nav_designer',
+    label: 'Diseñador POO',
+    target: 'class-designer',
+    visibleInHeader: true,
+    position: 4,
+    description: 'Herramienta de autoría para construir moldes y clases Processing Java',
+  },
+  {
+    id: 'nav_pilot',
+    label: 'Exploraciones',
+    target: 'pilot',
+    visibleInHeader: true,
+    position: 5,
+    description: 'Módulo piloto de 3 experiencias: Coordenadas, Condicionales y Audiovisual',
+  },
+  {
+    id: 'nav_catalogue',
+    label: 'Temario',
+    target: 'catalogue',
+    visibleInHeader: true,
+    position: 6,
+    badge: '7',
+    description: 'Catálogo de conceptos y fundamentos de Processing Java',
+  },
+];
 
 export interface CmsMediaResource {
   id: string;

@@ -17,21 +17,29 @@ import {
   X,
   Home,
   ChevronRight,
+  Film,
 } from 'lucide-react';
+import {
+  HeaderNavigationItem,
+  DEFAULT_HEADER_NAVIGATION,
+  NavigationTarget,
+} from '../types/cms';
 
 interface HeaderProps {
-  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin' | 'class-designer';
+  currentView: 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin' | 'class-designer' | 'horse';
   onNavigateHome: () => void;
   onOpenCatalogue: () => void;
   onNavigateOopLab: () => void;
   onNavigatePilot?: () => void;
   onNavigateUnits?: () => void;
   onNavigateClassDesigner?: () => void;
+  onNavigateHorse?: () => void;
   onNavigateAdmin?: () => void;
   currentUser: AppUser | null;
   onOpenAuth: () => void;
   isSyncing?: boolean;
   topicCount?: number;
+  navigationItems?: HeaderNavigationItem[];
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,11 +50,13 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigatePilot,
   onNavigateUnits,
   onNavigateClassDesigner,
+  onNavigateHorse,
   onNavigateAdmin,
   currentUser,
   onOpenAuth,
   isSyncing,
   topicCount = 7,
+  navigationItems,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -76,6 +86,83 @@ export const Header: React.FC<HeaderProps> = ({
     setIsMobileMenuOpen(false);
     if (callback) callback();
   };
+
+  const getActionForTarget = (target: NavigationTarget) => {
+    switch (target) {
+      case 'home':
+        return onNavigateHome;
+      case 'horse':
+        return onNavigateHorse || onNavigatePilot || onNavigateHome;
+      case 'units':
+        return onNavigateUnits;
+      case 'oop-lab':
+        return onNavigateOopLab;
+      case 'class-designer':
+        return onNavigateClassDesigner;
+      case 'pilot':
+        return onNavigatePilot;
+      case 'catalogue':
+        return onOpenCatalogue;
+      default:
+        return onNavigateHome;
+    }
+  };
+
+  const isTargetActive = (target: NavigationTarget) => {
+    if (target === 'home') return currentView === 'home';
+    if (target === 'horse') return currentView === 'horse';
+    if (target === 'units') return currentView === 'units';
+    if (target === 'oop-lab') return currentView === 'oop-lab';
+    if (target === 'class-designer') return currentView === 'class-designer';
+    if (target === 'pilot') return currentView === 'pilot';
+    return false;
+  };
+
+  const getIconForTarget = (target: NavigationTarget) => {
+    switch (target) {
+      case 'home':
+        return null;
+      case 'horse':
+        return <Film className="w-3.5 h-3.5 text-[#407B5D]" />;
+      case 'units':
+        return <Layers className="w-3.5 h-3.5 text-[#407B5D]" />;
+      case 'oop-lab':
+        return <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />;
+      case 'class-designer':
+        return <PenTool className="w-3.5 h-3.5 text-[#407B5D]" />;
+      case 'pilot':
+        return <Compass className="w-3.5 h-3.5 text-[#407B5D]" />;
+      case 'catalogue':
+        return <BookOpen className="w-3.5 h-3.5 text-[#59645C]" />;
+      default:
+        return null;
+    }
+  };
+
+  const getMobileIconForTarget = (target: NavigationTarget) => {
+    switch (target) {
+      case 'home':
+        return <Home className="w-4 h-4 text-[#407B5D]" />;
+      case 'horse':
+        return <Film className="w-4 h-4 text-[#407B5D]" />;
+      case 'units':
+        return <Layers className="w-4 h-4 text-[#407B5D]" />;
+      case 'oop-lab':
+        return <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />;
+      case 'class-designer':
+        return <PenTool className="w-4 h-4 text-[#407B5D]" />;
+      case 'pilot':
+        return <Compass className="w-4 h-4 text-[#407B5D]" />;
+      case 'catalogue':
+        return <BookOpen className="w-4 h-4 text-[#59645C]" />;
+      default:
+        return <Home className="w-4 h-4 text-[#407B5D]" />;
+    }
+  };
+
+  const effectiveNavItems = (navigationItems && navigationItems.length > 0 ? navigationItems : DEFAULT_HEADER_NAVIGATION)
+    .filter((item) => item.visibleInHeader)
+    .sort((a, b) => a.position - b.position);
 
   return (
     <>
@@ -119,83 +206,37 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 </div>
               ) : (
-                <>
-                  <button
-                    onClick={onNavigateHome}
-                    className={`min-h-[38px] px-2.5 xl:px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                      currentView === 'home'
-                        ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                        : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
-                    }`}
-                  >
-                    Inicio
-                  </button>
+                effectiveNavItems.map((item) => {
+                  const action = getActionForTarget(item.target);
+                  if (!action) return null;
+                  const active = isTargetActive(item.target);
+                  const icon = getIconForTarget(item.target);
 
-                  {onNavigateUnits && (
+                  return (
                     <button
-                      onClick={onNavigateUnits}
+                      key={item.id}
+                      onClick={action}
+                      title={item.description || item.label}
                       className={`min-h-[38px] px-2.5 xl:px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                        currentView === 'units'
+                        active
                           ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
                           : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
                       }`}
                     >
-                      <Layers className="w-3.5 h-3.5 text-[#407B5D]" />
-                      <span>Unidades 1-3</span>
+                      {icon}
+                      <span>{item.label}</span>
+                      {item.badge ? (
+                        <span className="text-[11px] font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">
+                          {item.badge}
+                        </span>
+                      ) : item.target === 'catalogue' ? (
+                        <span className="text-[11px] font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">
+                          {topicCount}
+                        </span>
+                      ) : null}
                     </button>
-                  )}
-
-                  <button
-                    onClick={onNavigateOopLab}
-                    className={`min-h-[38px] px-2.5 xl:px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                      currentView === 'oop-lab'
-                        ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                        : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
-                    }`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block" />
-                    <span>Laboratorio POO</span>
-                  </button>
-
-                  {onNavigateClassDesigner && (
-                    <button
-                      onClick={onNavigateClassDesigner}
-                      className={`min-h-[38px] px-2.5 xl:px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                        currentView === 'class-designer'
-                          ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                          : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
-                      }`}
-                    >
-                      <PenTool className="w-3.5 h-3.5 text-[#407B5D]" />
-                      <span>Diseñador</span>
-                    </button>
-                  )}
-
-                  {onNavigatePilot && (
-                    <button
-                      onClick={onNavigatePilot}
-                      className={`min-h-[38px] px-2.5 xl:px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                        currentView === 'pilot'
-                          ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                          : 'text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50'
-                      }`}
-                    >
-                      <Compass className="w-3.5 h-3.5 text-[#407B5D]" />
-                      <span>Exploraciones</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={onOpenCatalogue}
-                    className="min-h-[38px] px-2.5 xl:px-3 py-1.5 rounded-xl text-[#59645C] hover:text-[#232A24] hover:bg-[#E8EEE8]/50 transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <BookOpen className="w-3.5 h-3.5 text-[#59645C]" />
-                    <span>Temario</span>
-                    <span className="text-[11px] font-semibold text-[#59645C] bg-[#E8EEE8] px-1.5 py-0.5 rounded-md">
-                      {topicCount}
-                    </span>
-                  </button>
-                </>
+                  );
+                })
               )}
             </nav>
 
@@ -275,103 +316,54 @@ export const Header: React.FC<HeaderProps> = ({
                 Navegación del Laboratorio
               </div>
 
-              <button
-                onClick={() => handleMobileNav(onNavigateHome)}
-                className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
-                  currentView === 'home'
-                    ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                    : 'text-[#232A24] hover:bg-[#F7F8F4]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 text-sm">
-                  <Home className="w-4 h-4 text-[#407B5D]" />
-                  <span>Inicio</span>
-                </div>
-                {currentView === 'home' && (
-                  <span className="text-[11px] font-bold text-[#407B5D] bg-white px-2 py-0.5 rounded-md">
-                    Actual
-                  </span>
-                )}
-              </button>
+              {effectiveNavItems.map((item) => {
+                const action = getActionForTarget(item.target);
+                if (!action) return null;
+                const active = isTargetActive(item.target);
+                const icon = getMobileIconForTarget(item.target);
 
-              {onNavigateUnits && (
-                <button
-                  onClick={() => handleMobileNav(onNavigateUnits)}
-                  className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
-                    currentView === 'units'
-                      ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                      : 'text-[#232A24] hover:bg-[#F7F8F4]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 text-sm">
-                    <Layers className="w-4 h-4 text-[#407B5D]" />
-                    <span>Unidades 1, 2 y 3 (14 Prácticas)</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#8E8E89]" />
-                </button>
-              )}
-
-              <button
-                onClick={() => handleMobileNav(onNavigateOopLab)}
-                className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
-                  currentView === 'oop-lab'
-                    ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                    : 'text-[#232A24] hover:bg-[#F7F8F4]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 text-sm">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
-                  <span>Laboratorio POO (Pelota & Burbuja)</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#8E8E89]" />
-              </button>
-
-              {onNavigateClassDesigner && (
-                <button
-                  onClick={() => handleMobileNav(onNavigateClassDesigner)}
-                  className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
-                    currentView === 'class-designer'
-                      ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                      : 'text-[#232A24] hover:bg-[#F7F8F4]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 text-sm">
-                    <PenTool className="w-4 h-4 text-[#407B5D]" />
-                    <span>Diseñador de Clases (POO)</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#8E8E89]" />
-                </button>
-              )}
-
-              {onNavigatePilot && (
-                <button
-                  onClick={() => handleMobileNav(onNavigatePilot)}
-                  className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
-                    currentView === 'pilot'
-                      ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
-                      : 'text-[#232A24] hover:bg-[#F7F8F4]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 text-sm">
-                    <Compass className="w-4 h-4 text-[#407B5D]" />
-                    <span>Exploraciones (Coordenadas, Condicionales, Video ASCII)</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#8E8E89]" />
-                </button>
-              )}
-
-              <button
-                onClick={() => handleMobileNav(onOpenCatalogue)}
-                className="w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left text-[#232A24] hover:bg-[#F7F8F4] transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 text-sm">
-                  <BookOpen className="w-4 h-4 text-[#59645C]" />
-                  <span>Temario Curricular Completo</span>
-                </div>
-                <span className="text-xs font-semibold text-[#59645C] bg-[#E8EEE8] px-2 py-0.5 rounded-md">
-                  {topicCount} temas
-                </span>
-              </button>
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleMobileNav(action)}
+                    className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer ${
+                      active
+                        ? 'bg-[#E8EEE8] text-[#407B5D] font-bold'
+                        : 'text-[#232A24] hover:bg-[#F7F8F4]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 text-sm">
+                      {icon}
+                      <div className="flex flex-col">
+                        <span>{item.label}</span>
+                        {item.description && (
+                          <span className="text-[11px] text-[#59645C] font-normal leading-tight line-clamp-1">
+                            {item.description}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {item.badge ? (
+                        <span className="text-[11px] font-semibold text-[#59645C] bg-[#E8EEE8] px-2 py-0.5 rounded-md">
+                          {item.badge}
+                        </span>
+                      ) : item.target === 'catalogue' ? (
+                        <span className="text-[11px] font-semibold text-[#59645C] bg-[#E8EEE8] px-2 py-0.5 rounded-md">
+                          {topicCount}
+                        </span>
+                      ) : null}
+                      {active ? (
+                        <span className="text-[11px] font-bold text-[#407B5D] bg-white px-2 py-0.5 rounded-md">
+                          Actual
+                        </span>
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-[#8E8E89]" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
 
               {isUserAdmin(currentUser) && onNavigateAdmin && (
                 <div className="pt-2 border-t border-[#E1E7E1]">

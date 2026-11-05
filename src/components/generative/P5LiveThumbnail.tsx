@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { GenerativeArtwork } from './GenerativeArtwork';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 interface P5LiveThumbnailProps {
   p5Code?: string | null;
@@ -12,7 +13,7 @@ interface P5LiveThumbnailProps {
   caption?: string;
 }
 
-export const P5LiveThumbnail: React.FC<P5LiveThumbnailProps> = ({
+const P5LiveThumbnailInner: React.FC<P5LiveThumbnailProps> = ({
   p5Code,
   fallbackTopicNumber = 1,
   width = 280,
@@ -22,15 +23,14 @@ export const P5LiveThumbnail: React.FC<P5LiveThumbnailProps> = ({
   caption,
 }) => {
   const [reloadKey, setReloadKey] = useState(0);
-  const [hasError, setHasError] = useState(false);
 
   // Clean code and determine whether valid p5 code is provided
   const cleanedCode = useMemo(() => {
-    if (!p5Code) return '';
+    if (!p5Code || typeof p5Code !== 'string') return '';
     return p5Code.trim();
   }, [p5Code]);
 
-  // If no code is provided, fall back to the built-in GenerativeArtwork
+  // If no code is provided, fall back immediately to the built-in GenerativeArtwork
   if (!cleanedCode) {
     return (
       <GenerativeArtwork
@@ -45,11 +45,10 @@ export const P5LiveThumbnail: React.FC<P5LiveThumbnailProps> = ({
   }
 
   // Construct iframe srcdoc with sandboxed p5.js execution
-  const srcDoc = useMemo(() => {
-    // Escape script closing tags to prevent breaking srcdoc
-    const safeUserCode = cleanedCode.replace(/<\/script>/gi, '<\\/script>');
+  // Safe stringification prevents template literal interpolation bugs with ${} or quotes
+  const safeJsonCode = JSON.stringify(cleanedCode);
 
-    return `<!DOCTYPE html>
+  const srcDoc = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -82,15 +81,11 @@ export const P5LiveThumbnail: React.FC<P5LiveThumbnailProps> = ({
       max-height: 100% !important;
       object-fit: contain;
     }
-    .error-box {
-      color: #9A6700;
-      background: #FFF9EE;
-      border: 1px solid #E6C687;
-      padding: 8px 12px;
+    .fallback-box {
+      color: #59645C;
       font-size: 11px;
       font-family: monospace;
-      border-radius: 8px;
-      margin: 8px;
+      padding: 8px;
       text-align: center;
     }
   </style>
@@ -100,38 +95,21 @@ export const P5LiveThumbnail: React.FC<P5LiveThumbnailProps> = ({
   <div id="canvas-container"></div>
   <script>
     window.onerror = function(msg, url, line) {
-      console.warn("p5 thumbnail error:", msg, "line:", line);
-      const container = document.getElementById('canvas-container');
-      if (container) {
-        container.innerHTML = '<div class="error-box">Error en p5.js (L' + line + '): ' + String(msg).slice(0, 70) + '</div>';
-      }
-      return false;
-    };
-
-    // Override createCanvas to ensure canvas attaches to our flex container with auto-sizing
-    const originalCreateCanvas = window.createCanvas;
-    window.createCanvas = function(w, h, renderer) {
-      const targetW = ${width};
-      const targetH = ${height};
-      // Use sketch dimensions or fallback to container size
-      const sketchW = w || targetW;
-      const sketchH = h || targetH;
-      const c = originalCreateCanvas ? originalCreateCanvas(sketchW, sketchH, renderer) : null;
-      if (c && c.parent) {
-        c.parent('canvas-container');
-      }
-      return c;
+      console.warn("p5 thumbnail notice:", msg);
+      return true; // prevent error bubbling
     };
 
     try {
-      ${safeUserCode}
+      const userCode = ${safeJsonCode};
+      // Evaluate user p5 sketch in global context
+      const runFn = new Function(userCode);
+      runFn();
     } catch(err) {
-      window.onerror(err.message, '', 0);
+      console.warn("p5 runtime catch:", err.message);
     }
   </script>
 </body>
 </html>`;
-  }, [cleanedCode, width, height, reloadKey]);
 
   return (
     <div
@@ -168,11 +146,18 @@ export const P5LiveThumbnail: React.FC<P5LiveThumbnailProps> = ({
         </button>
       </div>
 
-      {caption && (
-        <div className="sr-only">
-          {caption}
-        </div>
-      )}
+      {caption && <div className="sr-only">{caption}</div>}
     </div>
+  );
+};
+
+export const P5LiveThumbnail: React.FC<P5LiveThumbnailProps> = (props) => {
+  return (
+    <ErrorBoundary
+      fallbackTitle="Miniatura gráfica"
+      onReset={() => {}}
+    >
+      <P5LiveThumbnailInner {...props} />
+    </ErrorBoundary>
   );
 };

@@ -21,6 +21,8 @@ import {
   CmsMediaResource,
   CmsRevision,
   CurriculumExportData,
+  HeaderNavigationItem,
+  DEFAULT_HEADER_NAVIGATION,
 } from '../types/cms';
 import { TOPICS_DATA, TopicItem, TopicConcept } from '../data/topicsData';
 
@@ -159,6 +161,13 @@ export const DEFAULT_SITE_CONTENT: Record<string, CmsSiteContent> = {
     title: 'Título Ejercicio 3 (Audiovisual)',
     section: 'piloto',
     content: 'Discretización audiovisual: Video a ASCII',
+    updatedAt: new Date().toISOString(),
+  },
+  header_navigation_config: {
+    key: 'header_navigation_config',
+    title: 'Apartados y Navegación del Header',
+    section: 'navegacion',
+    content: JSON.stringify(DEFAULT_HEADER_NAVIGATION),
     updatedAt: new Date().toISOString(),
   },
 };
@@ -637,33 +646,126 @@ export async function saveSiteContent(item: CmsSiteContent, _userEmail?: string)
 
 export function subscribeToSiteContent(callback: (content: CmsSiteContentCombined) => void): () => void {
   const emit = (source: Record<string, CmsSiteContent>) => {
-    const content = (key: string) => (source[key] ?? DEFAULT_SITE_CONTENT[key]).content;
-    let principles = content('generative_principles').split(',').map((item) => item.trim()).filter(Boolean);
     try {
-      const parsed = JSON.parse(content('generative_principles'));
-      if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) principles = parsed;
-    } catch { /* The default format is comma-separated text. */ }
-    callback({
-      heroHeadline: content('hero_headline'), heroSubtitle: content('hero_subtitle'), heroBadge: content('hero_badge'),
-      generativeQuestion: content('generative_question'), generativePrinciples: principles,
-      oopLabTitle: content('oop_lab_title'), oopLabSummary: content('oop_lab_summary'),
-      workshopTitle: content('workshop_title'), workshopSummary: content('workshop_summary'),
-      philosophyTitle: content('philosophy_title'), footerText: content('footer_text'),
-      pilotModuleTitle: content('pilot_module_title'),
-      pilotModuleDescription: content('pilot_module_description'),
-      pilotEx1Title: content('pilot_ex1_title'),
-      pilotEx1Objective: content('pilot_ex1_objective'),
-      pilotEx2Title: content('pilot_ex2_title'),
-      pilotEx2Objective: content('pilot_ex2_objective'),
-      pilotEx3Title: content('pilot_ex3_title'),
-    });
+      const content = (key: string): string => {
+        const item = source[key];
+        if (item && typeof item.content === 'string' && item.content.trim().length > 0) {
+          return item.content;
+        }
+        const def = DEFAULT_SITE_CONTENT[key];
+        if (def && typeof def.content === 'string') {
+          return def.content;
+        }
+        return '';
+      };
+
+      const rawPrinciples = content('generative_principles');
+      let principles: string[] = ['1. Código', '2. Sistema', '3. Regla', '4. Variación', '5. Forma'];
+      if (rawPrinciples) {
+        try {
+          const parsed = JSON.parse(rawPrinciples);
+          if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+            principles = parsed;
+          } else {
+            principles = rawPrinciples.split(',').map((item) => item.trim()).filter(Boolean);
+          }
+        } catch {
+          principles = rawPrinciples.split(',').map((item) => item.trim()).filter(Boolean);
+        }
+      }
+      if (!principles.length) {
+        principles = ['1. Código', '2. Sistema', '3. Regla', '4. Variación', '5. Forma'];
+      }
+
+      const rawNav = content('header_navigation_config');
+      let navItems: HeaderNavigationItem[] = DEFAULT_HEADER_NAVIGATION;
+      if (rawNav) {
+        try {
+          const parsed = JSON.parse(rawNav);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            navItems = parsed;
+          }
+        } catch {
+          // Keep defaults
+        }
+      }
+
+      callback({
+        heroHeadline: content('hero_headline') || DEFAULT_SITE_CONTENT.hero_headline.content,
+        heroSubtitle: content('hero_subtitle') || DEFAULT_SITE_CONTENT.hero_subtitle.content,
+        heroBadge: content('hero_badge') || 'Laboratorio de Código Creativo',
+        generativeQuestion: content('generative_question') || '¿Cómo funciona el pensamiento generativo?',
+        generativePrinciples: principles,
+        oopLabTitle: content('oop_lab_title') || DEFAULT_SITE_CONTENT.oop_lab_title.content,
+        oopLabSummary: content('oop_lab_summary') || DEFAULT_SITE_CONTENT.oop_lab_summary.content,
+        workshopTitle: content('workshop_title') || DEFAULT_SITE_CONTENT.workshop_title.content,
+        workshopSummary: content('workshop_summary') || DEFAULT_SITE_CONTENT.workshop_summary.content,
+        philosophyTitle: content('philosophy_title') || DEFAULT_SITE_CONTENT.philosophy_title.content,
+        footerText: content('footer_text') || DEFAULT_SITE_CONTENT.footer_text.content,
+        pilotModuleTitle: content('pilot_module_title') || 'Exploraciones con Processing',
+        pilotModuleDescription: content('pilot_module_description') || 'Secuencia pedagógica de tres ejercicios para asimilar el sistema de coordenadas, las estructuras condicionales y la experimentación audiovisual.',
+        pilotEx1Title: content('pilot_ex1_title') || 'Sistemas de coordenadas: Del espacio a la forma',
+        pilotEx1Objective: content('pilot_ex1_objective') || 'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.',
+        pilotEx2Title: content('pilot_ex2_title') || 'Estructuras condicionales: Decisiones visuales',
+        pilotEx2Objective: content('pilot_ex2_objective') || 'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.',
+        pilotEx3Title: content('pilot_ex3_title') || 'Discretización audiovisual: Video a ASCII',
+        headerNavigation: navItems,
+      });
+    } catch (err) {
+      console.warn('Error al procesar textos de cms_site_content, usando valores por defecto:', err);
+    }
   };
+
   emit(DEFAULT_SITE_CONTENT);
-  return onSnapshot(collection(db, 'cms_site_content'), (snapshot) => {
-    const source: Record<string, CmsSiteContent> = {};
-    snapshot.docs.forEach((document) => { source[document.id] = document.data() as CmsSiteContent; });
-    emit(source);
-  }, (error) => console.warn('No se pudieron cargar los textos del sitio:', error));
+
+  return onSnapshot(
+    collection(db, 'cms_site_content'),
+    (snapshot) => {
+      try {
+        const source: Record<string, CmsSiteContent> = {};
+        snapshot.docs.forEach((document) => {
+          const data = document.data();
+          if (data && typeof data === 'object') {
+            source[document.id] = { ...data, key: document.id } as CmsSiteContent;
+          }
+        });
+        emit(source);
+      } catch (err) {
+        console.warn('Error en listener de cms_site_content:', err);
+      }
+    },
+    (error) => console.warn('No se pudieron cargar los textos del sitio:', error)
+  );
+}
+
+export async function getHeaderNavigation(): Promise<HeaderNavigationItem[]> {
+  try {
+    const docSnap = await getDoc(doc(db, 'cms_site_content', 'header_navigation_config'));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data && typeof data.content === 'string') {
+        const parsed = JSON.parse(data.content);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Error al cargar navegación de cabecera:', err);
+  }
+  return DEFAULT_HEADER_NAVIGATION;
+}
+
+export async function saveHeaderNavigation(items: HeaderNavigationItem[]): Promise<void> {
+  const user = await requireCmsAdmin();
+  await persist('cms_site_content', 'header_navigation_config', {
+    key: 'header_navigation_config',
+    title: 'Apartados y Navegación del Header',
+    section: 'navegacion',
+    content: JSON.stringify(items),
+    updatedAt: new Date().toISOString(),
+    updatedBy: user.email,
+  });
 }
 
 export async function getCmsMediaResources(): Promise<CmsMediaResource[]> {
