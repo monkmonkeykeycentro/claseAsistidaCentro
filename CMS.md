@@ -30,13 +30,23 @@ Si falla **cargar el historial administrativo**, comprueba la regla de `cms_revi
 
 1. Inicia sesión con la cuenta administradora y abre **CMS**.
 2. Crea un módulo o selecciona uno existente. Los módulos nuevos empiezan como borrador; cambia su estado a **Publicado** cuando corresponda.
-3. Agrega una lección, sus secciones y los bloques de texto, código, notas, imágenes, videos, recursos o actividades.
+3. Agrega una lección, sus secciones y los bloques de texto, código, notas, imágenes, videos, iframes, recursos o actividades.
 4. Usa **Guardar Borrador** para guardar sin publicar o **Publicar Lección** para mostrarla. El módulo y la lección deben estar publicados y visibles.
 5. Comprueba el resultado en el temario. **Vista Estudiante** permite al administrador revisar también borradores.
 
 Los cambios de campos se guardan juntos al guardar o publicar; las operaciones de estructura conservan primero las ediciones pendientes. Un fallo de Firebase se muestra como error y no como un guardado correcto. Los antiguos datos `cms_*_cache` de localStorage ya no sustituyen los documentos de Firebase.
 
 La primera apertura autorizada inicializa el temario original y completa documentos faltantes de instalaciones parciales, sin sobrescribir documentos existentes. La marca `cms_site_content/curriculum_initialized` evita volver a importar contenido que después se retire deliberadamente.
+
+## Contenido composable
+
+El CMS también admite el modelo extensible `cms_nodes`. Un nodo puede representar una unidad, lección, actividad, herramienta, recurso, evaluación o contenedor. Sus capacidades (`content`, `activity`, `interactive`, `assessment`, `tool`, `resource`, `container` y `navigation`) son independientes del tipo, por lo que un administrador puede combinar funciones sin crear una jerarquía nueva por cada caso.
+
+Las relaciones se almacenan en `cms_node_relations` y los bloques genéricos en `cms_node_blocks`. El modelo anterior (`cms_modules`, `cms_lessons`, `cms_sections` y `cms_blocks`) se conserva para compatibilidad y migración gradual; no se migra ni elimina automáticamente ningún documento existente.
+
+## Google Drive
+
+El CMS puede subir recursos del administrador a Google Drive mediante Google Identity Services. Configura `VITE_GOOGLE_CLIENT_ID` con el Client ID OAuth de la aplicación web y agrega los orígenes autorizados de desarrollo y producción en Google Cloud. La integración usa únicamente `drive.file`, crea la carpeta `Clase Asistida Centro` automáticamente y guarda la metadata del archivo en `cms_media`; no se almacenan Client Secrets ni tokens en Firestore.
 
 ## Verificación
 
@@ -49,3 +59,47 @@ npm run build
 ```
 
 Las pruebas usan un SDK de Firebase simulado y renderizado estático de React. Cubren autorización, revocación, errores de persistencia, guardado completo, inicialización y lecciones públicas. No sustituyen las pruebas de `firestore.rules` en el emulador ni una comprobación de Google Sign-In en el dominio publicado. Para esa comprobación, el dominio debe estar autorizado en Firebase Authentication.
+
+## Proyectos p5.js desde GitHub
+
+Las lecciones y los bloques de código pueden utilizar un repositorio público de GitHub
+como fuente de ejecución. En el editor se completa el enlace; la ruta manual es opcional.
+
+Cada bloque de código permite elegir entre **Código independiente** (los campos escritos
+en el bloque) y **Repositorio GitHub**. La ejecución interactiva solo usa la fuente
+seleccionada; la casilla **Mostrar ejecución interactiva dentro del tema** la mantiene
+oculta hasta que el administrador la active. La vista previa del editor no cambia lo
+que verá el estudiante.
+
+El botón **+ Iframe** crea un bloque para contenido web externo. Se configura con URL,
+título accesible, altura y pie; solo se aceptan URLs `http` o `https` y el contenido
+se carga con `sandbox`. También se puede pegar directamente el código `<iframe>`
+proporcionado por Miro; el CMS extrae su atributo `src` sin insertar HTML arbitrario.
+Los tableros de Miro deben estar compartidos con los permisos necesarios para que
+usuarios autenticados puedan verlos; el CMS no puede evitar las restricciones de
+privacidad o de inserción definidas por Miro.
+
+- **Repositorio GitHub:** `https://github.com/usuario/repositorio`
+- **Archivo de entrada:** opcional; si se omite, se detecta el único `.js` de la carpeta `*_p5`
+
+El sistema detecta la rama predeterminada del repositorio y carga el archivo desde
+`raw.githubusercontent.com`. Las rutas relativas se conservan mediante una base URL,
+por lo que un sketch puede usar recursos organizados así:
+
+```text
+proyecto/
+├── Puntillismo/
+│   ├── Puntillismo.pde
+│   └── data/
+│       └── imagen.png
+└── Puntillismo_p5/
+    ├── Puntillismo.js
+    └── data/
+        └── imagen.png
+```
+
+En el código p5.js se pueden referenciar como `data/imagen.png`, `data/audio.mp3`
+y `data/video.mp4`. La plataforma exige una carpeta Java y una carpeta con sufijo
+`_p5` en la raíz; si no se proporciona una ruta manual, debe existir un único `.js`
+dentro de `*_p5`. Por ahora solo se admiten repositorios públicos; no se deben
+introducir tokens de GitHub en el navegador.

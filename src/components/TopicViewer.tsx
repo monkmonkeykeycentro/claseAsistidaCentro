@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { TopicItem } from '../data/topicsData';
 import { CmsBlockView } from './CmsBlockView';
 import { ProcessingCodeBlock } from './ProcessingCodeBlock';
-import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 import { ObjectArraysSessionView } from './ObjectArraysSessionView';
 import {
   BookOpen,
@@ -223,26 +222,6 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
                 </span>
                 <span className="font-mono text-[11px] text-[#407B5D] font-bold">Processing Java (.pde)</span>
               </div>
-
-              {activeConcept.codeSnippetP5 && (
-                <div className="border border-[#E1E7E1] rounded-2xl overflow-hidden bg-white p-3 space-y-2 shadow-2xs">
-                  <div className="flex items-center justify-between text-xs text-[#59645C] px-1">
-                    <span className="font-mono text-[11px] flex items-center gap-1.5 font-bold text-[#407B5D]">
-                      <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block animate-pulse" />
-                      Miniatura interactiva (p5.js en vivo)
-                    </span>
-                    <span className="text-[10px] text-[#7A867E]">Mueve el cursor / lienzo activo</span>
-                  </div>
-                  <div className="w-full flex justify-center bg-[#F7F8F4] rounded-xl p-2 border border-[#E1E7E1]">
-                    <P5LiveThumbnail
-                      p5Code={activeConcept.codeSnippetP5}
-                      width={380}
-                      height={170}
-                      interactive={true}
-                    />
-                  </div>
-                </div>
-              )}
 
               <ProcessingCodeBlock
                 code={activeConcept.codeSnippetJava || activeConcept.codeSnippet}

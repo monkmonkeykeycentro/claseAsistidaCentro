@@ -65,6 +65,10 @@ const moduleData = { id: 'mod_custom', title: 'Arte', description: 'Sistemas cre
 const lesson = { id: 'les_custom', moduleId: moduleData.id, title: 'Nueva lección publicada', summary: 'Resumen', position: 0, status: 'published', visible: true, createdAt: '', updatedAt: '' };
 const section = { id: 'sec_custom', lessonId: lesson.id, title: 'Sección nueva', position: 0, visible: true, createdAt: '', updatedAt: '' };
 const block = { id: 'blk_custom', sectionId: section.id, type: 'rich-text', content: 'Contenido real del CMS', position: 0, createdAt: '', updatedAt: '' };
+const node = { id: 'node_unit', type: 'unit', title: 'Unidad composable', description: 'Unidad editable', status: 'published', visible: true, position: 0, capabilities: ['content', 'container'], metadata: {}, createdAt: '', updatedAt: '' };
+const childNode = { id: 'node_tool', type: 'tool', title: 'Herramienta', status: 'draft', visible: true, position: 0, capabilities: ['interactive', 'tool'], metadata: {}, createdAt: '', updatedAt: '' };
+const nodeRelation = { id: 'rel_unit_tool', parentId: node.id, childId: childNode.id, relationType: 'contains', position: 0, createdAt: '', updatedAt: '' };
+const nodeBlock = { id: 'node_block', nodeId: node.id, type: 'rich-text', position: 0, data: { text: 'Contenido composable' }, createdAt: '', updatedAt: '' };
 function curriculum() {
   for (const [name, data] of [['cms_modules', moduleData], ['cms_lessons', lesson], ['cms_sections', section], ['cms_blocks', block]]) state.documents.set(`${name}/${data.id}`, { ...data });
   state.documents.set('cms_site_content/curriculum_initialized', { initialized: true });
@@ -87,6 +91,51 @@ test('visitors, students and admin-prefixed emails cannot perform CMS mutations'
     ]) await assert.rejects(operation);
   }
   assert.equal(state.writes.length, 0);
+});
+
+test('composable CMS nodes support mixed capabilities, relations and generic blocks', async () => {
+  administrator();
+  await cms.saveCmsNode(node);
+  await cms.saveCmsNode(childNode);
+  await cms.saveCmsNodeRelation(nodeRelation);
+  await cms.saveCmsNodeBlock(nodeBlock);
+
+  assert.deepEqual((await cms.getCmsNodes()).map(({ id }) => id), [node.id]);
+  assert.deepEqual((await cms.getCmsNodes(true)).map(({ id }) => id), [node.id, childNode.id]);
+  assert.deepEqual((await cms.getCmsNodeRelations(node.id)).map(({ childId }) => childId), [childNode.id]);
+  assert.deepEqual((await cms.getCmsNodeBlocks(node.id)).map(({ id }) => id), [nodeBlock.id]);
+
+  await cms.deleteCmsNode(node.id, true);
+  assert.equal(state.documents.has(`cms_nodes/${node.id}`), false);
+  assert.equal(state.documents.has(`cms_node_relations/${nodeRelation.id}`), false);
+  assert.equal(state.documents.has(`cms_node_blocks/${nodeBlock.id}`), false);
+});
+
+test('legacy content migration is idempotent and preserves source collections', async () => {
+  administrator();
+  state.documents.set(`cms_modules/${moduleData.id}`, { ...moduleData });
+  state.documents.set(`cms_lessons/${lesson.id}`, { ...lesson });
+  state.documents.set(`cms_sections/${section.id}`, { ...section });
+  state.documents.set(`cms_blocks/${block.id}`, { ...block });
+  state.documents.set('cms_media/media_miro', {
+    id: 'media_miro',
+    title: 'Tablero Miro',
+    url: 'https://miro.com/app/board/example',
+    category: 'tableros',
+    createdAt: '',
+  });
+
+  const first = await cms.migrateLegacyContentToComposable();
+  const second = await cms.migrateLegacyContentToComposable();
+
+  assert.equal(first.migrated, true);
+  assert.equal(second.migrated, false);
+  assert.ok(first.nodes >= 4);
+  assert.ok(first.relations >= 2);
+  assert.ok(first.blocks >= 2);
+  assert.equal(state.documents.has(`cms_modules/${moduleData.id}`), true);
+  assert.equal(state.documents.has(`cms_blocks/${block.id}`), true);
+  assert.equal(state.documents.has('cms_nodes/node_resource_media_miro'), true);
 });
 
 test('administrator directory grants access, ignores self-assigned profile roles, and revokes access', async () => {
@@ -158,6 +207,21 @@ test('published custom lessons retain their identity, sections and every ordered
   assert.equal((await cms.getTopicFromCmsOrFallback('les_custom')).title, lesson.title);
   const html = renderToStaticMarkup(React.createElement(TopicViewer, { topic: topics[0], onNavigateTopic() {}, onOpenCatalogue() {} }));
   assert.match(html, /Contenido real del CMS/); assert.match(html, /https:\/\/example.com\/image.png/);
+});
+
+test('topic code blocks can opt into a larger interactive execution', async () => {
+  curriculum();
+  state.documents.set('cms_blocks/blk_custom', {
+    ...block,
+    type: 'code',
+    contentJava: 'void setup() {}',
+    contentP5: 'function setup() { createCanvas(320, 180); }',
+    showInteractiveExecution: true,
+  });
+  const [topic] = await cms.getAllTopicsFromCmsOrFallback();
+  const html = renderToStaticMarkup(React.createElement(TopicViewer, { topic, onNavigateTopic() {}, onOpenCatalogue() {} }));
+  assert.match(html, /Ejecución interactiva/);
+  assert.match(html, /Código p5\.js ejecutándose en el tema/);
 });
 
 test('drafts, hidden lessons, hidden sections, archived lessons and hidden modules are excluded publicly', async () => {
@@ -313,9 +377,78 @@ test('code blocks and lessons execute p5 live thumbnail while displaying Process
   assert.equal(found.concepts[0].codeSnippetP5, dualBlock.contentP5);
   assert.equal(found.concepts[0].defaultLanguage, 'processing');
 
-  // Verify CmsBlockView renders the p5 live thumbnail container and Processing Java code
-  const blockHtml = renderToStaticMarkup(React.createElement(CmsBlockView, { block: dualBlock }));
-  assert.match(blockHtml, /Miniatura interactiva \(p5\.js en vivo\)/);
+  // Code blocks keep the interactive execution opt-in and still display Processing Java.
+  const hiddenInteractiveHtml = renderToStaticMarkup(React.createElement(CmsBlockView, { block: dualBlock }));
+  assert.doesNotMatch(hiddenInteractiveHtml, /Ejecución interactiva/);
+  assert.match(hiddenInteractiveHtml, /Processing/);
+
+  const blockHtml = renderToStaticMarkup(React.createElement(CmsBlockView, {
+    block: { ...dualBlock, showInteractiveExecution: true },
+  }));
+  assert.match(blockHtml, /Ejecución interactiva/);
   assert.match(blockHtml, /circle\(mouseX, mouseY, 20\)/);
-  assert.match(blockHtml, /Processing/);
+});
+
+test('iframe blocks render safe URLs with bounded height', () => {
+  const iframeHtml = renderToStaticMarkup(React.createElement(CmsBlockView, {
+    block: {
+      id: 'blk_iframe',
+      sectionId: 'sec_dual',
+      type: 'iframe',
+      content: 'https://example.com/embed',
+      iframeTitle: 'Demo externo',
+      iframeHeight: 5000,
+      caption: 'Demostración',
+      position: 0,
+      createdAt: '',
+      updatedAt: '',
+    },
+  }));
+  assert.match(iframeHtml, /title="Demo externo"/);
+  assert.match(iframeHtml, /height:1200px/);
+  assert.match(iframeHtml, /sandbox="allow-scripts allow-forms allow-popups"/);
+
+  const unsafeHtml = renderToStaticMarkup(React.createElement(CmsBlockView, {
+    block: {
+      id: 'blk_unsafe_iframe',
+      sectionId: 'sec_dual',
+      type: 'iframe',
+      content: 'javascript:alert(1)',
+      position: 0,
+      createdAt: '',
+      updatedAt: '',
+    },
+  }));
+  assert.match(unsafeHtml, /La URL del iframe no es válida/);
+});
+
+test('Miro board links are converted to embeddable view-only URLs', () => {
+  const miroHtml = renderToStaticMarkup(React.createElement(CmsBlockView, {
+    block: {
+      id: 'blk_miro',
+      sectionId: 'sec_dual',
+      type: 'iframe',
+      content: 'https://miro.com/app/board/uXjVExampleBoard/',
+      iframeTitle: 'Pizarra Miro',
+      position: 0,
+      createdAt: '',
+      updatedAt: '',
+    },
+  }));
+  assert.match(miroHtml, /https:\/\/miro\.com\/app\/live-embed\/uXjVExampleBoard\/\?embedMode=view_only/);
+  assert.match(miroHtml, /allow-same-origin/);
+  assert.match(miroHtml, /clipboard-read/);
+
+  const embedCodeHtml = renderToStaticMarkup(React.createElement(CmsBlockView, {
+    block: {
+      id: 'blk_miro_embed_code',
+      sectionId: 'sec_dual',
+      type: 'iframe',
+      content: '<iframe src="https://miro.com/app/live-embed/uXjVExampleBoard/?embedMode=view_only"></iframe>',
+      position: 0,
+      createdAt: '',
+      updatedAt: '',
+    },
+  }));
+  assert.match(embedCodeHtml, /https:\/\/miro\.com\/app\/live-embed\/uXjVExampleBoard\/\?embedMode=view_only/);
 });

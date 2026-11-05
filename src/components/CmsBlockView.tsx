@@ -21,10 +21,30 @@ function videoUrl(value: string): string | undefined {
   return safe;
 }
 
+function iframeUrl(value: string): string | undefined {
+  const embeddedSrc = value.match(/<iframe\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i)?.[1];
+  const safe = webUrl(embeddedSrc || value.trim());
+  if (!safe) return undefined;
+
+  const url = new URL(safe);
+  if (!['miro.com', 'www.miro.com'].includes(url.hostname)) return safe;
+
+  const boardMatch = url.pathname.match(/^\/app\/(?:board|live-embed|embed)\/([^/]+)/);
+  if (!boardMatch) return safe;
+
+  const embedUrl = new URL(`https://miro.com/app/live-embed/${boardMatch[1]}/`);
+  url.searchParams.forEach((value, key) => embedUrl.searchParams.set(key, value));
+  if (!embedUrl.searchParams.has('embedMode')) {
+    embedUrl.searchParams.set('embedMode', 'view_only');
+  }
+  return embedUrl.href;
+}
+
 export function CmsBlockView({ block }: { block: CmsBlock }) {
   if (block.type === 'code') {
     const javaCode = block.contentJava || block.content;
     const p5Code = block.contentP5;
+    const repositoryUrl = block.codeSource === 'github' ? block.repositoryUrl : undefined;
 
     return (
       <div className="space-y-3">
@@ -33,35 +53,37 @@ export function CmsBlockView({ block }: { block: CmsBlock }) {
         )}
 
         {/* Live p5.js visual thumbnail executed in sandboxed canvas */}
-        {p5Code && (
-          <div className="border border-[#E1E7E1] rounded-2xl overflow-hidden bg-white p-3 space-y-2 shadow-2xs">
-            <div className="flex items-center justify-between text-xs text-[#59645C] px-1">
-              <span className="font-mono text-[11px] flex items-center gap-1.5 font-bold text-[#407B5D]">
-                <span className="w-2 h-2 rounded-full bg-[#407B5D] inline-block animate-pulse" />
-                Miniatura interactiva (p5.js en vivo)
-              </span>
-              <span className="text-[10px] text-[#7A867E]">Mueve el cursor / lienzo activo</span>
+        {(p5Code || repositoryUrl) && block.showInteractiveExecution && (
+          <div className="space-y-2 border border-[#A4C4B5] rounded-2xl overflow-hidden bg-[#F7F8F4] p-3">
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="font-bold text-[#28543D]">Ejecución interactiva</span>
+              <span className="text-[10px] text-[#59645C]">Código p5.js ejecutándose en el tema</span>
             </div>
-            <div className="w-full flex justify-center bg-[#F7F8F4] rounded-xl p-2 border border-[#E1E7E1]">
+            <div className="w-full flex justify-center bg-white rounded-xl p-2 border border-[#E1E7E1]">
               <P5LiveThumbnail
                 p5Code={p5Code}
-                width={380}
-                height={160}
-                interactive={true}
+                repositoryUrl={repositoryUrl}
+                repositoryEntry={block.repositoryEntry}
+                width={620}
+                height={320}
+                interactive
+                fit="contain"
               />
             </div>
           </div>
         )}
 
         {/* Processing Java Code Displayed to Student */}
-        <ProcessingCodeBlock
-          code={javaCode}
-          codeJava={javaCode}
-          codeP5={p5Code}
-          defaultLanguage="processing"
-          filename={block.filename || 'sketch.pde'}
-          showCopyButton
-        />
+        {(block.showCodeJava !== false || block.showCodeP5 === true) && (
+          <ProcessingCodeBlock
+            code={javaCode}
+            codeJava={block.showCodeJava === false ? '' : javaCode}
+            codeP5={block.showCodeP5 === true ? p5Code : undefined}
+            defaultLanguage="processing"
+            filename={block.filename || 'sketch.pde'}
+            showCopyButton
+          />
+        )}
       </div>
     );
   }
@@ -72,6 +94,29 @@ export function CmsBlockView({ block }: { block: CmsBlock }) {
   if (block.type === 'video') {
     const src = videoUrl(block.content);
     return src ? <figure className="space-y-2"><iframe src={src} title={block.caption || 'Video educativo'} loading="lazy" className="aspect-video w-full rounded-xl border border-[#E1E7E1]" allowFullScreen />{block.caption && <figcaption className="text-xs text-[#59645C]">{block.caption}</figcaption>}</figure> : null;
+  }
+  if (block.type === 'iframe') {
+    const src = iframeUrl(block.content);
+    const isMiro = src ? new URL(src).hostname === 'miro.com' : false;
+    return src ? (
+      <figure className="space-y-2">
+        <iframe
+          src={src}
+          title={block.iframeTitle || block.caption || 'Contenido embebido'}
+          loading="lazy"
+          className="w-full rounded-xl border border-[#E1E7E1] bg-white"
+          style={{ height: `${Math.min(Math.max(block.iframeHeight || 480, 160), 1200)}px` }}
+          sandbox={isMiro
+            ? 'allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock'
+            : 'allow-scripts allow-forms allow-popups'}
+          allow={isMiro ? 'fullscreen; clipboard-read; clipboard-write' : undefined}
+          allowFullScreen
+        />
+        {block.caption && <figcaption className="text-xs text-[#59645C]">{block.caption}</figcaption>}
+      </figure>
+    ) : (
+      <p className="text-xs text-[#9A5A18]">La URL del iframe no es válida.</p>
+    );
   }
   if (block.type === 'callout') return (
     <aside className={`p-4 rounded-xl border text-sm whitespace-pre-line ${block.calloutType === 'warning' ? 'bg-[#FFF9EE] border-[#E6C687]' : 'bg-[#E8EEE8] border-[#A4C4B5]'}`}>

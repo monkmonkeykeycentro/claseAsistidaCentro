@@ -23,8 +23,12 @@ import {
   CurriculumExportData,
   HeaderNavigationItem,
   DEFAULT_HEADER_NAVIGATION,
+  CmsNode,
+  CmsNodeBlock,
+  CmsNodeRelation,
 } from '../types/cms';
 import { TOPICS_DATA, TopicItem, TopicConcept } from '../data/topicsData';
+import { CURRICULUM_UNITS } from '../data/unitsData';
 
 // ============================================================================
 // 1. DEFAULT SITE CONTENT
@@ -289,6 +293,10 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
             sectionId: sectionId,
             type: 'code',
             content: concept.codeSnippet,
+            contentJava: concept.codeSnippetJava || concept.codeSnippet,
+            contentP5: concept.codeSnippetP5,
+            codeLanguage: 'processing',
+            showInteractiveExecution: false,
             filename: `${concept.id}.pde`,
             caption: `Ejemplo Processing Java para ${concept.title}`,
             position: 1,
@@ -488,6 +496,229 @@ async function persist(name: string, id: string, data: object): Promise<void> {
 
 const published = () => [where('status', '==', 'published'), where('visible', '==', true)];
 const byPosition = <T extends { position: number }>(list: T[]) => list.sort((a, b) => a.position - b.position);
+
+const composableNodeCollections = {
+  nodes: 'cms_nodes',
+  relations: 'cms_node_relations',
+  blocks: 'cms_node_blocks',
+} as const;
+
+const composableMigrationKey = 'cms_composable_migration_v1';
+const nodeId = (prefix: string, id: string) => `${prefix}_${id}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+type ComposableMigrationResult = {
+  migrated: boolean;
+  nodes: number;
+  relations: number;
+  blocks: number;
+};
+
+async function commitInChunks(
+  writes: Array<(batch: ReturnType<typeof writeBatch>) => void>,
+  chunkSize = 400,
+): Promise<void> {
+  for (let index = 0; index < writes.length; index += chunkSize) {
+    const batch = writeBatch(db);
+    writes.slice(index, index + chunkSize).forEach((write) => write(batch));
+    await batch.commit();
+  }
+}
+
+/**
+ * Copies legacy CMS records and the hardcoded curriculum into composable nodes.
+ * The legacy collections remain untouched and existing composable records are
+ * never overwritten, so this operation is safe to retry after an interruption.
+ */
+export async function migrateLegacyContentToComposable(): Promise<ComposableMigrationResult> {
+  await requireCmsAdmin();
+  const marker = await getDoc(doc(db, 'cms_site_content', composableMigrationKey));
+  if (marker.exists()) {
+    const data = marker.data() as Partial<ComposableMigrationResult>;
+    return { migrated: false, nodes: data.nodes || 0, relations: data.relations || 0, blocks: data.blocks || 0 };
+  }
+
+  const [modules, lessons, sections, blocks, media, existingNodes, existingRelations, existingBlocks] = await Promise.all([
+    readCollection<CmsModule>('cms_modules'),
+    readCollection<CmsLesson>('cms_lessons'),
+    readCollection<CmsSection>('cms_sections'),
+    readCollection<CmsBlock>('cms_blocks'),
+    readCollection<CmsMediaResource>('cms_media'),
+    readCollection<CmsNode>(composableNodeCollections.nodes),
+    readCollection<CmsNodeRelation>(composableNodeCollections.relations),
+    readCollection<CmsNodeBlock>(composableNodeCollections.blocks),
+  ]);
+  const nodeIds = new Set(existingNodes.map((item) => item.id));
+  const relationIds = new Set(existingRelations.map((item) => item.id));
+  const blockIds = new Set(existingBlocks.map((item) => item.id));
+  const nodeWrites: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
+  const relationWrites: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
+  const blockWrites: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
+  const now = new Date().toISOString();
+  const addNode = (node: CmsNode) => {
+    if (!nodeIds.has(node.id)) {
+      nodeIds.add(node.id);
+      nodeWrites.push((batch) => batch.set(doc(db, composableNodeCollections.nodes, node.id), cleanDocument(node)));
+    }
+  };
+  const addRelation = (relation: CmsNodeRelation) => {
+    if (!relationIds.has(relation.id)) {
+      relationIds.add(relation.id);
+      relationWrites.push((batch) => batch.set(doc(db, composableNodeCollections.relations, relation.id), cleanDocument(relation)));
+    }
+  };
+  const addBlock = (block: CmsNodeBlock) => {
+    if (!blockIds.has(block.id)) {
+      blockIds.add(block.id);
+      blockWrites.push((batch) => batch.set(doc(db, composableNodeCollections.blocks, block.id), cleanDocument(block)));
+    }
+  };
+  const relation = (parentId: string, childId: string, position: number, id: string): CmsNodeRelation => ({
+    id,
+    parentId,
+    childId,
+    relationType: 'contains',
+    position,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  modules.forEach((module) => {
+    const id = nodeId('node_module', module.id);
+    addNode({ id, type: 'container', title: module.title, slug: module.slug, description: module.description, status: module.status, visible: module.visible, position: module.position, capabilities: ['content', 'container', 'navigation'], metadata: { legacyId: module.id, category: module.category, badge: module.badge || '' }, createdAt: module.createdAt || now, updatedAt: module.updatedAt || now });
+  });
+  lessons.forEach((lesson) => {
+    const id = nodeId('node_lesson', lesson.id);
+    addNode({ id, type: 'lesson', title: lesson.title, slug: lesson.slug, description: lesson.summary, status: lesson.status, visible: lesson.visible, position: lesson.position, capabilities: ['content', 'container'], metadata: { legacyId: lesson.id, moduleId: lesson.moduleId, estimatedTime: lesson.estimatedTime || '', workshopType: lesson.workshopType || '' }, createdAt: lesson.createdAt || now, updatedAt: lesson.updatedAt || now });
+    addRelation(relation(nodeId('node_module', lesson.moduleId), id, lesson.position, nodeId('rel_module_lesson', lesson.id)));
+  });
+  sections.forEach((section) => {
+    const id = nodeId('node_section', section.id);
+    addNode({ id, type: 'section', title: section.title, description: section.summary, status: 'published', visible: section.visible, position: section.position, capabilities: ['content', 'container'], metadata: { legacyId: section.id, lessonId: section.lessonId, didacticTip: section.didacticTip || '', commonMistake: section.commonMistake || '' }, createdAt: section.createdAt || now, updatedAt: section.updatedAt || now });
+    addRelation(relation(nodeId('node_lesson', section.lessonId), id, section.position, nodeId('rel_lesson_section', section.id)));
+  });
+  blocks.forEach((legacyBlock) => {
+    const id = nodeId('node_block', legacyBlock.id);
+    const sectionNodeId = nodeId('node_section', legacyBlock.sectionId);
+    addNode({ id: sectionNodeId, type: 'section', title: 'Sección migrada', status: 'published', visible: true, position: 0, capabilities: ['content', 'container'], metadata: { legacyId: legacyBlock.sectionId }, createdAt: now, updatedAt: now });
+    addBlock({ id, nodeId: sectionNodeId, type: legacyBlock.type, position: legacyBlock.position, data: { content: legacyBlock.content, contentP5: legacyBlock.contentP5 || '', contentJava: legacyBlock.contentJava || '', codeLanguage: legacyBlock.codeLanguage || '', showInteractiveExecution: legacyBlock.showInteractiveExecution === true, filename: legacyBlock.filename || '', caption: legacyBlock.caption || '', calloutType: legacyBlock.calloutType || '', activityConfig: legacyBlock.activityConfig || '' }, createdAt: legacyBlock.createdAt || now, updatedAt: legacyBlock.updatedAt || now });
+  });
+  media.forEach((resource, position) => {
+    const id = nodeId('node_resource', resource.id);
+    addNode({ id, type: 'resource', title: resource.title, description: resource.altText, status: 'published', visible: true, position, capabilities: ['resource', 'content'], metadata: { legacyId: resource.id, category: resource.category || '', url: resource.url }, createdAt: resource.createdAt || now, updatedAt: now });
+    addBlock({ id: nodeId('node_resource_block', resource.id), nodeId: id, type: 'resources', position: 0, data: { url: resource.url, title: resource.title, altText: resource.altText || '', category: resource.category || '', embed: false }, createdAt: resource.createdAt || now, updatedAt: now });
+  });
+  CURRICULUM_UNITS.forEach((unit) => {
+    const unitNodeId = nodeId('node_unit', unit.id);
+    addNode({ id: unitNodeId, type: 'unit', title: unit.title, description: unit.summary, status: 'published', visible: true, position: unit.number - 1, capabilities: ['content', 'container', 'navigation'], metadata: { source: 'unitsData', unit: { ...unit, exercises: undefined } }, createdAt: now, updatedAt: now });
+    unit.exercises.forEach((exercise, position) => {
+      const exerciseNodeId = nodeId('node_activity', exercise.id);
+      addNode({ id: exerciseNodeId, type: 'activity', title: exercise.title, description: exercise.subtitle, status: exercise.status, visible: exercise.status === 'published', position, capabilities: ['content', 'activity', 'assessment', 'interactive'], metadata: { source: 'unitsData', exercise }, createdAt: now, updatedAt: now });
+      addRelation(relation(unitNodeId, exerciseNodeId, position, nodeId('rel_unit_activity', exercise.id)));
+    });
+  });
+
+  await commitInChunks(nodeWrites);
+  await commitInChunks(relationWrites);
+  await commitInChunks(blockWrites);
+  const counts = { nodes: nodeWrites.length, relations: relationWrites.length, blocks: blockWrites.length };
+  await setDoc(doc(db, 'cms_site_content', composableMigrationKey), { key: composableMigrationKey, version: 1, ...counts, migratedAt: now }, { merge: true });
+  return { migrated: true, ...counts };
+}
+
+export async function getCmsNodes(includeUnpublished = false): Promise<CmsNode[]> {
+  if (includeUnpublished) await requireCmsAdmin();
+  const constraints = includeUnpublished ? [] : published();
+  const nodes = await readCollection<CmsNode>(composableNodeCollections.nodes, constraints);
+  return byPosition(nodes.filter((node) => node.status !== 'archived'));
+}
+
+export async function getCmsNodeById(nodeId: string): Promise<CmsNode | null> {
+  const snapshot = await getDoc(doc(db, composableNodeCollections.nodes, nodeId));
+  return snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } as CmsNode : null;
+}
+
+export async function saveCmsNode(data: CmsNode): Promise<void> {
+  if (!data.title.trim()) throw new Error('El contenido necesita un título.');
+  if (!data.type || !Array.isArray(data.capabilities)) {
+    throw new Error('El contenido necesita un tipo y capacidades válidas.');
+  }
+  await persist(composableNodeCollections.nodes, data.id, {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteCmsNode(id: string, hardDelete = false): Promise<void> {
+  await requireCmsAdmin();
+  if (!hardDelete) {
+    await persist(composableNodeCollections.nodes, id, {
+      status: 'archived',
+      visible: false,
+      updatedAt: new Date().toISOString(),
+    });
+    return;
+  }
+
+  const [relations, blocks] = await Promise.all([
+    readCollection<CmsNodeRelation>(composableNodeCollections.relations),
+    readCollection<CmsNodeBlock>(composableNodeCollections.blocks, [
+      where('nodeId', '==', id),
+    ]),
+  ]);
+  const batch = writeBatch(db);
+  relations
+    .filter((relation) => relation.parentId === id || relation.childId === id)
+    .forEach((relation) => batch.delete(doc(db, composableNodeCollections.relations, relation.id)));
+  blocks.forEach((block) => batch.delete(doc(db, composableNodeCollections.blocks, block.id)));
+  batch.delete(doc(db, composableNodeCollections.nodes, id));
+  await batch.commit();
+}
+
+export async function getCmsNodeRelations(
+  nodeId: string,
+  relationType: CmsNodeRelation['relationType'] = 'contains',
+): Promise<CmsNodeRelation[]> {
+  const relations = await readCollection<CmsNodeRelation>(composableNodeCollections.relations, [
+    where('parentId', '==', nodeId),
+    where('relationType', '==', relationType),
+  ]);
+  return byPosition(relations);
+}
+
+export async function saveCmsNodeRelation(data: CmsNodeRelation): Promise<void> {
+  if (!data.parentId || !data.childId || data.parentId === data.childId) {
+    throw new Error('La relación necesita contenidos distintos de origen y destino.');
+  }
+  await persist(composableNodeCollections.relations, data.id, {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteCmsNodeRelation(id: string): Promise<void> {
+  await requireCmsAdmin();
+  await deleteDoc(doc(db, composableNodeCollections.relations, id));
+}
+
+export async function getCmsNodeBlocks(nodeId: string): Promise<CmsNodeBlock[]> {
+  return byPosition(await readCollection<CmsNodeBlock>(composableNodeCollections.blocks, [
+    where('nodeId', '==', nodeId),
+  ]));
+}
+
+export async function saveCmsNodeBlock(data: CmsNodeBlock): Promise<void> {
+  if (!data.nodeId || !data.type || !data.data || typeof data.data !== 'object') {
+    throw new Error('El bloque necesita un contenido válido.');
+  }
+  await persist(composableNodeCollections.blocks, data.id, {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteCmsNodeBlock(id: string): Promise<void> {
+  await requireCmsAdmin();
+  await deleteDoc(doc(db, composableNodeCollections.blocks, id));
+}
 
 export async function getCmsModules(includeUnpublished = false): Promise<CmsModule[]> {
   if (includeUnpublished) await requireCmsAdmin();
@@ -828,9 +1059,24 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
     if (activity) {
       try { quickChallenge = JSON.parse(activity.activityConfig!); } catch { /* Plain text activity. */ }
     }
-    const codeBlock = blocks.find((block) => block.type === 'code');
+    const originalConcept = original?.concepts.find((concept) => concept.id === section.id.replace(/^sec_/, ''));
+    const blocksForDisplay = blocks.map((block) => {
+      if (block.type !== 'code') return block;
+      return {
+        ...block,
+        contentP5: block.contentP5 || lesson.thumbnailP5 || originalConcept?.codeSnippetP5,
+        contentJava: block.contentJava || originalConcept?.codeSnippetJava || block.content,
+        showInteractiveExecution: block.showInteractiveExecution ?? lesson.showInteractiveExecution,
+        showCodeJava: block.showCodeJava ?? lesson.showCodeJava,
+        showCodeP5: block.showCodeP5 ?? lesson.showCodeP5,
+        repositoryUrl: block.repositoryUrl || lesson.repositoryUrl,
+        repositoryEntry: block.repositoryEntry || lesson.repositoryEntry,
+        codeSource: block.codeSource || (block.repositoryUrl || lesson.repositoryUrl ? 'github' : 'inline'),
+      };
+    });
+    const codeBlock = blocksForDisplay.find((block) => block.type === 'code');
     const javaCode = codeBlock?.contentJava || codeBlock?.content || '';
-    const p5Code = codeBlock?.contentP5 || '';
+    const p5Code = codeBlock?.contentP5 || lesson.thumbnailP5 || originalConcept?.codeSnippetP5 || '';
 
     return {
       id: section.id,
@@ -838,12 +1084,17 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
       summary: section.summary || '',
       explanation: blocks.filter((block) => block.type === 'rich-text').map((block) => block.content).join('\n\n'),
       codeSnippet: javaCode,
-      codeSnippetJava: javaCode,
+      codeSnippetJava: javaCode || originalConcept?.codeSnippetJava || '',
       codeSnippetP5: p5Code,
+      repositoryUrl: codeBlock?.repositoryUrl || lesson.repositoryUrl,
+      repositoryEntry: codeBlock?.repositoryEntry || lesson.repositoryEntry,
+      showCodeJava: codeBlock?.showCodeJava ?? lesson.showCodeJava ?? true,
+      showCodeP5: codeBlock?.showCodeP5 ?? lesson.showCodeP5 ?? false,
+      showInteractiveExecution: codeBlock?.showInteractiveExecution ?? lesson.showInteractiveExecution ?? false,
       defaultLanguage: 'processing' as const,
       didacticTip: section.didacticTip || '',
       commonMistake: section.commonMistake,
-      blocks,
+      blocks: blocksForDisplay,
     };
   }));
 
@@ -863,6 +1114,11 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
     hasInteractiveWorkshop: original?.hasInteractiveWorkshop || false,
     quickChallenge,
     thumbnailP5,
+    repositoryUrl: lesson.repositoryUrl,
+    repositoryEntry: lesson.repositoryEntry,
+    showCodeJava: lesson.showCodeJava ?? true,
+    showCodeP5: lesson.showCodeP5 ?? false,
+    showInteractiveExecution: lesson.showInteractiveExecution ?? false,
     displayCodeJava,
   };
 }

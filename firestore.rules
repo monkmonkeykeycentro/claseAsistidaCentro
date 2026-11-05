@@ -73,6 +73,31 @@ service cloud.firestore {
       allow write: if isAdmin() && isValidId(blockId);
     }
 
+    match /cms_nodes/{nodeId} {
+      allow read: if isAdmin() || isPublished(resource.data);
+      allow write: if isAdmin() && isValidId(nodeId);
+    }
+
+    match /cms_node_relations/{relationId} {
+      allow read: if isAdmin()
+        || (
+          get(/databases/$(database)/documents/cms_nodes/$(resource.data.parentId)).data.status == 'published'
+          && get(/databases/$(database)/documents/cms_nodes/$(resource.data.parentId)).data.visible == true
+          && get(/databases/$(database)/documents/cms_nodes/$(resource.data.childId)).data.status == 'published'
+          && get(/databases/$(database)/documents/cms_nodes/$(resource.data.childId)).data.visible == true
+        );
+      allow write: if isAdmin() && isValidId(relationId);
+    }
+
+    match /cms_node_blocks/{blockId} {
+      allow read: if isAdmin()
+        || (
+          get(/databases/$(database)/documents/cms_nodes/$(resource.data.nodeId)).data.status == 'published'
+          && get(/databases/$(database)/documents/cms_nodes/$(resource.data.nodeId)).data.visible == true
+        );
+      allow write: if isAdmin() && isValidId(blockId);
+    }
+
     match /cms_site_content/{contentKey} {
       allow read: if true;
       allow write: if isAdmin() && isValidId(contentKey);

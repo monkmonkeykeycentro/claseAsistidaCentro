@@ -21,6 +21,7 @@ import {
 import { StudentPreviewModal } from './StudentPreviewModal';
 import { ProcessingCodeBlock } from '../ProcessingCodeBlock';
 import { P5LiveThumbnail } from '../generative/P5LiveThumbnail';
+import { fetchGithubSketchSource } from '../../services/githubRepositoryService';
 import {
   ArrowLeft,
   Save,
@@ -64,6 +65,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
+  const [isLoadingRepository, setIsLoadingRepository] = useState(false);
 
   const savingRef = useRef(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -125,6 +127,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
         status: publishNow ? 'published' : 'draft',
         updatedAt: new Date().toISOString(),
       };
+
       await saveCmsLessonContent(updated, sections, blocksBySection);
       setHasUnsavedChanges(false);
       setActionError(null);
@@ -139,6 +142,30 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     } finally {
       savingRef.current = false;
       setIsSaving(false);
+    }
+  };
+
+  const handleLoadRepository = async () => {
+    if (!formData.repositoryUrl?.trim()) {
+      setActionError('Agrega primero el enlace del repositorio de GitHub.');
+      return;
+    }
+    setIsLoadingRepository(true);
+    setActionError(null);
+    try {
+      const source = await fetchGithubSketchSource(formData.repositoryUrl, formData.repositoryEntry || undefined);
+      setFormData((current) => ({
+        ...current,
+        thumbnailP5: source.code,
+        repositoryEntry: source.entry,
+      }));
+      setHasUnsavedChanges(true);
+      setSaveSuccessMsg(`Código cargado desde ${source.entry}. Guarda la lección para conservarlo.`);
+      setTimeout(() => setSaveSuccessMsg(null), 4000);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No se pudo cargar el proyecto desde GitHub.');
+    } finally {
+      setIsLoadingRepository(false);
     }
   };
 
@@ -220,6 +247,8 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
         ? 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80'
         : type === 'video'
         ? 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+        : type === 'iframe'
+        ? 'https://example.com'
         : type === 'resources' ? 'https://processing.org/reference/' : 'Actividad práctica guiada';
 
     const newBlock: CmsBlock = {
@@ -229,6 +258,8 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
       content: defaultContent,
       filename: type === 'code' ? 'sketch.pde' : undefined,
       caption: type === 'code' ? 'Ejemplo en Processing Java' : undefined,
+      iframeTitle: type === 'iframe' ? 'Contenido embebido' : undefined,
+      iframeHeight: type === 'iframe' ? 480 : undefined,
       calloutType: type === 'callout' ? 'tip' : undefined,
       position: currentBlocks.length,
       createdAt: new Date().toISOString(),
@@ -311,6 +342,43 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
             <span>Volver a Módulos</span>
           </button>
           <span className="text-[#E1E7E1]">/</span>
+          <div>
+            <label className="font-semibold text-[#59645C] block mb-1 text-[11px]">
+              Repositorio público de GitHub (opcional):
+            </label>
+            <input
+              type="url"
+              value={formData.repositoryUrl || ''}
+              placeholder="https://github.com/usuario/proyecto"
+              onChange={(e) => {
+                setHasUnsavedChanges(true);
+                setFormData({ ...formData, repositoryUrl: e.target.value });
+              }}
+              className="w-full p-2 border border-[#E1E7E1] rounded-xl text-xs bg-[#F7F8F4] text-[#232A24] focus:outline-none focus:border-[#407B5D]"
+            />
+            <input
+              type="text"
+              value={formData.repositoryEntry || ''}
+              placeholder="Se detecta automáticamente el único archivo .js de *_p5"
+              onChange={(e) => {
+                setHasUnsavedChanges(true);
+                setFormData({ ...formData, repositoryEntry: e.target.value });
+              }}
+              className="w-full mt-1 p-2 border border-[#E1E7E1] rounded-xl font-mono text-[11px] bg-[#F7F8F4] text-[#232A24] focus:outline-none focus:border-[#407B5D]"
+            />
+            <p className="text-[10px] text-[#7A867E] mt-1">
+              Se detectan automáticamente las carpetas raíz y el único archivo .js dentro de *_p5.
+            </p>
+            <button
+              type="button"
+              onClick={handleLoadRepository}
+              disabled={isLoadingRepository || !formData.repositoryUrl?.trim()}
+              className="mt-2 px-3 py-1.5 rounded-lg bg-[#407B5D] text-white text-[11px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingRepository ? 'Cargando desde GitHub…' : 'Cargar código desde GitHub'}
+            </button>
+          </div>
+
           <div>
             <div className="flex items-center gap-2 text-xs">
               <span className="font-bold text-[#407B5D] uppercase tracking-wider bg-[#E8EEE8] px-2 py-0.5 rounded-full text-[10px]">
@@ -482,6 +550,32 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                   </span>
                 </div>
 
+                <div className="p-3 rounded-xl border border-[#A4C4B5] bg-[#F7F8F4] space-y-2">
+                  <span className="font-semibold text-[#59645C] block text-[11px]">
+                    Qué mostrar dentro del tema:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <label className="flex items-center gap-2 text-[11px] text-[#232A24]">
+                      <input type="checkbox" checked={formData.showCodeJava !== false}
+                        onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, showCodeJava: e.target.checked }); }}
+                        className="accent-[#407B5D]" />
+                      Código Processing Java
+                    </label>
+                    <label className="flex items-center gap-2 text-[11px] text-[#232A24]">
+                      <input type="checkbox" checked={formData.showCodeP5 === true}
+                        onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, showCodeP5: e.target.checked }); }}
+                        className="accent-[#407B5D]" />
+                      Código p5.js
+                    </label>
+                    <label className="flex items-center gap-2 text-[11px] text-[#232A24]">
+                      <input type="checkbox" checked={formData.showInteractiveExecution === true}
+                        onChange={(e) => { setHasUnsavedChanges(true); setFormData({ ...formData, showInteractiveExecution: e.target.checked }); }}
+                        className="accent-[#407B5D]" />
+                      Ejecución interactiva
+                    </label>
+                  </div>
+                </div>
+
                 <div>
                   <label className="font-semibold text-[#59645C] block mb-1 text-[11px]">
                     Código p5.js de miniatura (se ejecuta en la tarjeta del home):
@@ -514,13 +608,20 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                   />
                 </div>
 
-                {formData.thumbnailP5 && (
+                {(formData.thumbnailP5 || formData.repositoryUrl) && (
                   <div className="pt-1 space-y-1">
                     <span className="text-[10px] text-[#59645C] font-semibold block">
                       Vista previa de miniatura ejecutándose en p5:
                     </span>
                     <div className="flex justify-center p-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl overflow-hidden">
-                      <P5LiveThumbnail p5Code={formData.thumbnailP5} width={240} height={105} interactive={true} />
+                      <P5LiveThumbnail
+                        p5Code={formData.thumbnailP5}
+                        repositoryUrl={formData.repositoryUrl}
+                        repositoryEntry={formData.repositoryEntry}
+                        width={240}
+                        height={105}
+                        interactive={true}
+                      />
                     </div>
                   </div>
                 )}
@@ -731,6 +832,12 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                     <Video className="w-3.5 h-3.5 text-[#407B5D]" />
                     <span>+ Video</span>
                   </button>
+                  <button
+                    onClick={() => runAction(() => handleAddBlock(activeSection.id, 'iframe'))}
+                    className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] bg-white hover:bg-[#E8EEE8] text-xs font-semibold text-[#232A24] cursor-pointer"
+                  >
+                    + Iframe
+                  </button>
                   <button onClick={() => runAction(() => handleAddBlock(activeSection.id, 'resources'))} className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] text-xs cursor-pointer">+ Recurso</button>
                   <button onClick={() => runAction(() => handleAddBlock(activeSection.id, 'activity'))} className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E1E7E1] text-xs cursor-pointer">+ Actividad</button>
                 </div>
@@ -810,6 +917,20 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
 
                       {block.type === 'code' && (
                         <div className="space-y-3">
+                          <div className="flex items-center gap-2 p-2.5 rounded-xl border border-[#A4C4B5] bg-white text-xs">
+                            <span className="font-semibold">Fuente:</span>
+                            <select
+                              value={block.codeSource || (block.repositoryUrl ? 'github' : 'inline')}
+                              onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'codeSource', e.target.value)}
+                              className="px-2 py-1 rounded-lg border border-[#E1E7E1]"
+                            >
+                              <option value="inline">Código independiente</option>
+                              <option value="github">Repositorio GitHub</option>
+                            </select>
+                            <span className="text-[10px] text-[#59645C]">
+                              GitHub solo se usa cuando se selecciona esa opción.
+                            </span>
+                          </div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <input
                               type="text"
@@ -830,6 +951,25 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                               className="px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl text-xs text-[#232A24]"
                             />
                           </div>
+
+                          {block.codeSource === 'github' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <input
+                                type="url"
+                                value={block.repositoryUrl || ''}
+                                onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'repositoryUrl', e.target.value)}
+                                placeholder="Repositorio GitHub público"
+                                className="px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
+                              />
+                              <input
+                                type="text"
+                                value={block.repositoryEntry || ''}
+                                onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'repositoryEntry', e.target.value)}
+                                placeholder="Ruta opcional del archivo .js"
+                                className="px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl font-mono text-xs"
+                              />
+                            </div>
+                          )}
 
                           {/* Dual Code Inputs: 1. Processing Java (Displayed) and 2. p5.js (Live thumbnail) */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -873,6 +1013,28 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                             </div>
                           </div>
 
+                          <label className="flex items-start gap-2 p-3 rounded-xl border border-[#A4C4B5] bg-[#F7F8F4] text-xs text-[#232A24] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={block.showInteractiveExecution === true}
+                              onChange={(e) =>
+                                handleUpdateBlockField(
+                                  activeSection.id,
+                                  block.id,
+                                  'showInteractiveExecution',
+                                  e.target.checked,
+                                )
+                              }
+                              className="mt-0.5 accent-[#407B5D]"
+                            />
+                            <span>
+                              <strong className="block">Mostrar ejecución interactiva dentro del tema</strong>
+                              <span className="text-[11px] text-[#59645C]">
+                                Añade un lienzo grande ejecutable además de la miniatura.
+                              </span>
+                            </span>
+                          </label>
+
                           {/* Live mini preview of the p5.js code */}
                           <div className="p-3 bg-white border border-[#E1E7E1] rounded-xl space-y-2">
                             <div className="flex items-center justify-between text-xs text-[#59645C]">
@@ -887,6 +1049,8 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                             <div className="w-full flex justify-center bg-[#F7F8F4] rounded-lg p-2 border border-[#E1E7E1]">
                               <P5LiveThumbnail
                                 p5Code={block.contentP5}
+                                repositoryUrl={block.codeSource === 'github' ? block.repositoryUrl : undefined}
+                                repositoryEntry={block.repositoryEntry}
                                 width={340}
                                 height={150}
                                 interactive={true}
@@ -986,6 +1150,41 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                             }
                             placeholder="Descripción del video..."
                             className="w-full px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl"
+                          />
+                        </div>
+                      )}
+
+                      {block.type === 'iframe' && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                          <input
+                            type="url"
+                            value={block.content}
+                            onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)}
+                            placeholder="URL https://... o código <iframe> de Miro"
+                            className="md:col-span-2 px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
+                          />
+                          <input
+                            type="number"
+                            min={160}
+                            max={1200}
+                            value={block.iframeHeight || 480}
+                            onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'iframeHeight', Number(e.target.value))}
+                            placeholder="Alto (px)"
+                            className="px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
+                          />
+                          <input
+                            type="text"
+                            value={block.iframeTitle || ''}
+                            onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'iframeTitle', e.target.value)}
+                            placeholder="Título accesible del iframe"
+                            className="md:col-span-2 px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
+                          />
+                          <input
+                            type="text"
+                            value={block.caption || ''}
+                            onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'caption', e.target.value)}
+                            placeholder="Pie del contenido"
+                            className="px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
                           />
                         </div>
                       )}

@@ -609,6 +609,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <div className="border border-[#E1E7E1] bg-[#F7F8F4] rounded-xl flex items-center justify-center p-1.5 overflow-hidden">
                       <P5LiveThumbnail
                         p5Code={topic.thumbnailP5 || topic.concepts[0]?.codeSnippetP5}
+                        repositoryUrl={topic.repositoryUrl || topic.concepts[0]?.repositoryUrl}
+                        repositoryEntry={topic.repositoryEntry || topic.concepts[0]?.repositoryEntry}
                         fallbackTopicNumber={topic.number}
                         width={280}
                         height={125}

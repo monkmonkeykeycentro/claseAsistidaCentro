@@ -72,13 +72,20 @@ export const StudentPreviewModal: React.FC<StudentPreviewModalProps> = ({
               )}
             </div>
 
-            {lesson.thumbnailP5 && (
+            {(lesson.thumbnailP5 || lesson.repositoryUrl) && (
               <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl flex flex-col items-center gap-2 shadow-2xs">
                 <span className="text-[11px] font-mono text-[#407B5D] font-bold self-start flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#407B5D] animate-pulse" />
                   Miniatura en vivo de la lección (p5.js):
                 </span>
-                <P5LiveThumbnail p5Code={lesson.thumbnailP5} width={360} height={150} interactive={true} />
+                <P5LiveThumbnail
+                  p5Code={lesson.thumbnailP5}
+                  repositoryUrl={lesson.repositoryUrl}
+                  repositoryEntry={lesson.repositoryEntry}
+                  width={360}
+                  height={150}
+                  interactive={true}
+                />
               </div>
             )}
 

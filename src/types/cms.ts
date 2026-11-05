@@ -1,5 +1,64 @@
 export type PublicationStatus = 'draft' | 'published' | 'archived';
 
+export type CmsNodeType =
+  | 'space'
+  | 'unit'
+  | 'lesson'
+  | 'section'
+  | 'activity'
+  | 'tool'
+  | 'resource'
+  | 'assessment'
+  | 'collection'
+  | 'container';
+
+export type CmsCapability =
+  | 'content'
+  | 'activity'
+  | 'interactive'
+  | 'assessment'
+  | 'tool'
+  | 'resource'
+  | 'container'
+  | 'navigation';
+
+export interface CmsNode {
+  id: string;
+  type: CmsNodeType;
+  title: string;
+  slug?: string;
+  description?: string;
+  status: PublicationStatus;
+  visible: boolean;
+  position: number;
+  capabilities: CmsCapability[];
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CmsRelationType = 'contains' | 'recommends' | 'requires' | 'references';
+
+export interface CmsNodeRelation {
+  id: string;
+  parentId: string;
+  childId: string;
+  relationType: CmsRelationType;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CmsNodeBlock {
+  id: string;
+  nodeId: string;
+  type: BlockType;
+  position: number;
+  data: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CmsModule {
   id: string;
   title: string;
@@ -28,7 +87,12 @@ export interface CmsLesson {
   hasInteractiveWorkshop?: boolean;
   workshopType?: 'classes' | 'oop-lab' | 'object-arrays' | string;
   thumbnailP5?: string;
+  repositoryUrl?: string;
+  repositoryEntry?: string;
   displayCodeJava?: string;
+  showCodeJava?: boolean;
+  showCodeP5?: boolean;
+  showInteractiveExecution?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +115,7 @@ export type BlockType =
   | 'code'
   | 'image'
   | 'video'
+  | 'iframe'
   | 'callout'
   | 'resources'
   | 'activity';
@@ -61,13 +126,21 @@ export interface CmsBlock {
   type: BlockType;
   content: string;
   contentP5?: string;
+  repositoryUrl?: string;
+  repositoryEntry?: string;
+  codeSource?: 'inline' | 'github';
   contentJava?: string;
   codeLanguage?: 'p5' | 'processing';
+  showCodeJava?: boolean;
+  showCodeP5?: boolean;
+  showInteractiveExecution?: boolean;
   position: number;
   filename?: string;
   caption?: string;
   calloutType?: 'info' | 'tip' | 'warning' | 'success';
   activityConfig?: string;
+  iframeTitle?: string;
+  iframeHeight?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -191,6 +264,13 @@ export interface CmsMediaResource {
   altText?: string;
   category?: string;
   createdAt: string;
+  provider?: 'external' | 'google-drive';
+  driveFileId?: string;
+  mimeType?: string;
+  driveWebViewLink?: string;
+  driveThumbnailLink?: string;
+  driveShortUrl?: string;
+  driveFolderId?: string;
 }
 
 export interface CmsRevision {

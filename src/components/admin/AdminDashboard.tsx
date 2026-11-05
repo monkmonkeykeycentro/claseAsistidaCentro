@@ -34,8 +34,10 @@ import {
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
 import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
+import { AdminComposableContentView } from './AdminComposableContentView';
 import { AppUser, isUserAdmin, db } from '../../services/firebase';
 import { describeCmsError } from '../../utils/cmsErrors';
+import { connectGoogleDrive, getDriveThumbnailObjectUrl, isDriveConfigured, uploadDriveFile } from '../../services/googleDriveService';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import {
   PilotEvidenceRecord,
@@ -98,7 +100,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   onPreviewAsStudent,
   onOpenExerciseInRunner,
 }) => {
-  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'navigation' | 'content' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
+  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'composable' | 'navigation' | 'content' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
   const [navItems, setNavItems] = useState<HeaderNavigationItem[]>(DEFAULT_HEADER_NAVIGATION);
   const [isSavingNav, setIsSavingNav] = useState<boolean>(false);
   const [navSuccessMessage, setNavSuccessMessage] = useState<string>('');
@@ -138,6 +140,8 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     altText: '',
     category: 'diagramas',
   });
+  const [isDriveConnected, setIsDriveConnected] = useState(false);
+  const [drivePreviewUrls, setDrivePreviewUrls] = useState<Record<string, string>>({});
 
   // Notification Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -307,6 +311,33 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     loadAll();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const objectUrls: string[] = [];
+    const loadPreviews = async () => {
+      if (!isDriveConnected) return;
+      const entries = await Promise.all(
+        mediaList
+          .filter((media) => media.provider === 'google-drive' && media.driveFileId)
+          .map(async (media) => [media.id, await getDriveThumbnailObjectUrl(media.driveFileId!)] as const),
+      );
+      if (cancelled) return;
+      const previews: Record<string, string> = {};
+      entries.forEach(([id, url]) => {
+        if (url) {
+          previews[id] = url;
+          objectUrls.push(url);
+        }
+      });
+      setDrivePreviewUrls(previews);
+    };
+    loadPreviews().catch(() => undefined);
+    return () => {
+      cancelled = true;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [isDriveConnected, mediaList]);
 
   // Navigation & Apartados actions
   const handleMoveNav = (index: number, direction: 'up' | 'down') => {
@@ -590,10 +621,66 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       category: mediaForm.category || 'diagramas',
       createdAt: new Date().toISOString(),
     };
+
     await saveCmsMediaResource(newMedia);
     setIsMediaModalOpen(false);
     setMediaList([newMedia, ...mediaList]);
     showToast('Recurso multimedia agregado.');
+  };
+
+  const handleUploadToDrive = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!isDriveConfigured()) {
+      setActionError('Falta configurar VITE_GOOGLE_CLIENT_ID para usar Google Drive.');
+      return;
+    }
+    if (!isDriveConnected) {
+      setActionError('Primero presiona "Conectar Drive" y autoriza el acceso.');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const uploaded = await uploadDriveFile(file);
+      const resource: CmsMediaResource = {
+        id: `med_drive_${uploaded.id}`,
+        title: uploaded.name,
+        url: uploaded.webViewLink,
+        driveWebViewLink: uploaded.webViewLink,
+        driveThumbnailLink: uploaded.thumbnailLink,
+        driveShortUrl: `https://drive.google.com/file/d/${uploaded.id}/view`,
+        driveFileId: uploaded.id,
+        mimeType: uploaded.mimeType,
+        provider: 'google-drive',
+        altText: uploaded.name,
+        category: file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'imagenes' : 'documentos',
+        createdAt: new Date().toISOString(),
+      };
+
+      await saveCmsMediaResource(resource);
+      setMediaList((current) => [resource, ...current]);
+      showToast(`"${uploaded.name}" se subió a Google Drive y se registró en el CMS.`);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No se pudo subir el archivo a Google Drive.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConnectDrive = async () => {
+    if (!isDriveConfigured()) {
+      setActionError('Falta configurar VITE_GOOGLE_CLIENT_ID para usar Google Drive.');
+      return;
+    }
+    try {
+      setActionError(null);
+      await connectGoogleDrive();
+      setIsDriveConnected(true);
+      showToast('Google Drive conectado correctamente.');
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No se pudo conectar Google Drive.');
+    }
   };
 
   const handleDeleteMedia = async (mediaId: string) => {
@@ -702,6 +789,9 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
             <span className="text-[#59645C] font-mono text-[11px]">
               {currentUser?.email}
             </span>
+            <span className="rounded-full bg-[#E8EEE8] px-2 py-0.5 text-[10px] font-semibold text-[#28543D]">
+              Sesión CMS activa
+            </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#232A24]">
             Gestor de Contenidos Educativos (CMS)
@@ -776,6 +866,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl space-y-1 shadow-xs">
             {[
               { id: 'curriculum_units', label: 'Propuesta Unidades 1–3', icon: BookOpen, count: 14 },
+              { id: 'composable', label: 'Contenido Composable', icon: Sparkles },
               { id: 'navigation', label: 'Apartados y Header', icon: Menu, count: navItems.length },
               { id: 'content', label: 'Módulos y Lecciones (CMS)', icon: Layers, count: modules.length },
               { id: 'evidences', label: 'Evidencias de Estudiantes', icon: FileCheck, count: evidenceList.length },
@@ -845,6 +936,8 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
               }}
             />
           )}
+
+          {activeTab === 'composable' && <AdminComposableContentView />}
 
           {/* ========================================================================= */}
           {/* TAB: APARTADOS Y NAVEGACIÓN DEL HEADER                                    */}
@@ -1620,6 +1713,20 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                   <Plus className="w-4 h-4" />
                   <span>Registrar Recurso</span>
                 </button>
+                <label className="min-h-[38px] px-4 py-2 rounded-xl border border-[#407B5D] text-[#407B5D] text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  <span>Subir a Drive</span>
+                  <input type="file" className="hidden" onChange={handleUploadToDrive} accept="image/*,audio/*,video/*,.pdf,.pde,.zip" />
+                </label>
+                {!isDriveConnected && (
+                  <button
+                    onClick={handleConnectDrive}
+                    className="min-h-[38px] px-4 py-2 rounded-xl border border-[#407B5D] text-[#407B5D] text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    Conectar Drive
+                  </button>
+                )}
+                {isDriveConnected && <span className="min-h-[38px] px-4 py-2 rounded-xl bg-[#E8EEE8] text-[#28543D] border border-[#A4C4B5] text-xs font-semibold flex items-center">Drive conectado</span>}
               </div>
 
               {mediaList.length === 0 ? (
@@ -1634,15 +1741,19 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                       className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-2 text-xs shadow-xs"
                     >
                       <div className="aspect-video bg-white rounded-xl border border-[#E1E7E1] overflow-hidden flex items-center justify-center">
-                        <img
-                          src={m.url}
-                          alt={m.altText || m.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as any).src =
-                              'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=80';
-                          }}
-                        />
+                        {drivePreviewUrls[m.id] || m.driveThumbnailLink || (m.mimeType || '').startsWith('image/') ? (
+                          <img
+                            src={drivePreviewUrls[m.id] || m.driveThumbnailLink || m.url}
+                            alt={m.altText || m.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="text-center text-[#59645C] p-3">
+                            <FileText className="w-8 h-8 mx-auto mb-2 text-[#407B5D]" />
+                            <span className="text-[11px] font-semibold">{m.mimeType || m.category || 'Recurso'}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-0.5">
                         <span className="font-bold text-[#232A24] block truncate">
@@ -1662,6 +1773,16 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                         >
                           Copiar URL
                         </button>
+                        {m.driveShortUrl && (
+                          <a
+                            href={m.driveShortUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-semibold text-[#407B5D] hover:underline"
+                          >
+                            Abrir
+                          </a>
+                        )}
                         <button
                           onClick={() => runAction(() => handleDeleteMedia(m.id))}
                           className="p-1 text-red-500 hover:text-red-700 cursor-pointer"

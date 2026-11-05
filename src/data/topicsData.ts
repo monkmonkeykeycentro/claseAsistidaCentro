@@ -8,6 +8,11 @@ export interface TopicConcept {
   codeSnippet: string;
   codeSnippetP5?: string;
   codeSnippetJava?: string;
+  repositoryUrl?: string;
+  repositoryEntry?: string;
+  showCodeJava?: boolean;
+  showCodeP5?: boolean;
+  showInteractiveExecution?: boolean;
   defaultLanguage?: 'p5' | 'processing';
   didacticTip: string;
   commonMistake?: string;
@@ -26,7 +31,12 @@ export interface TopicItem {
   hasInteractiveWorkshop: boolean;
   concepts: TopicConcept[];
   thumbnailP5?: string;
+  repositoryUrl?: string;
+  repositoryEntry?: string;
   displayCodeJava?: string;
+  showCodeJava?: boolean;
+  showCodeP5?: boolean;
+  showInteractiveExecution?: boolean;
   quickChallenge?: {
     question: string;
     codeTemplate: string;
