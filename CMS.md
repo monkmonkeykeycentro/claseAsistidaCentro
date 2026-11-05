@@ -48,6 +48,13 @@ lecciones. Para habilitar persistencia de categorías, publica `firestore.rules`
 la base `ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f` del
 proyecto `rugged-precept-406017`.
 
+Al abrir el panel administrativo se ejecuta una sincronización idempotente:
+restaura en `cms_categories` cualquier categoría histórica que falte, conserva
+las categorías personalizadas y vincula módulos, lecciones, secciones, bloques,
+recursos y nodos composables mediante `categoryId`. El nombre `category` se
+mantiene para compatibilidad con el contenido legacy. Las actividades de las
+unidades reciben la categoría de su unidad.
+
 Los cambios de campos se guardan juntos al guardar o publicar; las operaciones de estructura conservan primero las ediciones pendientes. Un fallo de Firebase se muestra como error y no como un guardado correcto. Los antiguos datos `cms_*_cache` de localStorage ya no sustituyen los documentos de Firebase.
 
 La primera apertura autorizada inicializa el temario original y completa documentos faltantes de instalaciones parciales, sin sobrescribir documentos existentes. La marca `cms_site_content/curriculum_initialized` evita volver a importar contenido que después se retire deliberadamente.

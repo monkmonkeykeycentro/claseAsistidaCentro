@@ -870,6 +870,114 @@ export async function getCmsCategories(includeUnpublished = false): Promise<CmsC
   }
 }
 
+/**
+ * Keeps the category catalog and existing CMS records connected.
+ * The legacy category name remains for backwards compatibility; categoryId is
+ * the stable reference used by new editorial features.
+ */
+export async function syncCmsCategoryReferences(): Promise<{ categories: number; references: number }> {
+  await requireCmsAdmin();
+  const existingCategories = await readCollection<CmsCategory>('cms_categories');
+  const categoriesByName = new Map(existingCategories.map((category) => [category.name.trim().toLocaleLowerCase(), category]));
+  const now = new Date().toISOString();
+  const categories = [...existingCategories];
+
+  for (const defaultCategory of DEFAULT_CMS_CATEGORIES) {
+    const key = defaultCategory.name.toLocaleLowerCase();
+    if (!categoriesByName.has(key)) {
+      const restored = { ...defaultCategory, createdAt: now, updatedAt: now };
+      categoriesByName.set(key, restored);
+      categories.push(restored);
+      await persist('cms_categories', restored.id, restored);
+    }
+  }
+
+  const [modules, lessons, sections, blocks, media, nodes, relations] = await Promise.all([
+    readCollection<CmsModule>('cms_modules'),
+    readCollection<CmsLesson>('cms_lessons'),
+    readCollection<CmsSection>('cms_sections'),
+    readCollection<CmsBlock>('cms_blocks'),
+    readCollection<CmsMediaResource>('cms_media'),
+    readCollection<CmsNode>(composableNodeCollections.nodes),
+    readCollection<CmsNodeRelation>(composableNodeCollections.relations),
+  ]);
+  const categoryIdFor = (name?: string) => {
+    if (!name) return undefined;
+    return categoriesByName.get(name.trim().toLocaleLowerCase())?.id;
+  };
+  const moduleById = new Map(modules.map((module) => [module.id, module]));
+  const lessonById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+  const sectionById = new Map(sections.map((section) => [section.id, section]));
+  const categoryIdByNodeId = new Map<string, string>();
+  const writes: Array<{ collection: string; id: string; data: object }> = [];
+  const queue = (collection: string, id: string, data: object) => writes.push({ collection, id, data });
+
+  modules.forEach((module) => {
+    const categoryId = module.categoryId || categoryIdFor(module.category);
+    if (categoryId && module.categoryId !== categoryId) queue('cms_modules', module.id, { categoryId, updatedAt: now });
+  });
+  lessons.forEach((lesson) => {
+    const categoryId = lesson.categoryId || moduleById.get(lesson.moduleId)?.categoryId || categoryIdFor(moduleById.get(lesson.moduleId)?.category);
+    if (categoryId && lesson.categoryId !== categoryId) queue('cms_lessons', lesson.id, { categoryId, updatedAt: now });
+  });
+  sections.forEach((section) => {
+    const lesson = lessonById.get(section.lessonId);
+    const module = moduleById.get(lesson?.moduleId || '');
+    const categoryId = section.categoryId
+      || lesson?.categoryId
+      || module?.categoryId
+      || categoryIdFor(module?.category);
+    if (categoryId && section.categoryId !== categoryId) queue('cms_sections', section.id, { categoryId, updatedAt: now });
+  });
+  blocks.forEach((block) => {
+    const section = sectionById.get(block.sectionId);
+    const categoryId = block.categoryId || section?.categoryId;
+    if (categoryId && block.categoryId !== categoryId) queue('cms_blocks', block.id, { categoryId, updatedAt: now });
+  });
+  media.forEach((resource) => {
+    const categoryId = resource.categoryId || categoryIdFor(resource.category);
+    if (categoryId && resource.categoryId !== categoryId) queue('cms_media', resource.id, { categoryId, updatedAt: now });
+  });
+
+  nodes.forEach((node) => {
+    const metadata = node.metadata || {};
+    const metadataCategory = typeof metadata.category === 'string' ? metadata.category : undefined;
+    const categoryId = typeof metadata.categoryId === 'string'
+      ? metadata.categoryId
+      : categoryIdFor(metadataCategory);
+    if (categoryId) categoryIdByNodeId.set(node.id, categoryId);
+  });
+  const parentByChild = new Map(relations.map((relation) => [relation.childId, relation.parentId]));
+  const categoryByUnitId: Record<string, string> = { u1: 'Fundamentos', u2: 'Control y Lógica', u3: 'Programación Orientada a Objetos' };
+  nodes.forEach((node) => {
+    let categoryId = categoryIdByNodeId.get(node.id);
+    if (!categoryId) {
+      const parentId = parentByChild.get(node.id);
+      categoryId = parentId ? categoryIdByNodeId.get(parentId) : undefined;
+    }
+    if (!categoryId && node.type === 'unit' && typeof node.metadata.unit === 'object' && node.metadata.unit) {
+      const unitId = (node.metadata.unit as { id?: string }).id;
+      categoryId = categoryIdFor(unitId ? categoryByUnitId[unitId] : undefined);
+    }
+    if (!categoryId && node.type === 'activity') {
+      const unitRelation = relations.find((relation) => relation.childId === node.id);
+      const unit = unitRelation ? nodes.find((candidate) => candidate.id === unitRelation.parentId) : undefined;
+      const unitId = unit && typeof unit.metadata.unit === 'object' && unit.metadata.unit
+        ? (unit.metadata.unit as { id?: string }).id
+        : undefined;
+      categoryId = categoryIdFor(unitId ? categoryByUnitId[unitId] : undefined);
+    }
+    if (categoryId && metadata.categoryId !== categoryId) {
+      queue('cms_nodes', node.id, { metadata: { ...metadata, categoryId }, updatedAt: now });
+    }
+  });
+
+  for (const write of writes) {
+    await persist(write.collection, write.id, write.data);
+  }
+  return { categories: categories.length, references: writes.length };
+}
+
 export async function saveCmsCategory(data: CmsCategory): Promise<void> {
   if (!data.name.trim()) throw new Error('La categoría necesita un nombre.');
   await persist('cms_categories', data.id, {
@@ -910,12 +1018,23 @@ export async function getCmsLessonById(lessonId: string): Promise<CmsLesson | nu
 
 export async function saveCmsModule(data: CmsModule): Promise<void> {
   if (!data.title.trim()) throw new Error('El módulo necesita un título.');
-  await persist('cms_modules', data.id, { ...data, updatedAt: new Date().toISOString() });
+  const category = (await getCmsCategories(true)).find((item) => item.name === data.category);
+  await persist('cms_modules', data.id, {
+    ...data,
+    categoryId: data.categoryId || category?.id,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export async function saveCmsLesson(data: CmsLesson): Promise<void> {
   if (!data.title.trim() || !data.moduleId) throw new Error('La lección necesita un título y un módulo.');
-  await persist('cms_lessons', data.id, { ...data, updatedAt: new Date().toISOString() });
+  const moduleSnapshot = await getDoc(doc(db, 'cms_modules', data.moduleId));
+  const module = moduleSnapshot.exists() ? moduleSnapshot.data() as CmsModule : undefined;
+  await persist('cms_lessons', data.id, {
+    ...data,
+    categoryId: data.categoryId || module?.categoryId || (module ? (await getCmsCategories(true)).find((item) => item.name === module.category)?.id : undefined),
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export async function deleteCmsModule(id: string, hardDelete = false): Promise<void> {
@@ -1015,8 +1134,16 @@ export async function saveCmsLessonContent(lesson: CmsLesson, sections: CmsSecti
   const batch = writeBatch(db);
   batch.set(doc(db, 'cms_lessons', lesson.id), cleanDocument(lesson));
   for (const section of sections) {
-    batch.set(doc(db, 'cms_sections', section.id), cleanDocument(section));
-    for (const block of blocks[section.id] || []) batch.set(doc(db, 'cms_blocks', block.id), cleanDocument(block));
+    batch.set(doc(db, 'cms_sections', section.id), cleanDocument({
+      ...section,
+      categoryId: section.categoryId || lesson.categoryId,
+    }));
+    for (const block of blocks[section.id] || []) {
+      batch.set(doc(db, 'cms_blocks', block.id), cleanDocument({
+        ...block,
+        categoryId: block.categoryId || section.categoryId || lesson.categoryId,
+      }));
+    }
   }
   await batch.commit();
 }

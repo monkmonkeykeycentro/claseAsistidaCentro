@@ -35,6 +35,7 @@ import {
   seedCmsFromExistingContentIfEmpty,
   getHeaderNavigation,
   saveHeaderNavigation,
+  syncCmsCategoryReferences,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
 import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
@@ -184,6 +185,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       // 2. Load modules & lessons
       operation = 'cargar los módulos y las lecciones';
       const modList = await getCmsModules(true);
+      await syncCmsCategoryReferences();
       const categoryList = await getCmsCategories(true);
       const lesList = await getCmsLessons(undefined, true);
       setModules(modList);

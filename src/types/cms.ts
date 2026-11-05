@@ -64,6 +64,7 @@ export interface CmsModule {
   title: string;
   description: string;
   category: string;
+  categoryId?: string;
   badge?: string;
   slug?: string;
   position: number;
@@ -87,6 +88,7 @@ export interface CmsCategory {
 export interface CmsLesson {
   id: string;
   moduleId: string;
+  categoryId?: string;
   title: string;
   summary: string;
   badge?: string;
@@ -111,6 +113,7 @@ export interface CmsLesson {
 export interface CmsSection {
   id: string;
   lessonId: string;
+  categoryId?: string;
   title: string;
   summary?: string;
   position: number;
@@ -134,6 +137,7 @@ export type BlockType =
 export interface CmsBlock {
   id: string;
   sectionId: string;
+  categoryId?: string;
   type: BlockType;
   content: string;
   contentP5?: string;
@@ -274,6 +278,7 @@ export interface CmsMediaResource {
   url: string;
   altText?: string;
   category?: string;
+  categoryId?: string;
   createdAt: string;
   provider?: 'external' | 'google-drive';
   driveFileId?: string;
