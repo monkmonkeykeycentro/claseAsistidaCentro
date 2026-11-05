@@ -855,11 +855,19 @@ const DEFAULT_CMS_CATEGORIES: CmsCategory[] = [
 
 export async function getCmsCategories(includeUnpublished = false): Promise<CmsCategory[]> {
   if (includeUnpublished) await requireCmsAdmin();
-  const categories = await readCollection<CmsCategory>(
-    'cms_categories',
-    includeUnpublished ? [] : [where('visible', '==', true)],
-  );
-  return byPosition(categories.length ? categories : DEFAULT_CMS_CATEGORIES);
+  try {
+    const categories = await readCollection<CmsCategory>(
+      'cms_categories',
+      includeUnpublished ? [] : [where('visible', '==', true)],
+    );
+    return byPosition(categories.length ? categories : DEFAULT_CMS_CATEGORIES);
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'permission-denied') {
+      console.warn('No se pudo leer cms_categories; se usarán las categorías predeterminadas hasta publicar firestore.rules.');
+      return DEFAULT_CMS_CATEGORIES;
+    }
+    throw error;
+  }
 }
 
 export async function saveCmsCategory(data: CmsCategory): Promise<void> {

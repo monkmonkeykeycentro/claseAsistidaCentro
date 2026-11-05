@@ -42,6 +42,12 @@ cuatro categorías históricas se muestran como valores iniciales cuando todaví
 existe la colección `cms_categories`, por lo que el contenido existente conserva sus
 nombres. No se puede eliminar una categoría que todavía tenga módulos asignados.
 
+Si la colección todavía no tiene las reglas desplegadas en Firebase, el CMS conserva
+las cuatro categorías históricas como respaldo y no bloquea la carga de módulos y
+lecciones. Para habilitar persistencia de categorías, publica `firestore.rules` en
+la base `ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f` del
+proyecto `rugged-precept-406017`.
+
 Los cambios de campos se guardan juntos al guardar o publicar; las operaciones de estructura conservan primero las ediciones pendientes. Un fallo de Firebase se muestra como error y no como un guardado correcto. Los antiguos datos `cms_*_cache` de localStorage ya no sustituyen los documentos de Firebase.
 
 La primera apertura autorizada inicializa el temario original y completa documentos faltantes de instalaciones parciales, sin sobrescribir documentos existentes. La marca `cms_site_content/curriculum_initialized` evita volver a importar contenido que después se retire deliberadamente.

@@ -262,6 +262,8 @@ test('categories provide defaults and can be persisted by administrators', async
     createdAt: '',
     updatedAt: '',
   });
+
+
   assert.equal(state.documents.get('cms_categories/cat_generativo').name, 'Código generativo');
 });
 
