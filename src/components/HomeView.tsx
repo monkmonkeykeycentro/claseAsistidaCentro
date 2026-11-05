@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { TOPICS_DATA, TopicItem } from '../data/topicsData';
+import { TOPICS_DATA } from '../data/topicsData';
+import { areUnitPrerequisitesComplete, getLessonProgressPercentage, getLessonStatus, getUnitEvaluationSummary, LearningLesson, LessonStatus, normalizeTopic, UnitEvaluationSummary } from '../types/learning';
+import { CURRICULUM_UNITS } from '../data/unitsData';
 import { UserProgress, StageId } from '../types/classStructure';
 import { AppUser } from '../services/firebase';
 import { GenerativeArtwork } from './generative/GenerativeArtwork';
@@ -42,10 +44,40 @@ interface HomeViewProps {
   onResetProgress?: () => void;
   siteContent?: CmsSiteContentCombined | null;
   onNavigateAdmin?: () => void;
-  topics?: TopicItem[];
+  topics?: LearningLesson[];
+  currentTopicId?: string;
+  resumeTopicId?: string;
 }
 
 type TabFilter = 'all' | 'horse' | 'units' | 'pilot' | 'topics' | 'tools';
+
+const LESSON_STATUS_LABELS: Record<LessonStatus, string> = {
+  'not-started': 'No iniciada',
+  'in-progress': 'En progreso',
+  completed: 'Completada',
+  blocked: 'Bloqueada',
+};
+
+const LESSON_STATUS_STYLES: Record<LessonStatus, string> = {
+  'not-started': 'bg-[#F7F8F4] text-[#59645C]',
+  'in-progress': 'bg-[#FFF5D9] text-[#8A6318]',
+  completed: 'bg-[#E8EEE8] text-[#407B5D]',
+  blocked: 'bg-[#FBE9E7] text-[#A4473D]',
+};
+
+const UnitProgressSummary: React.FC<{ summary: UnitEvaluationSummary; blocked?: boolean }> = ({ summary, blocked }) => (
+  <div className="space-y-1.5 pt-2 border-t border-[#E1E7E1]">
+    <div className="flex items-center justify-between text-[11px]">
+      <span className={`font-semibold ${blocked ? 'text-[#A4473D]' : 'text-[#59645C]'}`}>
+        {blocked ? 'Bloqueada por prerrequisito' : `${summary.completedActivities}/${summary.totalActivities} actividades aprobadas`}
+      </span>
+      <span className="font-mono text-[#407B5D]">{summary.percentage}%</span>
+    </div>
+    <div className="h-1.5 rounded-full bg-[#E8EEE8] overflow-hidden">
+      <div className="h-full rounded-full bg-[#407B5D] transition-all" style={{ width: `${summary.percentage}%` }} />
+    </div>
+  </div>
+);
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onOpenWorkshop,
@@ -64,21 +96,42 @@ export const HomeView: React.FC<HomeViewProps> = ({
   siteContent,
   onNavigateAdmin,
   topics,
+  currentTopicId,
+  resumeTopicId,
 }) => {
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [showAsciiCanvas, setShowAsciiCanvas] = useState(true);
 
-  const allCurriculumTopics = topics ?? TOPICS_DATA;
+  const allCurriculumTopics = topics ?? TOPICS_DATA.map(normalizeTopic);
   const activeProgress = progress || classesProgress || {
     stageCompleted: { 1: false, 2: false, 3: false, 4: false },
     stage3CompletedExercises: [],
     stage2Placements: {},
     stage4BuilderCustomized: false,
+    activityProgress: {},
   };
 
   const handleOpenOop = onNavigateOopLab || onOpenOopLab || (() => {});
   const completedStagesCount = Object.values(activeProgress.stageCompleted).filter(Boolean).length;
   const workshopPercentage = Math.round((completedStagesCount / 4) * 100);
+  const resumeTopic = allCurriculumTopics.find((topic) => topic.id === (resumeTopicId || currentTopicId)) || allCurriculumTopics[0];
+  const resumeLabel = resumeTopicId ? 'Continuar lección' : 'Comenzar recorrido';
+  const foundationTopics = allCurriculumTopics.filter((topic) => topic.unitId === 'u1');
+  const additionalFoundationTopics = foundationTopics.filter(
+    (topic) => !['canvas', 'variables'].includes(topic.id),
+  );
+  const unitEvaluation = Object.fromEntries(
+    CURRICULUM_UNITS.map((unit) => [unit.id, getUnitEvaluationSummary(unit, activeProgress.activityProgress)]),
+  ) as Record<'u1' | 'u2' | 'u3', ReturnType<typeof getUnitEvaluationSummary>>;
+  const completedUnitIds = CURRICULUM_UNITS
+    .filter((unit) => unitEvaluation[unit.id].isComplete)
+    .map((unit) => unit.id);
+  const unitAccess = Object.fromEntries(
+    CURRICULUM_UNITS.map((unit) => [
+      unit.id,
+      areUnitPrerequisitesComplete(unit, completedUnitIds),
+    ]),
+  ) as Record<'u1' | 'u2' | 'u3', boolean>;
 
   return (
     <div className="space-y-10 sm:space-y-14 animate-in fade-in duration-200">
@@ -225,6 +278,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
       {/* 2. SECTION NAVIGATOR & FILTER BAR */}
+      <section className="p-5 bg-white border border-[#A4C4B5] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#407B5D]">Tu recorrido</span>
+          <h2 className="text-lg font-bold text-[#232A24]">
+            {resumeTopic ? resumeTopic.title : 'Explora el laboratorio'}
+          </h2>
+          <p className="text-xs text-[#59645C]">
+            {resumeTopicId ? 'Retoma la última lección que visitaste.' : 'Elige una lección para comenzar a registrar tu avance.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => resumeTopic && onSelectTopic(resumeTopic.id)}
+          disabled={!resumeTopic}
+          className="min-h-[42px] px-4 py-2 rounded-xl bg-[#407B5D] text-white text-xs font-bold hover:bg-[#33654C] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {resumeLabel}
+        </button>
+      </section>
+
       <section className="border-b border-[#E1E7E1] pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1 text-xs">
@@ -292,6 +365,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <p className="text-xs text-[#59645C] leading-relaxed">
                   Descubre cómo una imagen se construye siguiendo instrucciones secuenciales precisas y cómo una regla origina múltiples variaciones.
                 </p>
+                <UnitProgressSummary summary={unitEvaluation.u1} />
                 <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
                   <li
                     onClick={() => onOpenUnits?.('u1', 'u1-e1')}
@@ -314,6 +388,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <span className="text-[#407B5D] font-bold">U1-E3</span>
                     <span>Del boceto a un procedimiento</span>
                   </li>
+                  {additionalFoundationTopics.map((topic) => (
+                    <li
+                      key={topic.id}
+                      onClick={() => onSelectTopic(topic.id)}
+                      className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
+                    >
+                      <span className="text-[#407B5D] font-bold">CMS</span>
+                      <span className="truncate">{topic.title}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
               {onOpenUnits && (
@@ -342,23 +426,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <p className="text-xs text-[#59645C] leading-relaxed">
                   Sistema de coordenadas, funciones con parámetros, primitivas 2D, espacios RGB/HSB y consulta de referencias oficiales.
                 </p>
+                <UnitProgressSummary summary={unitEvaluation.u2} blocked={!unitAccess.u2} />
                 <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
                   <li
-                    onClick={() => onOpenUnits?.('u2', 'u2-e1')}
+                    onClick={() => unitAccess.u2 && onOpenUnits?.('u2', 'u2-e1')}
                     className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
                   >
                     <span className="text-[#407B5D] font-bold">U2-E1</span>
                     <span>Primer recorrido por Processing</span>
                   </li>
                   <li
-                    onClick={() => onOpenUnits?.('u2', 'u2-e2')}
+                    onClick={() => unitAccess.u2 && onOpenUnits?.('u2', 'u2-e2')}
                     className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
                   >
                     <span className="text-[#407B5D] font-bold">U2-E2</span>
                     <span>Del espacio a la forma</span>
                   </li>
                   <li
-                    onClick={() => onOpenUnits?.('u2', 'u2-e3')}
+                    onClick={() => unitAccess.u2 && onOpenUnits?.('u2', 'u2-e3')}
                     className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
                   >
                     <span className="text-[#407B5D] font-bold">U2-E3</span>
@@ -368,10 +453,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
               {onOpenUnits && (
                 <button
-                  onClick={() => onOpenUnits('u2')}
-                  className="w-full min-h-[36px] px-3 py-1.5 bg-[#F7F8F4] hover:bg-[#E8EEE8] border border-[#E1E7E1] hover:border-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  onClick={() => unitAccess.u2 && onOpenUnits('u2')}
+                  disabled={!unitAccess.u2}
+                  className="w-full min-h-[36px] px-3 py-1.5 bg-[#F7F8F4] hover:bg-[#E8EEE8] border border-[#E1E7E1] hover:border-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <span>Iniciar Unidad 2</span>
+                  <span>{unitAccess.u2 ? 'Iniciar Unidad 2' : 'Completa Unidad 1'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#407B5D]" />
                 </button>
               )}
@@ -392,23 +478,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <p className="text-xs text-[#59645C] leading-relaxed">
                   Variables de usuario, variables del sistema (mouseX, mouseY), interactividad en tiempo real y traslaciones con push/popMatrix.
                 </p>
+                <UnitProgressSummary summary={unitEvaluation.u3} blocked={!unitAccess.u3} />
                 <ul className="text-xs text-[#59645C] space-y-1.5 pt-2 border-t border-[#E1E7E1]">
                   <li
-                    onClick={() => onOpenUnits?.('u3', 'u3-e1')}
+                    onClick={() => unitAccess.u3 && onOpenUnits?.('u3', 'u3-e1')}
                     className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
                   >
                     <span className="text-[#407B5D] font-bold">U3-E1</span>
                     <span>Valores fijos vs valores que cambian</span>
                   </li>
                   <li
-                    onClick={() => onOpenUnits?.('u3', 'u3-e2')}
+                    onClick={() => unitAccess.u3 && onOpenUnits?.('u3', 'u3-e2')}
                     className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
                   >
                     <span className="text-[#407B5D] font-bold">U3-E2</span>
                     <span>Variables del sistema en tiempo real</span>
                   </li>
                   <li
-                    onClick={() => onOpenUnits?.('u3', 'u3-e3')}
+                    onClick={() => unitAccess.u3 && onOpenUnits?.('u3', 'u3-e3')}
                     className="hover:text-[#407B5D] cursor-pointer flex items-center gap-1.5 font-medium"
                   >
                     <span className="text-[#407B5D] font-bold">U3-E3</span>
@@ -418,10 +505,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
               {onOpenUnits && (
                 <button
-                  onClick={() => onOpenUnits('u3')}
-                  className="w-full min-h-[36px] px-3 py-1.5 bg-[#F7F8F4] hover:bg-[#E8EEE8] border border-[#E1E7E1] hover:border-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  onClick={() => unitAccess.u3 && onOpenUnits('u3')}
+                  disabled={!unitAccess.u3}
+                  className="w-full min-h-[36px] px-3 py-1.5 bg-[#F7F8F4] hover:bg-[#E8EEE8] border border-[#E1E7E1] hover:border-[#407B5D] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <span>Iniciar Unidad 3</span>
+                  <span>{unitAccess.u3 ? 'Iniciar Unidad 3' : 'Completa Unidad 2'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#407B5D]" />
                 </button>
               )}
@@ -591,6 +679,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {allCurriculumTopics.map((topic) => {
               const isClasses = topic.id === 'classes';
+              const lessonProgress = activeProgress.lessonProgress?.[topic.id];
+              const unit = topic.unitId ? CURRICULUM_UNITS.find((candidate) => candidate.id === topic.unitId) : undefined;
+              const isBlocked = Boolean(unit && !areUnitPrerequisitesComplete(unit, completedUnitIds));
+              const lessonStatus = getLessonStatus(topic, lessonProgress, isBlocked);
+              const lessonPercentage = getLessonProgressPercentage(topic, lessonProgress);
 
               return (
                 <div
@@ -608,9 +701,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     {/* Generative Diagram Thumbnail */}
                     <div className="border border-[#E1E7E1] bg-[#F7F8F4] rounded-xl flex items-center justify-center p-1.5 overflow-hidden">
                       <P5LiveThumbnail
-                        p5Code={topic.thumbnailP5 || topic.concepts[0]?.codeSnippetP5}
-                        repositoryUrl={topic.repositoryUrl || topic.concepts[0]?.repositoryUrl}
-                        repositoryEntry={topic.repositoryEntry || topic.concepts[0]?.repositoryEntry}
+                        p5Code={topic.thumbnailP5 || topic.sections[0]?.codeSnippetP5}
+                        repositoryUrl={topic.repositoryUrl || topic.sections[0]?.repositoryUrl}
+                        repositoryEntry={topic.repositoryEntry || topic.sections[0]?.repositoryEntry}
                         fallbackTopicNumber={topic.number}
                         width={280}
                         height={125}
@@ -625,6 +718,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <p className="text-xs text-[#59645C] line-clamp-2 leading-relaxed">
                       {topic.summary}
                     </p>
+
+                    {!isClasses && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className={`px-2 py-0.5 rounded-md font-semibold ${LESSON_STATUS_STYLES[lessonStatus]}`}>
+                            {LESSON_STATUS_LABELS[lessonStatus]}
+                          </span>
+                          <span className="font-mono text-[#59645C]">{lessonPercentage}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-[#E8EEE8] overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-[#407B5D] transition-all"
+                            style={{ width: `${lessonPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-3 border-t border-[#E1E7E1] flex items-center justify-between">
@@ -658,10 +768,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       </div>
                     ) : (
                       <button
-                        onClick={() => onSelectTopic(topic.id)}
+                        onClick={() => !isBlocked && onSelectTopic(topic.id)}
+                        disabled={isBlocked}
                         className="min-h-[36px] px-3.5 py-1.5 border border-[#E1E7E1] hover:border-[#407B5D] hover:bg-[#E8EEE8]/30 text-[#232A24] text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <span>Ver tema</span>
+                        <span>{isBlocked ? 'Completa el requisito' : 'Ver tema'}</span>
                         <ArrowRight className="w-3.5 h-3.5 text-[#59645C]" />
                       </button>
                     )}

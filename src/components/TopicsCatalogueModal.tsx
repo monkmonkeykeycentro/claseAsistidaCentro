@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { TopicItem, TOPICS_DATA } from '../data/topicsData';
+import { TOPICS_DATA } from '../data/topicsData';
+import { LearningLesson, normalizeTopic } from '../types/learning';
 import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 import { BookOpen, Check, ArrowRight, X, Clock, Layers } from 'lucide-react';
 
@@ -9,7 +10,7 @@ interface TopicsCatalogueModalProps {
   currentTopicId: string;
   onSelectTopic: (topicId: string) => void;
   classesProgressCount: number;
-  topics?: TopicItem[];
+  topics?: LearningLesson[];
   onNavigateUnits?: () => void;
 }
 
@@ -26,7 +27,7 @@ export const TopicsCatalogueModal: React.FC<TopicsCatalogueModalProps> = ({
 
   if (!isOpen) return null;
 
-  const allTopics = topics ?? TOPICS_DATA;
+  const allTopics = topics ?? TOPICS_DATA.map(normalizeTopic);
 
   const categories = [
     { id: 'all', label: 'Todos los temas' },

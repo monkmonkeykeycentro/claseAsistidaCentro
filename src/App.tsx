@@ -3,10 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { StageId, UserProgress, BuilderState, ZoneId } from './types/classStructure';
-import { INITIAL_BUILDER_STATE } from './data/stageData';
-import { TOPICS_DATA, TopicItem } from './data/topicsData';
+import React, { useState, useEffect, useCallback } from 'react';
+import { BuilderState, ZoneId } from './types/classStructure';
+import { TOPICS_DATA } from './data/topicsData';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -22,181 +21,68 @@ import { VideoAsciiSplitCanvas } from './components/generative/VideoAsciiSplitCa
 import {
   AppUser,
   subscribeToAuth,
-  saveUserTopicProgress,
-  loadUserTopicProgress,
   isUserAdmin,
 } from './services/firebase';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import {
-  subscribeToSiteContent,
-  getAllTopicsFromCmsOrFallback,
-} from './services/cmsService';
+import { subscribeToSiteContent } from './services/cmsService';
 import { CmsSiteContentCombined } from './types/cms';
 import { BookOpen, Eye, X, Settings } from 'lucide-react';
-
-const STORAGE_KEY = 'processing_class_structure_progress';
-const TOPIC_STORAGE_KEY = 'processing_current_topic_id';
-
-const DEFAULT_PROGRESS: UserProgress = {
-  stageCompleted: {
-    1: false,
-    2: false,
-    3: false,
-    4: false,
-  },
-  stage3CompletedExercises: [],
-  stage2Placements: {},
-  stage4BuilderCustomized: false,
-};
-
-type ViewMode = 'home' | 'workshop' | 'topic' | 'oop-lab' | 'pilot' | 'units' | 'admin' | 'class-designer' | 'horse';
+import { navigateToRoute } from './app/routeState';
+import { useAppNavigation } from './app/useAppNavigation';
+import { useCurriculumContent } from './app/useCurriculumContent';
+import { useLearningProgress } from './app/useLearningProgress';
+import { LearningLesson, normalizeTopic } from './types/learning';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<ViewMode>('home');
   const [siteContent, setSiteContent] = useState<CmsSiteContentCombined | null>(null);
   const [isStudentPreviewMode, setIsStudentPreviewMode] = useState<boolean>(false);
-
-  const [currentTopicId, setCurrentTopicId] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem(TOPIC_STORAGE_KEY);
-      if (saved && /^[a-zA-Z0-9_-]+$/.test(saved)) {
-        return saved;
-      }
-    } catch {
-      // Ignore
-    }
-    return 'classes';
-  });
-
-  const [allCurriculumTopics, setAllCurriculumTopics] = useState<TopicItem[]>(TOPICS_DATA);
-  const [curriculumIncludesDrafts, setCurriculumIncludesDrafts] = useState(false);
-  const [isCurriculumLoading, setIsCurriculumLoading] = useState(true);
-
-
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [currentStage, setCurrentStage] = useState<StageId>(1);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const canAdmin = isUserAdmin(currentUser);
+  const navigation = useAppNavigation(canAdmin);
+  const {
+    activeView,
+    setActiveView,
+    currentTopicId,
+    setCurrentTopicId,
+    selectedCurriculumUnit,
+    setSelectedCurriculumUnit,
+    selectedCurriculumExercise,
+    setSelectedCurriculumExercise,
+    navigate,
+    navigateHome,
+    navigateTopic,
+    navigateUnits,
+  } = navigation;
+  const learning = useLearningProgress(currentUser, currentTopicId);
+  const {
+    progress,
+    savedBuilderState,
+    currentStage,
+    setCurrentStage,
+    isSyncing,
+    completeStage,
+    saveStage3Exercise,
+    saveStage2Placements,
+    saveBuilderState,
+    resetAllProgress,
+    markLessonSectionVisited,
+    saveActivityResult,
+  } = learning;
+  const curriculum = useCurriculumContent(canAdmin, isStudentPreviewMode, activeView);
+  const { topics: allCurriculumTopics, includesDrafts: curriculumIncludesDrafts, isLoading: isCurriculumLoading } = curriculum;
   const displayedTopics = curriculumIncludesDrafts && !canAdmin ? [] : allCurriculumTopics;
   const dynamicTopic = displayedTopics.find((topic) => topic.id === currentTopicId) || null;
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  const [selectedCurriculumUnit, setSelectedCurriculumUnit] = useState<'u1' | 'u2' | 'u3'>('u1');
-  const [selectedCurriculumExercise, setSelectedCurriculumExercise] = useState<string | undefined>(undefined);
-
   const handleNavigateAdmin = () => {
     if (!canAdmin) return;
     setActiveView('admin');
-    window.location.hash = '#admin';
+    navigate({ view: 'admin' });
   };
 
   const handleExitAdmin = () => {
-    setActiveView('home');
-    if (window.location.hash === '#admin' || window.location.hash === '#cms') {
-      try {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      } catch {
-        window.location.hash = '';
-      }
-    }
+    navigateHome();
   };
-
-  // URL route detection (#admin, #cms, ?admin, /admin, #unidades, #u1, #u2, #u3) and keyboard shortcut (Ctrl+Shift+A)
-  useEffect(() => {
-    const checkAdminRoute = () => {
-      const hash = window.location.hash.toLowerCase();
-      const search = new URLSearchParams(window.location.search.toLowerCase());
-      const pathname = window.location.pathname.toLowerCase();
-
-      if (canAdmin && (
-        hash === '#admin' ||
-        hash === '#cms' ||
-        search.has('admin') ||
-        search.has('cms') ||
-        pathname.endsWith('/admin') ||
-        pathname.endsWith('/cms')
-      )) {
-        setActiveView('admin');
-        return;
-      }
-
-      if (
-        hash === '#unidades' ||
-        hash === '#unidad-1' ||
-        hash === '#unidad-2' ||
-        hash === '#unidad-3' ||
-        hash === '#u1' ||
-        hash === '#u2' ||
-        hash === '#u3' ||
-        hash === '#actividades' ||
-        search.has('units') ||
-        search.has('unidades')
-      ) {
-        if (hash === '#unidad-2' || hash === '#u2') setSelectedCurriculumUnit('u2');
-        else if (hash === '#unidad-3' || hash === '#u3') setSelectedCurriculumUnit('u3');
-        else if (hash === '#unidad-1' || hash === '#u1') setSelectedCurriculumUnit('u1');
-        setActiveView('units');
-        return;
-      }
-
-      if (
-        hash === '#exploraciones' ||
-        hash === '#piloto' ||
-        hash === '#coordenadas' ||
-        hash === '#condicionales' ||
-        hash === '#audiovisual' ||
-        search.has('pilot') ||
-        search.has('exploraciones')
-      ) {
-        setActiveView('pilot');
-        return;
-      }
-
-      if (
-        hash === '#disenador-clases' ||
-        hash === '#disenador' ||
-        hash === '#class-designer' ||
-        hash === '#herramientas' ||
-        search.has('disenador') ||
-        search.has('designer')
-      ) {
-        setActiveView('class-designer');
-        return;
-      }
-
-      if (
-        hash === '#caballo' ||
-        hash === '#caballo-galope' ||
-        hash === '#muybridge' ||
-        hash === '#horse' ||
-        hash === '#video-ascii' ||
-        search.has('horse') ||
-        search.has('caballo')
-      ) {
-        setActiveView('horse');
-        return;
-      }
-    };
-
-    checkAdminRoute();
-    window.addEventListener('hashchange', checkAdminRoute);
-    window.addEventListener('popstate', checkAdminRoute);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (canAdmin && (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-        e.preventDefault();
-        handleNavigateAdmin();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('hashchange', checkAdminRoute);
-      window.removeEventListener('popstate', checkAdminRoute);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [canAdmin]);
 
   useEffect(() => {
     if (!canAdmin) {
@@ -218,170 +104,9 @@ export default function App() {
     };
   }, []);
 
-  // Refresh dynamic topic data from CMS whenever topic or view changes
-  useEffect(() => {
-    let isMounted = true;
-    setIsCurriculumLoading(true);
-    getAllTopicsFromCmsOrFallback(canAdmin && isStudentPreviewMode).then((list) => {
-      if (isMounted) {
-        setAllCurriculumTopics(list);
-        setCurriculumIncludesDrafts(canAdmin && isStudentPreviewMode);
-
-      }
-    }).catch((error) => {
-      console.warn('No se pudo cargar la vista previa del CMS:', error);
-      if (isMounted) setAllCurriculumTopics([]);
-    }).finally(() => {
-      if (isMounted) setIsCurriculumLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isStudentPreviewMode, activeView, canAdmin]);
-
-  const [progress, setProgress] = useState<UserProgress>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch {
-      // Ignore JSON error
-    }
-    return DEFAULT_PROGRESS;
-  });
-
-  const [savedBuilderState, setSavedBuilderState] = useState<BuilderState>(() => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY}_builder`);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch {
-      // Ignore
-    }
-    return INITIAL_BUILDER_STATE;
-  });
 
   // Keep one identity subscription; changing lessons must not reset admin access.
   useEffect(() => subscribeToAuth(setCurrentUser), []);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (!currentUser) {
-      setIsSyncing(false);
-      return;
-    }
-    setIsSyncing(true);
-    loadUserTopicProgress(currentUser.uid, currentTopicId).then((cloudData) => {
-      if (!isMounted || !cloudData?.progress) return;
-      setProgress((prev) => ({
-        ...prev,
-        ...cloudData.progress,
-        stageCompleted: { ...prev.stageCompleted, ...(cloudData.progress.stageCompleted || {}) },
-      }));
-      if (cloudData.builderState) setSavedBuilderState(cloudData.builderState);
-    }).catch((error) => {
-      console.warn('Could not sync initial progress from cloud:', error);
-    }).finally(() => {
-      if (isMounted) setIsSyncing(false);
-    });
-    return () => { isMounted = false; };
-  }, [currentUser?.uid, currentTopicId]);
-
-  // Save topic change locally
-  useEffect(() => {
-    try {
-      localStorage.setItem(TOPIC_STORAGE_KEY, currentTopicId);
-    } catch {
-      // Ignore
-    }
-  }, [currentTopicId]);
-
-  // Save progress changes locally
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-    } catch {
-      // Ignore storage error
-    }
-  }, [progress]);
-
-  // Auto-sync progress to Firebase Firestore if logged in
-  useEffect(() => {
-    if (!currentUser) return;
-    const timeout = setTimeout(async () => {
-      try {
-        setIsSyncing(true);
-        await saveUserTopicProgress(currentUser.uid, currentTopicId, progress, savedBuilderState);
-      } catch (err) {
-        console.warn('Auto-save progress to cloud error:', err);
-      } finally {
-        setIsSyncing(false);
-      }
-    }, 1500);
-
-    return () => clearTimeout(timeout);
-  }, [progress, savedBuilderState, currentUser, currentTopicId]);
-
-  const handleStageComplete = (stage: StageId) => {
-    setProgress((prev) => ({
-      ...prev,
-      stageCompleted: {
-        ...prev.stageCompleted,
-        [stage]: true,
-      },
-    }));
-  };
-
-  const handleSaveStage3Exercise = (exId: string) => {
-    setProgress((prev) => {
-      if (prev.stage3CompletedExercises.includes(exId)) return prev;
-      return {
-        ...prev,
-        stage3CompletedExercises: [...prev.stage3CompletedExercises, exId],
-      };
-    });
-  };
-
-  const handleSaveStage2Placements = (placements: Record<string, ZoneId>) => {
-    setProgress((prev) => ({
-      ...prev,
-      stage2Placements: placements,
-    }));
-  };
-
-  const handleSaveBuilderState = (state: BuilderState) => {
-    setSavedBuilderState(state);
-    try {
-      localStorage.setItem(`${STORAGE_KEY}_builder`, JSON.stringify(state));
-    } catch {
-      // Ignore
-    }
-    setProgress((prev) => ({
-      ...prev,
-      stage4BuilderCustomized: true,
-    }));
-  };
-
-  const handleResetAllProgress = () => {
-    if (
-      window.confirm(
-        '¿Deseas reiniciar todo tu progreso y volver al inicio de la Etapa 1 del taller de clases?'
-      )
-    ) {
-      setProgress(DEFAULT_PROGRESS);
-      setSavedBuilderState(INITIAL_BUILDER_STATE);
-      setCurrentStage(1);
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(`${STORAGE_KEY}_builder`);
-      } catch {
-        // Ignore
-      }
-    }
-  };
 
   const handleSelectTopicFromCatalogue = (topicId: string) => {
     setCurrentTopicId(topicId);
@@ -390,10 +115,21 @@ export default function App() {
     } else {
       setActiveView('topic');
     }
+    navigateToRoute({ view: topicId === 'classes' ? 'workshop' : 'topic', topicId });
   };
 
-  const currentTopic =
-    TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5];
+  const currentTopic: LearningLesson = normalizeTopic(
+    TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5],
+  );
+  const handleSectionVisited = useCallback((sectionId: string, totalSections: number) => {
+    markLessonSectionVisited(currentTopicId, sectionId, totalSections);
+  }, [currentTopicId, markLessonSectionVisited]);
+  const currentTopicIndex = displayedTopics.findIndex((topic) => topic.id === currentTopicId);
+  const previousTopicId = currentTopicIndex > 0 ? displayedTopics[currentTopicIndex - 1]?.id : undefined;
+  const nextTopicId = currentTopicIndex >= 0 ? displayedTopics[currentTopicIndex + 1]?.id : undefined;
+  const resumeTopicId = [...displayedTopics]
+    .filter((topic) => progress.lessonProgress?.[topic.id])
+    .sort((a, b) => new Date(progress.lessonProgress?.[b.id]?.lastVisitedAt || 0).getTime() - new Date(progress.lessonProgress?.[a.id]?.lastVisitedAt || 0).getTime())[0]?.id;
 
   return (
     <div className="min-h-screen bg-[#F7F8F4] text-[#232A24] flex flex-col font-sans selection:bg-[#E8EEE8] selection:text-[#232A24]">
@@ -487,13 +223,16 @@ export default function App() {
               if (stage) setCurrentStage(stage);
               setCurrentTopicId('classes');
               setActiveView('workshop');
+              navigateToRoute({ view: 'workshop', topicId: 'classes' });
             }}
             onSelectTopic={(tId) => {
               setCurrentTopicId(tId);
               if (tId === 'classes') {
                 setActiveView('workshop');
+                navigateToRoute({ view: 'workshop', topicId: tId });
               } else {
                 setActiveView('topic');
+                navigateToRoute({ view: 'topic', topicId: tId });
               }
             }}
             onOpenOopLab={() => setActiveView('oop-lab')}
@@ -515,10 +254,12 @@ export default function App() {
             progress={progress}
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthModalOpen(true)}
-            onResetProgress={handleResetAllProgress}
+            onResetProgress={resetAllProgress}
             siteContent={siteContent}
             onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
             topics={displayedTopics}
+            currentTopicId={currentTopicId}
+            resumeTopicId={resumeTopicId}
           />
         )}
 
@@ -528,13 +269,16 @@ export default function App() {
             currentStage={currentStage}
             onSelectStage={(st) => setCurrentStage(st)}
             progress={progress}
-            onStageComplete={handleStageComplete}
-            onSaveStage2Placements={handleSaveStage2Placements}
-            onSaveStage3Exercise={handleSaveStage3Exercise}
+            onStageComplete={completeStage}
+            onSaveStage2Placements={saveStage2Placements}
+            onSaveStage3Exercise={saveStage3Exercise}
             savedBuilderState={savedBuilderState}
-            onSaveBuilderState={handleSaveBuilderState}
-            onResetAllProgress={handleResetAllProgress}
-            onBackToHome={() => setActiveView('home')}
+            onSaveBuilderState={saveBuilderState}
+            onResetAllProgress={resetAllProgress}
+            onBackToHome={() => {
+              setActiveView('home');
+              navigateToRoute({ view: 'home' });
+            }}
           />
         )}
 
@@ -547,10 +291,21 @@ export default function App() {
               setCurrentTopicId(tId);
               if (tId === 'classes') {
                 setActiveView('workshop');
+                navigateToRoute({ view: 'workshop', topicId: tId });
+              } else {
+                setActiveView('topic');
+                navigateToRoute({ view: 'topic', topicId: tId });
               }
             }}
             onOpenCatalogue={() => setIsCatalogueOpen(true)}
-            onBackToHome={() => setActiveView('home')}
+            lessonProgress={progress.lessonProgress?.[currentTopicId]}
+            onSectionVisited={handleSectionVisited}
+            previousTopicId={previousTopicId}
+            nextTopicId={nextTopicId}
+            onBackToHome={() => {
+              setActiveView('home');
+              navigateToRoute({ view: 'home' });
+            }}
           />
         )}
 
@@ -620,6 +375,8 @@ export default function App() {
             initialUnitId={selectedCurriculumUnit}
             initialExerciseId={selectedCurriculumExercise}
             isStudentPreviewMode={isStudentPreviewMode}
+            activityProgress={progress.activityProgress}
+            onActivityResult={saveActivityResult}
           />
         )}
 

@@ -58,6 +58,11 @@ service cloud.firestore {
       allow write: if isAdmin() && isValidId(moduleId);
     }
 
+    match /cms_categories/{categoryId} {
+      allow read: if resource.data.visible == true || isAdmin();
+      allow write: if isAdmin() && isValidId(categoryId);
+    }
+
     match /cms_lessons/{lessonId} {
       allow read: if isAdmin() || (isPublished(resource.data) && publicModule(resource.data.moduleId));
       allow write: if isAdmin() && isValidId(lessonId);

@@ -9,6 +9,7 @@ import { CoordinateSystemExercise } from '../pilot/CoordinateSystemExercise';
 import { AppUser, db, isUserAdmin } from '../../services/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { loadCurriculumStatusMap } from '../../services/unitsCurriculumService';
+import type { ActivityProgress } from '../../types/classStructure';
 import {
   BookOpen,
   Layers,
@@ -39,6 +40,8 @@ interface UnitActivitiesViewProps {
   initialUnitId?: 'u1' | 'u2' | 'u3';
   initialExerciseId?: string;
   isStudentPreviewMode?: boolean;
+  activityProgress?: Record<string, ActivityProgress>;
+  onActivityResult?: (exerciseId: string, result: Omit<ActivityProgress, 'attempts' | 'lastAttemptAt'>) => void;
 }
 
 export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
@@ -47,6 +50,8 @@ export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
   initialUnitId = 'u1',
   initialExerciseId,
   isStudentPreviewMode = false,
+  activityProgress,
+  onActivityResult,
 }) => {
   const [statusMap, setStatusMap] = useState<Record<string, 'draft' | 'published'>>({});
 
@@ -509,13 +514,20 @@ export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
       optionId: selectedOptionId,
       predictionCorrect: chosen?.isCorrect ?? false,
       reflection: studentReflection,
-      completed: Boolean(selectedOptionId) && studentReflection.trim().length > 10,
+      completed: Boolean(chosen?.isCorrect) && studentReflection.trim().length > 10,
       updatedAt: new Date().toISOString(),
       userEmail: currentUser?.email || 'Estudiante',
       userName: currentUser?.displayName || 'Estudiante',
     };
 
     try {
+      const passed = evidenceData.completed;
+      onActivityResult?.(activeExercise.id, {
+        unitId: activeUnit.id,
+        passed,
+        bestScore: passed ? 100 : chosen ? 50 : 0,
+        lastFeedback: chosen?.feedback || 'Selecciona una respuesta y escribe una reflexión para completar la actividad.',
+      });
       localStorage.setItem(`curriculum_ev_${activeExercise.id}`, JSON.stringify(evidenceData));
       if (currentUser) {
         const ref = doc(db, 'users', currentUser.uid, 'curriculum_evidences', activeExercise.id);
@@ -528,6 +540,8 @@ export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
       setTimeout(() => setSaveStatus(null), 3000);
     }
   };
+
+  const currentActivityProgress = activityProgress?.[activeExercise.id];
 
   const currentExIdx = activeUnit.exercises.findIndex((e) => e.id === activeExercise.id);
   const prevExercise = currentExIdx > 0 ? activeUnit.exercises[currentExIdx - 1] : null;
@@ -746,6 +760,23 @@ export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
             <h2 className="text-xl sm:text-2xl font-extrabold text-[#141414] tracking-tight">
               {activeExercise.title}
             </h2>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className={`px-2.5 py-1 rounded-lg font-bold ${
+                currentActivityProgress?.passed
+                  ? 'bg-[#E8EEE8] text-[#407B5D]'
+                  : currentActivityProgress
+                    ? 'bg-[#FFF5D9] text-[#8A6318]'
+                    : 'bg-[#F7F8F4] text-[#626262]'
+              }`}>
+                {currentActivityProgress?.passed ? 'Aprobada' : currentActivityProgress ? 'Intentada' : 'Sin intento'}
+              </span>
+              {currentActivityProgress && (
+                <span className="text-[#626262]">
+                  {currentActivityProgress.attempts} {currentActivityProgress.attempts === 1 ? 'intento' : 'intentos'} · mejor resultado {currentActivityProgress.bestScore}%
+                </span>
+              )}
+            </div>
 
             <p className="text-xs sm:text-sm text-[#626262] leading-relaxed">
               <strong>Objetivo:</strong> {activeExercise.objective}

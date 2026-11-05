@@ -99,4 +99,21 @@ export interface UserProgress {
   stage3CompletedExercises: string[];
   stage2Placements: Record<string, ZoneId>;
   stage4BuilderCustomized: boolean;
+  lessonProgress?: Record<string, LessonProgress>;
+  activityProgress?: Record<string, ActivityProgress>;
+}
+
+export interface LessonProgress {
+  completedSections: string[];
+  currentSectionId?: string;
+  lastVisitedAt: string;
+}
+
+export interface ActivityProgress {
+  unitId: 'u1' | 'u2' | 'u3';
+  attempts: number;
+  passed: boolean;
+  bestScore: number;
+  lastFeedback?: string;
+  lastAttemptAt: string;
 }

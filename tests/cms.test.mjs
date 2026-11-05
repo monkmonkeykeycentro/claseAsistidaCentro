@@ -2,6 +2,9 @@ import { test, mock, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { parseAppRoute, routeHash } from '../src/app/routeState.ts';
+import { getLessonProgressPercentage, getLessonStatus, getLessonUnitId, getUnitEvaluationSummary, inferUnitId, normalizeTopic } from '../src/types/learning.ts';
+import { areUnitPrerequisitesComplete, normalizeUnit } from '../src/types/learning.ts';
 
 // Exercise the real auth/service code against an in-memory Firebase SDK boundary.
 // These tests do not replace running firestore.rules in the Firebase emulator.
@@ -207,6 +210,59 @@ test('published custom lessons retain their identity, sections and every ordered
   assert.equal((await cms.getTopicFromCmsOrFallback('les_custom')).title, lesson.title);
   const html = renderToStaticMarkup(React.createElement(TopicViewer, { topic: topics[0], onNavigateTopic() {}, onOpenCatalogue() {} }));
   assert.match(html, /Contenido real del CMS/); assert.match(html, /https:\/\/example.com\/image.png/);
+});
+
+test('published composable lessons are preferred over legacy curriculum', async () => {
+  curriculum();
+  const composableModule = { ...node, id: 'node_module_mod_custom', type: 'container', title: 'Módulo composable', metadata: { category: 'Fundamentos', badge: 'Nuevo' } };
+  const composableLesson = { ...node, id: 'node_lesson_les_custom', type: 'lesson', title: 'Lección composable', description: 'Contenido desde nodos', metadata: { legacyId: 'les_custom', estimatedTime: '15 min' } };
+  const composableSection = { ...node, id: 'node_section_sec_custom', type: 'section', title: 'Sección composable', description: 'Sección normalizada', metadata: { didacticTip: 'Experimenta' } };
+  state.documents.set(`cms_nodes/${composableModule.id}`, composableModule);
+  state.documents.set(`cms_nodes/${composableLesson.id}`, composableLesson);
+  state.documents.set(`cms_nodes/${composableSection.id}`, composableSection);
+  state.documents.set('cms_node_relations/rel_module_lesson', { ...nodeRelation, id: 'rel_module_lesson', parentId: composableModule.id, childId: composableLesson.id });
+  state.documents.set('cms_node_relations/rel_lesson_section', { ...nodeRelation, id: 'rel_lesson_section', parentId: composableLesson.id, childId: composableSection.id });
+  state.documents.set('cms_node_blocks/block_composable', { ...nodeBlock, id: 'block_composable', nodeId: composableSection.id, data: { content: 'Contenido composable real' } });
+
+  const [topic] = await cms.getAllTopicsFromCmsOrFallback();
+  assert.equal(topic.title, 'Lección composable');
+  assert.equal(topic.concepts[0].blocks[0].content, 'Contenido composable real');
+});
+
+test('published legacy lessons remain visible alongside composable lessons', async () => {
+  curriculum();
+  const composableModule = { ...node, id: 'node_module_other', type: 'container', title: 'Otro módulo', metadata: { category: 'Fundamentos' } };
+  const composableLesson = { ...node, id: 'node_lesson_other', type: 'lesson', title: 'Lección adicional', description: 'Contenido adicional', metadata: { legacyId: 'les_other' } };
+  const composableSection = { ...node, id: 'node_section_other', type: 'section', title: 'Sección adicional', description: 'Sección adicional', metadata: {} };
+  state.documents.set(`cms_nodes/${composableModule.id}`, composableModule);
+  state.documents.set(`cms_nodes/${composableLesson.id}`, composableLesson);
+  state.documents.set(`cms_nodes/${composableSection.id}`, composableSection);
+  state.documents.set('cms_node_relations/rel_other_module_lesson', { ...nodeRelation, id: 'rel_other_module_lesson', parentId: composableModule.id, childId: composableLesson.id });
+  state.documents.set('cms_node_relations/rel_other_lesson_section', { ...nodeRelation, id: 'rel_other_lesson_section', parentId: composableLesson.id, childId: composableSection.id });
+
+  const topics = await cms.getAllTopicsFromCmsOrFallback();
+  assert.deepEqual(topics.map((topic) => topic.id).sort(), ['les_custom', 'other']);
+});
+
+test('categories provide defaults and can be persisted by administrators', async () => {
+  const defaults = await cms.getCmsCategories();
+  assert.deepEqual(defaults.map((category) => category.name), [
+    'Fundamentos',
+    'Control y Lógica',
+    'Modularidad',
+    'Programación Orientada a Objetos',
+  ]);
+  administrator();
+  await cms.saveCmsCategory({
+    id: 'cat_generativo',
+    name: 'Código generativo',
+    slug: 'codigo-generativo',
+    position: 4,
+    visible: true,
+    createdAt: '',
+    updatedAt: '',
+  });
+  assert.equal(state.documents.get('cms_categories/cat_generativo').name, 'Código generativo');
 });
 
 test('topic code blocks can opt into a larger interactive execution', async () => {
@@ -451,4 +507,69 @@ test('Miro board links are converted to embeddable view-only URLs', () => {
     },
   }));
   assert.match(embedCodeHtml, /https:\/\/miro\.com\/app\/live-embed\/uXjVExampleBoard\/\?embedMode=view_only/);
+});
+
+test('educational routes preserve lessons and units across reloads', () => {
+  const lessonRoute = parseAppRoute(new URL('http://localhost:3000/#/lecciones/puntillismo'));
+  assert.deepEqual(lessonRoute, { view: 'topic', topicId: 'puntillismo' });
+  assert.equal(routeHash(lessonRoute), '#/lecciones/puntillismo');
+
+  const exerciseRoute = parseAppRoute(new URL('http://localhost:3000/#/unidades/u2/actividad-3'));
+  assert.deepEqual(exerciseRoute, { view: 'units', unitId: 'u2', exerciseId: 'actividad-3' });
+  assert.equal(routeHash(exerciseRoute), '#/unidades/u2/actividad-3');
+});
+
+test('legacy topic data is normalized to the learning lesson contract', async () => {
+  const { TOPICS_DATA } = await import('../src/data/topicsData.ts');
+  const lesson = normalizeTopic(TOPICS_DATA[0]);
+  assert.equal(lesson.id, TOPICS_DATA[0].id);
+  assert.equal(lesson.sections.length, TOPICS_DATA[0].concepts.length);
+  assert.equal(lesson.sections[0]?.id, TOPICS_DATA[0].concepts[0]?.id);
+});
+
+test('lesson status is derived from known visited sections', () => {
+  const lesson = {
+    sections: [{ id: 'one' }, { id: 'two' }],
+  };
+  assert.equal(getLessonStatus(lesson), 'not-started');
+  assert.equal(getLessonStatus(lesson, { completedSections: ['one'], lastVisitedAt: '' }), 'in-progress');
+  assert.equal(getLessonStatus(lesson, { completedSections: ['one', 'two', 'stale'], lastVisitedAt: '' }), 'completed');
+  assert.equal(getLessonStatus(lesson, undefined, true), 'blocked');
+  assert.equal(getLessonProgressPercentage(lesson, { completedSections: ['one', 'stale'], lastVisitedAt: '' }), 50);
+});
+
+test('lessons expose explicit unit relationships', async () => {
+  const { TOPICS_DATA } = await import('../src/data/topicsData.ts');
+  assert.equal(getLessonUnitId('canvas'), 'u1');
+  assert.equal(getLessonUnitId('variables'), 'u2');
+  assert.equal(getLessonUnitId('loops'), 'u3');
+  assert.equal(normalizeTopic(TOPICS_DATA.find((topic) => topic.id === 'functions')).unitId, 'u2');
+  assert.equal(inferUnitId('puntillismo', 'Fundamentos'), 'u1');
+});
+
+test('unit completion is based on passed activities, not lesson reading', async () => {
+  const { CURRICULUM_UNITS } = await import('../src/data/unitsData.ts');
+  const unit = CURRICULUM_UNITS.find((item) => item.id === 'u1');
+  const first = unit.exercises[0];
+  const summary = getUnitEvaluationSummary(unit, {
+    [first.id]: {
+      unitId: 'u1',
+      attempts: 2,
+      passed: true,
+      bestScore: 100,
+      lastAttemptAt: '',
+    },
+  });
+  assert.equal(summary.completedActivities, 1);
+  assert.equal(summary.totalActivities, unit.exercises.length);
+  assert.equal(summary.isComplete, false);
+  assert.equal(summary.percentage, Math.round((1 / unit.exercises.length) * 100));
+});
+
+test('units expose explicit prerequisites without coupling views to storage', async () => {
+  const { CURRICULUM_UNITS } = await import('../src/data/unitsData.ts');
+  const unit = normalizeUnit(CURRICULUM_UNITS.find((item) => item.id === 'u3'));
+  assert.deepEqual(unit.prerequisiteUnitIds, ['u2']);
+  assert.equal(areUnitPrerequisitesComplete(unit, ['u1']), false);
+  assert.equal(areUnitPrerequisitesComplete(unit, ['u1', 'u2']), true);
 });

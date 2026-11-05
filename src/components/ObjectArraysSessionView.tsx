@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TopicItem } from '../data/topicsData';
+import { LearningLesson } from '../types/learning';
 import { ProcessingCodeBlock } from './ProcessingCodeBlock';
 import {
   ArrowLeft,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 interface ObjectArraysSessionViewProps {
-  topic: TopicItem;
+  topic: LearningLesson;
   onNavigateHome: () => void;
   onOpenCatalogue: () => void;
   onNavigateTopic: (topicId: string) => void;

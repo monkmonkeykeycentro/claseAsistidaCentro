@@ -13,6 +13,7 @@ import {
 import { db, requireCmsAdmin } from './firebase';
 import {
   CmsModule,
+  CmsCategory,
   CmsLesson,
   CmsSection,
   CmsBlock,
@@ -705,6 +706,117 @@ export async function getCmsNodeBlocks(nodeId: string): Promise<CmsNodeBlock[]> 
   ]));
 }
 
+function composableBlockToCmsBlock(block: CmsNodeBlock, sectionId: string): CmsBlock {
+  const data = block.data || {};
+  return {
+    id: block.id,
+    sectionId,
+    type: block.type,
+    content: typeof data.content === 'string' ? data.content : typeof data.url === 'string' ? data.url : '',
+    contentP5: typeof data.contentP5 === 'string' ? data.contentP5 : undefined,
+    contentJava: typeof data.contentJava === 'string' ? data.contentJava : undefined,
+    repositoryUrl: typeof data.repositoryUrl === 'string' ? data.repositoryUrl : undefined,
+    repositoryEntry: typeof data.repositoryEntry === 'string' ? data.repositoryEntry : undefined,
+    codeSource: data.codeSource === 'github' ? 'github' : data.codeSource === 'inline' ? 'inline' : undefined,
+    codeLanguage: data.codeLanguage === 'p5' ? 'p5' : data.codeLanguage === 'processing' ? 'processing' : undefined,
+    showCodeJava: typeof data.showCodeJava === 'boolean' ? data.showCodeJava : undefined,
+    showCodeP5: typeof data.showCodeP5 === 'boolean' ? data.showCodeP5 : undefined,
+    showInteractiveExecution: data.showInteractiveExecution === true,
+    filename: typeof data.filename === 'string' ? data.filename : undefined,
+    caption: typeof data.caption === 'string' ? data.caption : typeof data.title === 'string' ? data.title : undefined,
+    calloutType: ['info', 'tip', 'warning', 'success'].includes(String(data.calloutType))
+      ? data.calloutType as CmsBlock['calloutType']
+      : undefined,
+    activityConfig: typeof data.activityConfig === 'string' ? data.activityConfig : undefined,
+    iframeTitle: typeof data.iframeTitle === 'string' ? data.iframeTitle : undefined,
+    iframeHeight: typeof data.iframeHeight === 'number' ? data.iframeHeight : undefined,
+    position: block.position,
+    createdAt: block.createdAt,
+    updatedAt: block.updatedAt,
+  };
+}
+
+async function getTopicsFromComposable(includeUnpublished = false): Promise<TopicItem[]> {
+  const [nodes, relations, blocks] = await Promise.all([
+    getCmsNodes(includeUnpublished),
+    readCollection<CmsNodeRelation>(composableNodeCollections.relations, [where('relationType', '==', 'contains')]),
+    readCollection<CmsNodeBlock>(composableNodeCollections.blocks),
+  ]);
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const childrenByParent = new Map<string, CmsNodeRelation[]>();
+  relations.forEach((relation) => {
+    const children = childrenByParent.get(relation.parentId) || [];
+    children.push(relation);
+    childrenByParent.set(relation.parentId, children);
+  });
+  childrenByParent.forEach((children) => children.sort((a, b) => a.position - b.position));
+
+  const lessonNodes = nodes.filter((node) => node.type === 'lesson');
+  return Promise.all(lessonNodes.map(async (lessonNode) => {
+    const sectionRelations = childrenByParent.get(lessonNode.id) || [];
+    const sections = await Promise.all(sectionRelations
+      .map((relation) => nodeById.get(relation.childId))
+      .filter((node): node is CmsNode => node?.type === 'section')
+      .map(async (sectionNode) => {
+        const sectionBlocks = blocks
+          .filter((block) => block.nodeId === sectionNode.id)
+          .sort((a, b) => a.position - b.position)
+          .map((block) => composableBlockToCmsBlock(block, sectionNode.id));
+        const codeBlock = sectionBlocks.find((block) => block.type === 'code');
+        const javaCode = codeBlock?.contentJava || codeBlock?.content || '';
+        return {
+          id: sectionNode.id,
+          title: sectionNode.title,
+          summary: sectionNode.description || '',
+          explanation: sectionBlocks.filter((block) => block.type === 'rich-text').map((block) => block.content).join('\n\n'),
+          codeSnippet: javaCode,
+          codeSnippetJava: javaCode,
+          codeSnippetP5: codeBlock?.contentP5,
+          repositoryUrl: codeBlock?.repositoryUrl,
+          repositoryEntry: codeBlock?.repositoryEntry,
+          showCodeJava: codeBlock?.showCodeJava ?? true,
+          showCodeP5: codeBlock?.showCodeP5 ?? false,
+          showInteractiveExecution: codeBlock?.showInteractiveExecution ?? false,
+          defaultLanguage: 'processing' as const,
+          didacticTip: typeof sectionNode.metadata.didacticTip === 'string' ? sectionNode.metadata.didacticTip : '',
+          commonMistake: typeof sectionNode.metadata.commonMistake === 'string' ? sectionNode.metadata.commonMistake : undefined,
+          blocks: sectionBlocks,
+        };
+      }));
+    const parentRelation = relations.find((relation) => relation.childId === lessonNode.id);
+    const parentNode = parentRelation ? nodeById.get(parentRelation.parentId) : undefined;
+    const category = typeof parentNode?.metadata.category === 'string'
+      ? parentNode.metadata.category
+      : 'Fundamentos';
+    const metadata = lessonNode.metadata || {};
+    const unitId = metadata.unitId === 'u1' || metadata.unitId === 'u2' || metadata.unitId === 'u3'
+      ? metadata.unitId
+      : category === 'Fundamentos' ? 'u1' : undefined;
+    const original = TOPICS_DATA.find((topic) => topic.id === lessonNode.metadata.legacyId || `les_${topic.id}` === lessonNode.metadata.legacyId);
+    return {
+      id: typeof metadata.legacyId === 'string' ? metadata.legacyId.replace(/^les_/, '') : lessonNode.id,
+      number: lessonNode.position + 1,
+      title: lessonNode.title,
+      summary: lessonNode.description || '',
+      category: category as TopicItem['category'],
+      unitId,
+      badge: typeof parentNode?.metadata.badge === 'string' ? parentNode.metadata.badge : '',
+      estimatedTime: typeof metadata.estimatedTime === 'string' && metadata.estimatedTime ? metadata.estimatedTime : '20 min',
+      conceptsCount: sections.length,
+      concepts: sections,
+      hasInteractiveWorkshop: original?.hasInteractiveWorkshop || metadata.workshopType === 'classes',
+      quickChallenge: original?.quickChallenge,
+      thumbnailP5: sections.find((section) => section.codeSnippetP5)?.codeSnippetP5,
+      repositoryUrl: sections.find((section) => section.repositoryUrl)?.repositoryUrl,
+      repositoryEntry: sections.find((section) => section.repositoryEntry)?.repositoryEntry,
+      showCodeJava: true,
+      showCodeP5: false,
+      showInteractiveExecution: sections.some((section) => section.showInteractiveExecution),
+      displayCodeJava: sections.find((section) => section.codeSnippetJava)?.codeSnippetJava,
+    };
+  }));
+}
+
 export async function saveCmsNodeBlock(data: CmsNodeBlock): Promise<void> {
   if (!data.nodeId || !data.type || !data.data || typeof data.data !== 'object') {
     throw new Error('El bloque necesita un contenido válido.');
@@ -724,6 +836,51 @@ export async function getCmsModules(includeUnpublished = false): Promise<CmsModu
   if (includeUnpublished) await requireCmsAdmin();
   const list = await readCollection<CmsModule>('cms_modules', includeUnpublished ? [] : published());
   return byPosition(list.filter((item) => item.status !== 'archived'));
+}
+
+const DEFAULT_CMS_CATEGORIES: CmsCategory[] = [
+  'Fundamentos',
+  'Control y Lógica',
+  'Modularidad',
+  'Programación Orientada a Objetos',
+].map((name, position) => ({
+  id: `cat_${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+  name,
+  slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+  position,
+  visible: true,
+  createdAt: '',
+  updatedAt: '',
+}));
+
+export async function getCmsCategories(includeUnpublished = false): Promise<CmsCategory[]> {
+  if (includeUnpublished) await requireCmsAdmin();
+  const categories = await readCollection<CmsCategory>(
+    'cms_categories',
+    includeUnpublished ? [] : [where('visible', '==', true)],
+  );
+  return byPosition(categories.length ? categories : DEFAULT_CMS_CATEGORIES);
+}
+
+export async function saveCmsCategory(data: CmsCategory): Promise<void> {
+  if (!data.name.trim()) throw new Error('La categoría necesita un nombre.');
+  await persist('cms_categories', data.id, {
+    ...data,
+    name: data.name.trim(),
+    slug: data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteCmsCategory(id: string): Promise<void> {
+  await requireCmsAdmin();
+  const categories = await getCmsCategories(true);
+  const category = categories.find((item) => item.id === id);
+  const modules = await getCmsModules(true);
+  if (category && modules.some((module) => module.category === category.name)) {
+    throw new Error('No puedes eliminar una categoría que todavía tiene módulos asignados.');
+  }
+  await deleteDoc(doc(db, 'cms_categories', id));
 }
 
 export async function getCmsLessons(moduleId?: string, includeUnpublished = false): Promise<CmsLesson[]> {
@@ -1107,6 +1264,7 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
     title: lesson.title,
     summary: lesson.summary,
     category: module.category as TopicItem['category'],
+    unitId: module.category === 'Fundamentos' ? 'u1' : undefined,
     badge: lesson.badge || module.badge || '',
     estimatedTime: lesson.estimatedTime || '20 min',
     conceptsCount: concepts.length,
@@ -1125,17 +1283,28 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
 
 export async function getAllTopicsFromCmsOrFallback(includeUnpublished = false): Promise<TopicItem[]> {
   try {
+    let composableTopics: TopicItem[] = [];
+    try {
+      composableTopics = await getTopicsFromComposable(includeUnpublished);
+    } catch (error) {
+      if (includeUnpublished) throw error;
+      console.warn('No se pudo cargar el contenido composable público; se continuará con el CMS legacy:', error);
+    }
     const modules = await getCmsModules(includeUnpublished);
     if (modules.length === 0) {
       // Empty published results may mean everything was deliberately hidden.
       const initialized = await getDoc(doc(db, 'cms_site_content', 'curriculum_initialized'));
+      if (composableTopics.length > 0) return composableTopics;
       return initialized.exists() ? [] : TOPICS_DATA;
     }
     const groups = await Promise.all(modules.map(async (module) => {
       const lessons = await getCmsLessons(module.id, includeUnpublished);
       return Promise.all(lessons.map((lesson) => lessonToTopic(lesson, module, includeUnpublished)));
     }));
-    return groups.flat();
+    const legacyTopics = groups.flat();
+    const merged = new Map(legacyTopics.map((topic) => [topic.id, topic]));
+    composableTopics.forEach((topic) => merged.set(topic.id, topic));
+    return [...merged.values()].sort((a, b) => a.number - b.number || a.title.localeCompare(b.title));
   } catch (error) {
     if (includeUnpublished) throw error;
     console.warn('No se pudo cargar el temario del CMS:', error);

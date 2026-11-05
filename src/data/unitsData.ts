@@ -66,6 +66,7 @@ export interface UnitDefinition {
     rubric: { concept: string; percentage: number }[];
     conditionToAdvance: string;
   };
+  prerequisiteUnitIds?: Array<'u1' | 'u2' | 'u3'>;
   exercises: ExerciseDefinition[];
 }
 
@@ -367,6 +368,7 @@ void draw() {
   // ==========================================================================
   {
     id: 'u2',
+    prerequisiteUnitIds: ['u1'],
     number: 2,
     title: 'Primeros pasos con Processing',
     creativeSubtitle: 'Atlas de composiciones visuales',
@@ -867,6 +869,7 @@ void draw() {
   // ==========================================================================
   {
     id: 'u3',
+    prerequisiteUnitIds: ['u2'],
     number: 3,
     title: 'Variables y personalización visual',
     creativeSubtitle: 'Diseñar un sistema, no una imagen',

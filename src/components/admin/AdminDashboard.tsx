@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   CmsModule,
+  CmsCategory,
   CmsLesson,
   CmsSiteContent,
   CmsMediaResource,
@@ -12,6 +13,9 @@ import {
 } from '../../types/cms';
 import {
   getCmsModules,
+  getCmsCategories,
+  saveCmsCategory,
+  deleteCmsCategory,
   saveCmsModule,
   deleteCmsModule,
   duplicateCmsModule,
@@ -80,6 +84,7 @@ import {
   Menu,
   Film,
   Sliders,
+  Tags,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -100,7 +105,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   onPreviewAsStudent,
   onOpenExerciseInRunner,
 }) => {
-  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'composable' | 'navigation' | 'content' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
+  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'composable' | 'navigation' | 'content' | 'categories' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
   const [navItems, setNavItems] = useState<HeaderNavigationItem[]>(DEFAULT_HEADER_NAVIGATION);
   const [isSavingNav, setIsSavingNav] = useState<boolean>(false);
   const [navSuccessMessage, setNavSuccessMessage] = useState<string>('');
@@ -108,6 +113,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   const [evidenceFilter, setEvidenceFilter] = useState<'all' | 'coordinates' | 'conditionals'>('all');
   const [selectedEvidence, setSelectedEvidence] = useState<PilotEvidenceRecord | null>(null);
   const [modules, setModules] = useState<CmsModule[]>([]);
+  const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [lessons, setLessons] = useState<CmsLesson[]>([]);
   const [siteContent, setSiteContent] = useState<Record<string, CmsSiteContent>>({});
   const [siteTextDrafts, setSiteTextDrafts] = useState<Record<string, string>>({});
@@ -117,6 +123,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'hidden'>('all');
+  const [categoryForm, setCategoryForm] = useState<Partial<CmsCategory>>({});
 
   // Currently editing lesson (switches to AdminLessonEditor)
   const [editingLesson, setEditingLesson] = useState<CmsLesson | null>(null);
@@ -177,8 +184,10 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       // 2. Load modules & lessons
       operation = 'cargar los módulos y las lecciones';
       const modList = await getCmsModules(true);
+      const categoryList = await getCmsCategories(true);
       const lesList = await getCmsLessons(undefined, true);
       setModules(modList);
+      setCategories(categoryList);
       setLessons(lesList);
 
       // Auto-expand first 4 modules
@@ -438,6 +447,34 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsModuleModalOpen(false);
     await loadAll();
     showToast(`Módulo "${modToSave.title}" guardado con éxito.`);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!categoryForm.name?.trim()) {
+      alert('Ingresa un nombre para la categoría');
+      return;
+    }
+    const category: CmsCategory = {
+      id: categoryForm.id || `cat_${Date.now()}`,
+      name: categoryForm.name.trim(),
+      slug: categoryForm.slug || categoryForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      description: categoryForm.description || '',
+      position: categoryForm.position ?? categories.length,
+      visible: categoryForm.visible ?? true,
+      createdAt: categoryForm.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await saveCmsCategory(category);
+    setCategories((current) => [...current.filter((item) => item.id !== category.id), category].sort((a, b) => a.position - b.position));
+    setCategoryForm({});
+    showToast(`Categoría "${category.name}" guardada.`);
+  };
+
+  const handleDeleteCategory = async (category: CmsCategory) => {
+    if (!confirm(`¿Archivar la categoría "${category.name}"?`)) return;
+    await deleteCmsCategory(category.id);
+    setCategories((current) => current.filter((item) => item.id !== category.id));
+    showToast('Categoría eliminada.');
   };
 
   const handleToggleModuleVisibility = async (mod: CmsModule) => {
@@ -869,6 +906,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
               { id: 'composable', label: 'Contenido Composable', icon: Sparkles },
               { id: 'navigation', label: 'Apartados y Header', icon: Menu, count: navItems.length },
               { id: 'content', label: 'Módulos y Lecciones (CMS)', icon: Layers, count: modules.length },
+              { id: 'categories', label: 'Categorías', icon: Tags, count: categories.length },
               { id: 'evidences', label: 'Evidencias de Estudiantes', icon: FileCheck, count: evidenceList.length },
               { id: 'overview', label: 'Resumen & Estadísticas', icon: Sparkles },
               { id: 'site_texts', label: 'Textos Generales', icon: FileText },
@@ -1169,6 +1207,60 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* ========================================================================= */}
           {/* TAB 1: MÓDULOS Y LECCIONES                                                */}
           {/* ========================================================================= */}
+          {activeTab === 'categories' && (
+            <div className="space-y-4">
+              <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl shadow-xs">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-base font-bold text-[#232A24]">Categorías curriculares</h2>
+                    <p className="text-xs text-[#59645C]">Organiza módulos y lecciones con nombres propios de tu curso.</p>
+                  </div>
+                  <button
+                    onClick={() => setCategoryForm({ visible: true })}
+                    className="min-h-[36px] px-3 py-2 bg-[#407B5D] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Nueva categoría
+                  </button>
+                </div>
+                {Object.keys(categoryForm).length > 0 && (
+                  <div className="p-4 mb-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-3">
+                    <input
+                      value={categoryForm.name || ''}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                      placeholder="Ej. Código generativo"
+                      className="w-full px-3 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
+                    />
+                    <textarea
+                      value={categoryForm.description || ''}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                      placeholder="Descripción opcional"
+                      rows={2}
+                      className="w-full px-3 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => setCategoryForm({})} className="px-3 py-2 border border-[#E1E7E1] rounded-xl text-xs cursor-pointer">Cancelar</button>
+                      <button onClick={() => runAction(handleSaveCategory)} className="px-3 py-2 bg-[#407B5D] text-white rounded-xl text-xs font-semibold cursor-pointer">Guardar</button>
+                    </div>
+                  </div>
+                )}
+                <div className="grid gap-2">
+                  {categories.map((category) => (
+                    <div key={category.id} className="flex items-center justify-between gap-3 p-3 border border-[#E1E7E1] rounded-xl">
+                      <div>
+                        <p className="text-sm font-semibold text-[#232A24]">{category.name}</p>
+                        <p className="text-[11px] text-[#59645C]">{category.description || 'Sin descripción'}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setCategoryForm(category)} className="p-2 border border-[#E1E7E1] rounded-lg text-[#407B5D] cursor-pointer" title="Editar categoría"><Edit3 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => runAction(() => handleDeleteCategory(category))} className="p-2 border border-[#E1E7E1] rounded-lg text-[#A4473D] cursor-pointer" title="Eliminar categoría"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'content' && (
             <div className="space-y-4">
               {/* Filter and Top Search Bar */}
@@ -2067,12 +2159,9 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setModuleForm({ ...moduleForm, category: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-xs"
                 >
-                  <option value="Fundamentos">Fundamentos</option>
-                  <option value="Control y Lógica">Control y Lógica</option>
-                  <option value="Modularidad">Modularidad</option>
-                  <option value="Programación Orientada a Objetos">
-                    Programación Orientada a Objetos
-                  </option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.name}>{category.name}</option>
+                  ))}
                 </select>
               </div>
 

@@ -1,4 +1,5 @@
 import type { CmsBlock } from '../types/cms';
+import type { UnitDefinition } from './unitsData';
 
 export interface TopicConcept {
   id: string;
@@ -21,6 +22,7 @@ export interface TopicConcept {
 
 export interface TopicItem {
   id: string;
+  unitId?: UnitDefinition['id'];
   number: number;
   title: string;
   category: 'Fundamentos' | 'Control y Lógica' | 'Modularidad' | 'Programación Orientada a Objetos';

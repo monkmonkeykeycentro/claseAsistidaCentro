@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { LearningLesson, normalizeTopic } from '../types/learning';
 import { TopicItem } from '../data/topicsData';
+import { LessonProgress } from '../types/classStructure';
 import { CmsBlockView } from './CmsBlockView';
 import { ProcessingCodeBlock } from './ProcessingCodeBlock';
 import { ObjectArraysSessionView } from './ObjectArraysSessionView';
@@ -15,11 +17,15 @@ import {
 } from 'lucide-react';
 
 interface TopicViewerProps {
-  topic: TopicItem;
+  topic: LearningLesson | TopicItem;
   onNavigateTopic: (topicId: string) => void;
   onOpenCatalogue: () => void;
   onBackToHome?: () => void;
   onCompleteChallenge?: (challengeId: string) => void;
+  lessonProgress?: LessonProgress;
+  onSectionVisited?: (sectionId: string, totalSections: number) => void;
+  previousTopicId?: string;
+  nextTopicId?: string;
 }
 
 export const TopicViewer: React.FC<TopicViewerProps> = ({
@@ -28,16 +34,21 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
   onOpenCatalogue,
   onBackToHome,
   onCompleteChallenge,
+  lessonProgress,
+  onSectionVisited,
+  previousTopicId,
+  nextTopicId,
 }) => {
+  const learningTopic = 'sections' in topic ? topic : normalizeTopic(topic);
   const [activeConceptIdx, setActiveConceptIdx] = useState<number>(0);
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
   const [showAnswerFeedback, setShowAnswerFeedback] = useState<boolean>(false);
 
   // If this is Topic 7 (Object Arrays & Collections), display the full interactive session view
-  if (topic.id === 'object-arrays') {
+  if (learningTopic.id === 'object-arrays') {
     return (
       <ObjectArraysSessionView
-        topic={topic}
+        topic={learningTopic}
         onNavigateHome={onBackToHome || (() => {})}
         onOpenCatalogue={onOpenCatalogue}
         onNavigateTopic={onNavigateTopic}
@@ -46,7 +57,21 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
     );
   }
 
-  const activeConcept = topic.concepts[activeConceptIdx] || topic.concepts[0] || { id: 'empty', title: topic.title, summary: '', explanation: 'Esta lección aún no tiene contenido.', codeSnippet: '', didacticTip: '', commonMistake: undefined, blocks: undefined };
+  const activeConcept = learningTopic.sections[activeConceptIdx] || learningTopic.sections[0] || { id: 'empty', title: learningTopic.title, summary: '', explanation: 'Esta lección aún no tiene contenido.', codeSnippet: '', didacticTip: '', commonMistake: undefined, blocks: undefined };
+
+  useEffect(() => {
+    if (activeConcept.id !== 'empty') {
+      onSectionVisited?.(activeConcept.id, learningTopic.sections.length);
+    }
+  }, [activeConcept.id, learningTopic.sections.length, onSectionVisited]);
+
+  useEffect(() => {
+    if (!lessonProgress?.currentSectionId) return;
+    const savedIndex = learningTopic.sections.findIndex(
+      (section) => section.id === lessonProgress.currentSectionId,
+    );
+    if (savedIndex >= 0) setActiveConceptIdx(savedIndex);
+  }, [learningTopic.id, learningTopic.sections, lessonProgress?.currentSectionId]);
 
   const handleSelectOption = (idx: number) => {
     setSelectedOptionIdx(idx);
@@ -83,6 +108,21 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
           <span className="text-[#232A24] font-bold">
             Tema 0{topic.number}
           </span>
+        </div>
+
+        <div className="p-3 rounded-xl border border-[#E1E7E1] bg-white flex items-center justify-between gap-4 text-xs">
+          <span className="font-semibold text-[#59645C]">Avance de la lección</span>
+          <div className="flex items-center gap-2 min-w-0 flex-1 max-w-xs">
+            <div className="h-2 flex-1 rounded-full bg-[#E8EEE8] overflow-hidden" aria-label="Progreso de la lección">
+              <div
+                className="h-full rounded-full bg-[#407B5D] transition-all"
+                style={{ width: `${learningTopic.sections.length ? Math.round(((lessonProgress?.completedSections.length || 0) / learningTopic.sections.length) * 100) : 0}%` }}
+              />
+            </div>
+            <span className="font-mono text-[#407B5D]">
+              {learningTopic.sections.length ? Math.round(((lessonProgress?.completedSections.length || 0) / learningTopic.sections.length) * 100) : 0}%
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
@@ -129,11 +169,11 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
         {/* Left Column: Concept Selector Navigation (4 cols) */}
         <div className="lg:col-span-4 space-y-4">
           <div className="text-xs uppercase tracking-wider text-[#59645C] font-bold">
-            Conceptos clave ({topic.concepts.length})
+            Conceptos clave ({learningTopic.sections.length})
           </div>
 
           <div className="space-y-2">
-            {topic.concepts.map((concept, idx) => {
+            {learningTopic.sections.map((concept, idx) => {
               const isActive = idx === activeConceptIdx;
 
               return (
@@ -201,7 +241,7 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
                 {activeConcept.title}
               </h2>
               <span className="text-xs text-[#59645C] font-mono">
-                Concepto 0{activeConceptIdx + 1}/0{topic.concepts.length}
+                Concepto 0{activeConceptIdx + 1}/0{learningTopic.sections.length}
               </span>
             </div>
 
@@ -301,18 +341,36 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
           {/* Navigation to Next Topic */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#E1E7E1] text-xs">
             <button
-              onClick={onOpenCatalogue}
-              className="text-[#59645C] hover:text-[#232A24] flex items-center gap-1.5 cursor-pointer font-medium"
+              onClick={() => previousTopicId ? onNavigateTopic(previousTopicId) : onOpenCatalogue()}
+              className="min-h-[42px] px-4 py-2 border border-[#E1E7E1] rounded-xl text-[#59645C] hover:bg-[#E8EEE8] flex items-center gap-1.5 cursor-pointer font-medium disabled:opacity-50"
+              disabled={!previousTopicId && !onOpenCatalogue}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Ver todos los temas</span>
+              <span>{previousTopicId ? 'Lección anterior' : 'Ver todos los temas'}</span>
             </button>
 
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveConceptIdx((index) => Math.max(0, index - 1))}
+                disabled={activeConceptIdx === 0}
+                className="min-h-[42px] px-3 py-2 border border-[#E1E7E1] rounded-xl text-xs font-semibold disabled:opacity-40 cursor-pointer"
+              >
+                Sección anterior
+              </button>
+              <button
+                onClick={() => setActiveConceptIdx((index) => Math.min(learningTopic.sections.length - 1, index + 1))}
+                disabled={activeConceptIdx >= learningTopic.sections.length - 1}
+                className="min-h-[42px] px-3 py-2 border border-[#E1E7E1] rounded-xl text-xs font-semibold disabled:opacity-40 cursor-pointer"
+              >
+                Sección siguiente
+              </button>
+            </div>
+
             <button
-              onClick={() => onNavigateTopic('classes')}
+              onClick={() => nextTopicId ? onNavigateTopic(nextTopicId) : onNavigateTopic('classes')}
               className="min-h-[44px] px-5 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white rounded-xl transition-colors flex items-center gap-2 cursor-pointer font-semibold shadow-xs"
             >
-              <span>Explorar Taller de Anatomía de una Clase (POO)</span>
+              <span>{nextTopicId ? 'Siguiente lección' : 'Explorar Taller de Anatomía de una Clase (POO)'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

@@ -73,6 +73,17 @@ export interface CmsModule {
   updatedAt: string;
 }
 
+export interface CmsCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  position: number;
+  visible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CmsLesson {
   id: string;
   moduleId: string;
