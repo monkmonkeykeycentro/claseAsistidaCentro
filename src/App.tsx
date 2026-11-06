@@ -24,8 +24,9 @@ import {
   isUserAdmin,
 } from './services/firebase';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { subscribeToSiteContent } from './services/cmsService';
-import { CmsSiteContentCombined } from './types/cms';
+import { subscribeToHomeConfig, subscribeToSiteContent } from './services/cmsService';
+import { CmsHomeConfig, CmsSiteContentCombined, DEFAULT_HOME_CONFIG, CmsCategory, CmsModule } from './types/cms';
+import { getCmsCategories, getCmsModules } from './services/cmsService';
 import { BookOpen, Eye, X, Settings } from 'lucide-react';
 import { navigateToRoute } from './app/routeState';
 import { useAppNavigation } from './app/useAppNavigation';
@@ -35,6 +36,9 @@ import { LearningLesson, normalizeTopic } from './types/learning';
 
 export default function App() {
   const [siteContent, setSiteContent] = useState<CmsSiteContentCombined | null>(null);
+  const [homeConfig, setHomeConfig] = useState<CmsHomeConfig>(DEFAULT_HOME_CONFIG);
+  const [homeModules, setHomeModules] = useState<CmsModule[]>([]);
+  const [homeCategories, setHomeCategories] = useState<CmsCategory[]>([]);
   const [isStudentPreviewMode, setIsStudentPreviewMode] = useState<boolean>(false);
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -102,6 +106,17 @@ export default function App() {
       isMounted = false;
       unsubscribeSite();
     };
+  }, []);
+
+  useEffect(() => subscribeToHomeConfig(setHomeConfig), []);
+
+  useEffect(() => {
+    Promise.all([getCmsModules(), getCmsCategories()])
+      .then(([modules, categories]) => {
+        setHomeModules(modules);
+        setHomeCategories(categories);
+      })
+      .catch((error) => console.warn('No se pudieron cargar los datos configurables del Home:', error));
   }, []);
 
 
@@ -256,6 +271,9 @@ export default function App() {
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onResetProgress={resetAllProgress}
             siteContent={siteContent}
+            homeConfig={homeConfig}
+            homeModules={homeModules}
+            homeCategories={homeCategories}
             onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
             topics={displayedTopics}
             currentTopicId={currentTopicId}
@@ -485,22 +503,24 @@ export default function App() {
         currentUser={currentUser}
       />
 
-      {/* Friendly and clean footer */}
-      <footer className="border-t border-[#E1E7E1] py-8 text-xs text-[#59645C] bg-[#FFFFFF]">
+      {homeConfig.footer.visible && <footer className="border-t border-[#E1E7E1] py-8 text-xs text-[#59645C] bg-[#FFFFFF]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#232A24]">Código Creativo</span>
+            <span className="font-bold text-[#232A24]">{homeConfig.footer.brand}</span>
             <span className="text-[#E1E7E1]">/</span>
-            <span className="font-mono text-[11px] text-[#59645C]">Processing Java 4.3</span>
+            <span className="font-mono text-[11px] text-[#59645C]">{homeConfig.footer.technology}</span>
           </div>
-
-          <div className="flex items-center gap-4 text-xs font-medium text-[#59645C]">
+          <p className="max-w-md text-center text-[11px] leading-relaxed">{homeConfig.footer.text}</p>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[#59645C]">
+            {homeConfig.footer.showHomeLink && <>
             <button
               onClick={() => setActiveView('home')}
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Inicio
             </button>
+            </>}
+            {homeConfig.footer.showDesignerLink && <>
             <span className="text-[#E1E7E1]">·</span>
             <button
               onClick={() => {
@@ -511,6 +531,8 @@ export default function App() {
             >
               Diseñador de Clases
             </button>
+            </>}
+            {homeConfig.footer.showUnitsLink && <>
             <span className="text-[#E1E7E1]">·</span>
             <button
               onClick={() => {
@@ -522,6 +544,8 @@ export default function App() {
             >
               Unidades 1-3
             </button>
+            </>}
+            {homeConfig.footer.showCatalogueLink && <>
             <span className="text-[#E1E7E1]">·</span>
             <button
               onClick={() => setIsCatalogueOpen(true)}
@@ -529,6 +553,8 @@ export default function App() {
             >
               Temario ({displayedTopics.length})
             </button>
+            </>}
+            {homeConfig.footer.showOopLink && <>
             <span className="text-[#E1E7E1]">·</span>
             <button
               onClick={() => setActiveView('oop-lab')}
@@ -536,6 +562,8 @@ export default function App() {
             >
               Laboratorio POO
             </button>
+            </>}
+            {homeConfig.footer.showPilotLink && <>
             <span className="text-[#E1E7E1]">·</span>
             <button
               onClick={() => setActiveView('pilot')}
@@ -543,9 +571,10 @@ export default function App() {
             >
               Exploraciones
             </button>
+            </>}
           </div>
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   CmsModule,
   CmsCategory,
+  CmsHomeConfig,
   CmsLesson,
   CmsSiteContent,
   CmsMediaResource,
@@ -9,6 +10,7 @@ import {
   CurriculumExportData,
   HeaderNavigationItem,
   DEFAULT_HEADER_NAVIGATION,
+  DEFAULT_HOME_CONFIG,
   NavigationTarget,
 } from '../../types/cms';
 import {
@@ -36,6 +38,8 @@ import {
   getHeaderNavigation,
   saveHeaderNavigation,
   syncCmsCategoryReferences,
+  getHomeConfig,
+  saveHomeConfig,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
 import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
@@ -118,6 +122,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   const [lessons, setLessons] = useState<CmsLesson[]>([]);
   const [siteContent, setSiteContent] = useState<Record<string, CmsSiteContent>>({});
   const [siteTextDrafts, setSiteTextDrafts] = useState<Record<string, string>>({});
+  const [homeConfig, setHomeConfig] = useState<CmsHomeConfig>(DEFAULT_HOME_CONFIG);
   const [savingTextKeys, setSavingTextKeys] = useState<Record<string, boolean>>({});
   const [mediaList, setMediaList] = useState<CmsMediaResource[]>([]);
   const [revisions, setRevisions] = useState<CmsRevision[]>([]);
@@ -202,7 +207,9 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       // 3. Load site content
       operation = 'cargar los textos del sitio';
       const texts = await getAllSiteContent();
+      const loadedHomeConfig = await getHomeConfig();
       setSiteContent(texts);
+      setHomeConfig(loadedHomeConfig);
       const drafts: Record<string, string> = {};
       Object.entries(texts).forEach(([k, item]) => {
         drafts[k] = item.content;
@@ -638,6 +645,22 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveHomeConfig = async () => {
+    await saveHomeConfig({
+      ...homeConfig,
+      key: 'home_config',
+      updatedAt: new Date().toISOString(),
+    });
+    showToast('✓ Configuración de la portada guardada en Firestore.');
+  };
+
+  const updateHomePillar = (id: keyof CmsHomeConfig['pillars'], changes: Partial<CmsHomeConfig['pillars'][typeof id]>) => {
+    setHomeConfig((current) => ({
+      ...current,
+      pillars: { ...current.pillars, [id]: { ...current.pillars[id], ...changes } },
+    }));
   };
 
   const handleResetSiteText = (key: string) => {
@@ -1659,6 +1682,258 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                   <Save className="w-4 h-4" />
                   <span>Guardar todos los textos</span>
                 </button>
+              </div>
+
+              <div className="p-4 bg-[#E8EEE8] border border-[#A4C4B5] rounded-2xl space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-[#232A24]">Configuración visible de la portada</h4>
+                    <p className="text-[11px] text-[#59645C]">Decide qué bloques aparecen en el Home sin borrar su contenido.</p>
+                  </div>
+                  <div className="space-y-3 border-t border-[#A4C4B5] pt-4">
+                    <p className="text-xs font-bold text-[#232A24]">Configuración del Footer</p>
+                    <label className="flex items-center gap-2 text-xs text-[#59645C]">
+                      <input type="checkbox" checked={homeConfig.footer.visible} onChange={(event) => setHomeConfig((current) => ({ ...current, footer: { ...current.footer, visible: event.target.checked } }))} />
+                      Mostrar Footer
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {([
+                        ['brand', 'Marca'],
+                        ['technology', 'Tecnología / versión'],
+                      ] as const).map(([field, label]) => (
+                        <input
+                          key={field}
+                          value={homeConfig.footer[field]}
+                          onChange={(event) => setHomeConfig((current) => ({ ...current, footer: { ...current.footer, [field]: event.target.value } }))}
+                          placeholder={label}
+                          className="w-full px-3 py-2 rounded-lg border border-[#E1E7E1] text-xs"
+                        />
+                      ))}
+                    </div>
+                    <textarea
+                      value={homeConfig.footer.text}
+                      onChange={(event) => setHomeConfig((current) => ({ ...current, footer: { ...current.footer, text: event.target.value } }))}
+                      placeholder="Texto del Footer"
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-lg border border-[#E1E7E1] text-xs resize-y"
+                    />
+                    <div className="flex flex-wrap gap-3">
+                      {([
+                        ['showHomeLink', 'Inicio'],
+                        ['showDesignerLink', 'Diseñador'],
+                        ['showUnitsLink', 'Unidades'],
+                        ['showCatalogueLink', 'Temario'],
+                        ['showOopLink', 'Laboratorio POO'],
+                        ['showPilotLink', 'Exploraciones'],
+                      ] as const).map(([field, label]) => (
+                        <label key={field} className="flex items-center gap-1.5 text-[11px] text-[#59645C]">
+                          <input type="checkbox" checked={homeConfig.footer[field]} onChange={(event) => setHomeConfig((current) => ({ ...current, footer: { ...current.footer, [field]: event.target.checked } }))} />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => runAction(handleSaveHomeConfig)}
+                    className="min-h-[36px] px-3 py-2 rounded-xl bg-[#407B5D] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" /> Guardar portada
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {([
+                    ['hero', 'Hero y bienvenida'],
+                    ['resume', 'Continuar lección'],
+                    ['units', 'Unidades curriculares'],
+                    ['pilot', 'Módulo piloto y caballo'],
+                    ['topics', 'Temario de lecciones'],
+                    ['tools', 'Herramientas de autoría'],
+                    ['philosophy', 'Filosofía didáctica'],
+                  ] as const).map(([id, label]) => (
+                    <label key={id} className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-[#E1E7E1] text-xs font-semibold text-[#232A24] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={homeConfig.sections[id]}
+                        onChange={(event) => setHomeConfig((current) => ({
+                          ...current,
+                          sections: { ...current.sections, [id]: event.target.checked },
+                        }))}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-[#232A24]">Lecciones destacadas</p>
+                  <p className="text-[11px] text-[#59645C]">Si seleccionas alguna, el Home mostrará solo esas lecciones en el temario. Sin selección, muestra todas.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                    {lessons.map((lesson) => {
+                      const selected = homeConfig.featuredTopicIds.includes(lesson.id);
+                      return (
+                        <label key={lesson.id} className="flex items-center gap-2 p-2 bg-white rounded-lg border border-[#E1E7E1] text-[11px] text-[#232A24] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(event) => setHomeConfig((current) => ({
+                              ...current,
+                              featuredTopicIds: event.target.checked
+                                ? [...current.featuredTopicIds, lesson.id]
+                                : current.featuredTopicIds.filter((id) => id !== lesson.id),
+                            }))}
+                          />
+                          <span className="truncate">{lesson.title}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-[#232A24]">Contenido editorial de los pilares</p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    {([
+                      ['units', 'Pilar 1 · Unidades'],
+                      ['pilot', 'Pilar 2 · Módulo piloto'],
+                      ['topics', 'Pilar 3 · Temario'],
+                      ['tools', 'Pilar 4 · Herramientas'],
+                      ['philosophy', 'Pilar 5 · Filosofía'],
+                    ] as const).map(([id, label]) => (
+                      <div key={id} className="p-3 bg-white border border-[#E1E7E1] rounded-xl space-y-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-[#407B5D]">{label}</span>
+                        <input
+                          value={homeConfig.pillars[id].title}
+                          onChange={(event) => setHomeConfig((current) => ({
+                            ...current,
+                            pillars: {
+                              ...current.pillars,
+                              [id]: { ...current.pillars[id], title: event.target.value },
+                            },
+                          }))}
+                          placeholder="Título del pilar"
+                          className="w-full px-3 py-2 rounded-lg border border-[#E1E7E1] text-xs outline-none focus:border-[#407B5D]"
+                        />
+                        <textarea
+                          value={homeConfig.pillars[id].description}
+                          onChange={(event) => setHomeConfig((current) => ({
+                            ...current,
+                            pillars: {
+                              ...current.pillars,
+                              [id]: { ...current.pillars[id], description: event.target.value },
+                            },
+                          }))}
+                          placeholder="Descripción y propósito del pilar"
+                          rows={3}
+                          className="w-full px-3 py-2 rounded-lg border border-[#E1E7E1] text-xs outline-none resize-y focus:border-[#407B5D]"
+                        />
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                          <label className="flex items-center gap-2 text-[11px] text-[#59645C]">
+                            <input
+                              type="checkbox"
+                              checked={homeConfig.pillars[id].showDefaultContent}
+                              onChange={(event) => updateHomePillar(id, { showDefaultContent: event.target.checked })}
+                            />
+                            Mostrar contenido predeterminado
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => updateHomePillar(id, {
+                              blocks: [...homeConfig.pillars[id].blocks, {
+                                id: `home_block_${Date.now()}`,
+                                type: 'text',
+                                title: 'Nuevo bloque',
+                                text: 'Escribe aquí el contenido de este bloque.',
+                                columns: 1,
+                                visible: true,
+                                position: homeConfig.pillars[id].blocks.length,
+                              }],
+                            })}
+                            className="px-2.5 py-1.5 rounded-lg border border-[#407B5D] text-[#407B5D] text-[11px] font-semibold cursor-pointer"
+                          >
+                            + Agregar bloque
+                          </button>
+                        </div>
+                        {homeConfig.pillars[id].blocks.map((block, blockIndex) => (
+                          <div key={block.id} className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-lg space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold text-[#232A24]">Bloque {blockIndex + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => updateHomePillar(id, { blocks: homeConfig.pillars[id].blocks.filter((item) => item.id !== block.id) })}
+                                className="text-[11px] text-[#A4473D] cursor-pointer"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <select
+                                value={block.type}
+                                onChange={(event) => updateHomePillar(id, {
+                                  blocks: homeConfig.pillars[id].blocks.map((item) => item.id === block.id ? { ...item, type: event.target.value as typeof block.type } : item),
+                                })}
+                                className="px-2 py-2 rounded-lg border border-[#E1E7E1] text-[11px] bg-white"
+                              >
+                                <option value="text">Bloque de texto</option>
+                                <option value="modules">Módulos educativos</option>
+                                <option value="categories">Categorías</option>
+                                <option value="lessons">Lecciones</option>
+                                <option value="tools">Herramientas</option>
+                              </select>
+                              <input
+                                value={block.title}
+                                onChange={(event) => updateHomePillar(id, { blocks: homeConfig.pillars[id].blocks.map((item) => item.id === block.id ? { ...item, title: event.target.value } : item) })}
+                                placeholder="Título del bloque"
+                                className="px-2 py-2 rounded-lg border border-[#E1E7E1] text-[11px]"
+                              />
+                            </div>
+                            <textarea
+                              value={block.text || ''}
+                              onChange={(event) => updateHomePillar(id, { blocks: homeConfig.pillars[id].blocks.map((item) => item.id === block.id ? { ...item, text: event.target.value } : item) })}
+                              placeholder="Texto introductorio o instrucciones"
+                              rows={2}
+                              className="w-full px-2 py-2 rounded-lg border border-[#E1E7E1] text-[11px] resize-y"
+                            />
+                            {block.type !== 'text' && block.type !== 'tools' && (
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] text-[#59645C]">Selecciona elementos específicos o deja todo sin marcar para mostrar todos.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">
+                                  {(block.type === 'modules' ? modules : block.type === 'categories' ? categories : lessons).map((item) => {
+                                    const selected = (block.sourceIds || []).includes(item.id);
+                                    return (
+                                      <label key={item.id} className="flex items-center gap-1.5 text-[10px] text-[#59645C]">
+                                        <input
+                                          type="checkbox"
+                                          checked={selected}
+                                          onChange={(event) => updateHomePillar(id, {
+                                            blocks: homeConfig.pillars[id].blocks.map((currentBlock) => currentBlock.id === block.id
+                                              ? {
+                                                ...currentBlock,
+                                                sourceIds: event.target.checked
+                                                  ? [...(currentBlock.sourceIds || []), item.id]
+                                                  : (currentBlock.sourceIds || []).filter((sourceId) => sourceId !== item.id),
+                                              }
+                                              : currentBlock),
+                                          })}
+                                        />
+                                        <span className="truncate">{'title' in item ? item.title : item.name}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            <label className="flex items-center gap-2 text-[11px] text-[#59645C]">
+                              <input
+                                type="checkbox"
+                                checked={block.visible}
+                                onChange={(event) => updateHomePillar(id, { blocks: homeConfig.pillars[id].blocks.map((item) => item.id === block.id ? { ...item, visible: event.target.checked } : item) })}
+                              />
+                              Bloque visible
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Grouped by Section */}

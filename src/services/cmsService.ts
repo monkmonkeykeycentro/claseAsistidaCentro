@@ -27,6 +27,8 @@ import {
   CmsNode,
   CmsNodeBlock,
   CmsNodeRelation,
+  CmsHomeConfig,
+  DEFAULT_HOME_CONFIG,
 } from '../types/cms';
 import { TOPICS_DATA, TopicItem, TopicConcept } from '../data/topicsData';
 import { CURRICULUM_UNITS } from '../data/unitsData';
@@ -737,11 +739,19 @@ function composableBlockToCmsBlock(block: CmsNodeBlock, sectionId: string): CmsB
 }
 
 async function getTopicsFromComposable(includeUnpublished = false): Promise<TopicItem[]> {
-  const [nodes, relations, blocks] = await Promise.all([
-    getCmsNodes(includeUnpublished),
-    readCollection<CmsNodeRelation>(composableNodeCollections.relations, [where('relationType', '==', 'contains')]),
-    readCollection<CmsNodeBlock>(composableNodeCollections.blocks),
-  ]);
+  const nodes = await getCmsNodes(includeUnpublished);
+  const nodeIds = nodes.map((node) => node.id);
+  const relationGroups = await Promise.all(nodeIds.map((parentId) => readCollection<CmsNodeRelation>(
+    composableNodeCollections.relations,
+    [where('parentId', '==', parentId), where('relationType', '==', 'contains')],
+  )));
+  const relations = relationGroups.flat();
+  const sectionIds = nodes.filter((node) => node.type === 'section').map((node) => node.id);
+  const blockGroups = await Promise.all(sectionIds.map((nodeId) => readCollection<CmsNodeBlock>(
+    composableNodeCollections.blocks,
+    [where('nodeId', '==', nodeId)],
+  )));
+  const blocks = blockGroups.flat();
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const childrenByParent = new Map<string, CmsNodeRelation[]>();
   relations.forEach((relation) => {
@@ -950,6 +960,7 @@ export async function syncCmsCategoryReferences(): Promise<{ categories: number;
   const parentByChild = new Map(relations.map((relation) => [relation.childId, relation.parentId]));
   const categoryByUnitId: Record<string, string> = { u1: 'Fundamentos', u2: 'Control y Lógica', u3: 'Programación Orientada a Objetos' };
   nodes.forEach((node) => {
+    const metadata = node.metadata || {};
     let categoryId = categoryIdByNodeId.get(node.id);
     if (!categoryId) {
       const parentId = parentByChild.get(node.id);
@@ -1160,6 +1171,86 @@ export async function getAllSiteContent(): Promise<Record<string, CmsSiteContent
   const snapshot = await getDocs(collection(db, 'cms_site_content'));
   snapshot.docs.forEach((document) => { if (document.id !== 'curriculum_initialized') result[document.id] = document.data() as CmsSiteContent; });
   return result;
+}
+
+export async function getHomeConfig(): Promise<CmsHomeConfig> {
+  const snapshot = await getDoc(doc(db, 'cms_site_content', 'home_config'));
+  if (!snapshot.exists()) return DEFAULT_HOME_CONFIG;
+  const raw = snapshot.data();
+  let data: Partial<CmsHomeConfig> = raw as Partial<CmsHomeConfig>;
+  if (typeof raw.content === 'string') {
+    try { data = JSON.parse(raw.content) as Partial<CmsHomeConfig>; } catch { return DEFAULT_HOME_CONFIG; }
+  }
+  const pillars = Object.fromEntries(Object.entries(DEFAULT_HOME_CONFIG.pillars).map(([id, defaults]) => [
+    id,
+    {
+      ...defaults,
+      ...((data.pillars || {})[id as keyof CmsHomeConfig['pillars']] || {}),
+      blocks: Array.isArray((data.pillars || {})[id as keyof CmsHomeConfig['pillars']]?.blocks)
+        ? (data.pillars || {})[id as keyof CmsHomeConfig['pillars']]!.blocks
+        : defaults.blocks,
+    },
+  ])) as CmsHomeConfig['pillars'];
+  return {
+    ...DEFAULT_HOME_CONFIG,
+    ...data,
+    sections: { ...DEFAULT_HOME_CONFIG.sections, ...(data.sections || {}) },
+    featuredTopicIds: Array.isArray(data.featuredTopicIds) ? data.featuredTopicIds : [],
+    pillars,
+    footer: { ...DEFAULT_HOME_CONFIG.footer, ...(data.footer || {}) },
+  };
+}
+
+export function subscribeToHomeConfig(callback: (config: CmsHomeConfig) => void): () => void {
+  return onSnapshot(
+    collection(db, 'cms_site_content'),
+    (snapshot) => {
+      const homeDocument = snapshot.docs.find((document) => document.id === 'home_config');
+      if (!homeDocument) {
+        callback(DEFAULT_HOME_CONFIG);
+        return;
+      }
+      {
+        const raw = homeDocument.data();
+        let data: Partial<CmsHomeConfig> = raw as Partial<CmsHomeConfig>;
+        if (typeof raw.content === 'string') {
+          try { data = JSON.parse(raw.content) as Partial<CmsHomeConfig>; } catch { callback(DEFAULT_HOME_CONFIG); return; }
+        }
+        const pillars = Object.fromEntries(Object.entries(DEFAULT_HOME_CONFIG.pillars).map(([id, defaults]) => [
+          id,
+          {
+            ...defaults,
+            ...((data.pillars || {})[id as keyof CmsHomeConfig['pillars']] || {}),
+            blocks: Array.isArray((data.pillars || {})[id as keyof CmsHomeConfig['pillars']]?.blocks)
+              ? (data.pillars || {})[id as keyof CmsHomeConfig['pillars']]!.blocks
+              : defaults.blocks,
+          },
+        ])) as CmsHomeConfig['pillars'];
+        callback({
+          ...DEFAULT_HOME_CONFIG,
+          ...data,
+          sections: { ...DEFAULT_HOME_CONFIG.sections, ...(data.sections || {}) },
+          featuredTopicIds: Array.isArray(data.featuredTopicIds) ? data.featuredTopicIds : [],
+          pillars,
+          footer: { ...DEFAULT_HOME_CONFIG.footer, ...(data.footer || {}) },
+        });
+      }
+    },
+    (error) => {
+      console.warn('No se pudo cargar la configuración del Home; se usará la configuración predeterminada.', error);
+      callback(DEFAULT_HOME_CONFIG);
+    },
+  );
+}
+
+export async function saveHomeConfig(config: CmsHomeConfig): Promise<void> {
+  await saveSiteContent({
+    key: 'home_config',
+    title: 'Configuración de la portada',
+    section: 'home',
+    content: JSON.stringify(config),
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export async function saveSiteContent(item: CmsSiteContent, _userEmail?: string): Promise<void> {

@@ -48,6 +48,40 @@ lecciones. Para habilitar persistencia de categorías, publica `firestore.rules`
 la base `ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f` del
 proyecto `rugged-precept-406017`.
 
+### Configuración del Home
+
+En **CMS → Textos Generales**, el bloque **Configuración visible de la portada**
+permite activar o desactivar el hero, la continuidad, las unidades, el módulo
+piloto, el temario, las herramientas y la filosofía didáctica. También permite
+seleccionar lecciones destacadas: si no se selecciona ninguna, el Home muestra
+todo el temario; si se seleccionan, muestra únicamente esas lecciones en la
+sección pública. Ocultar un bloque no elimina contenido ni cambia sus rutas
+internas. La configuración se guarda en `cms_site_content/home_config`.
+
+La misma configuración permite editar el título y la descripción editorial de
+cada pilar: Unidades, Módulo piloto, Temario, Herramientas y Filosofía. Estos
+campos cambian directamente la presentación del Home sin modificar las rutas ni
+el contenido interno de las herramientas.
+
+Cada pilar también admite bloques composables. Se pueden agregar bloques de
+texto, módulos educativos, categorías, lecciones o herramientas; seleccionar
+elementos concretos dentro de cada fuente, mantener el orden y ocultar el
+contenido predeterminado del pilar para dejar únicamente la composición creada
+por el administrador.
+
+El Footer también se configura desde este bloque: se puede ocultar, cambiar la
+marca, la tecnología/versión, el texto descriptivo y la visibilidad de cada
+enlace de navegación.
+
+El Home consume el contenido publicado del modelo composable
+(`cms_nodes`, `cms_node_relations` y `cms_node_blocks`) y conserva el modelo
+legacy como respaldo. Después de actualizar las reglas de lectura pública,
+despliégalas para que las ediciones del CMS puedan reflejarse fuera del panel:
+
+```bash
+firebase deploy --only firestore:rules --project rugged-precept-406017
+```
+
 Al abrir el panel administrativo se ejecuta una sincronización idempotente:
 restaura en `cms_categories` cualquier categoría histórica que falte, conserva
 las categorías personalizadas y vincula módulos, lecciones, secciones, bloques,

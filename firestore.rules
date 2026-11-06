@@ -86,10 +86,9 @@ service cloud.firestore {
     match /cms_node_relations/{relationId} {
       allow read: if isAdmin()
         || (
-          get(/databases/$(database)/documents/cms_nodes/$(resource.data.parentId)).data.status == 'published'
+          resource.data.relationType == 'contains'
+          && get(/databases/$(database)/documents/cms_nodes/$(resource.data.parentId)).data.status == 'published'
           && get(/databases/$(database)/documents/cms_nodes/$(resource.data.parentId)).data.visible == true
-          && get(/databases/$(database)/documents/cms_nodes/$(resource.data.childId)).data.status == 'published'
-          && get(/databases/$(database)/documents/cms_nodes/$(resource.data.childId)).data.visible == true
         );
       allow write: if isAdmin() && isValidId(relationId);
     }

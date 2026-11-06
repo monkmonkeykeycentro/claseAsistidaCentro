@@ -191,6 +191,109 @@ export interface CmsSiteContentCombined {
   headerNavigation?: HeaderNavigationItem[];
 }
 
+export type HomeSectionId = 'hero' | 'resume' | 'units' | 'pilot' | 'topics' | 'tools' | 'philosophy';
+
+export interface CmsHomePillar {
+  title: string;
+  description: string;
+  showDefaultContent: boolean;
+  blocks: CmsHomeBlock[];
+}
+
+export type CmsHomeBlockType = 'text' | 'modules' | 'categories' | 'lessons' | 'tools';
+
+export interface CmsHomeBlock {
+  id: string;
+  type: CmsHomeBlockType;
+  title: string;
+  text?: string;
+  sourceIds?: string[];
+  columns?: 1 | 2 | 3;
+  visible: boolean;
+  position: number;
+}
+
+export interface CmsFooterConfig {
+  visible: boolean;
+  brand: string;
+  technology: string;
+  text: string;
+  showHomeLink: boolean;
+  showDesignerLink: boolean;
+  showUnitsLink: boolean;
+  showCatalogueLink: boolean;
+  showOopLink: boolean;
+  showPilotLink: boolean;
+}
+
+export interface CmsHomeConfig {
+  key: 'home_config';
+  sections: Record<HomeSectionId, boolean>;
+  featuredTopicIds: string[];
+  pillars: Record<Exclude<HomeSectionId, 'hero' | 'resume'>, CmsHomePillar>;
+  footer: CmsFooterConfig;
+  updatedAt: string;
+}
+
+export const DEFAULT_HOME_CONFIG: CmsHomeConfig = {
+  key: 'home_config',
+  sections: {
+    hero: true,
+    resume: true,
+    units: true,
+    pilot: true,
+    topics: true,
+    tools: true,
+    philosophy: true,
+  },
+  featuredTopicIds: [],
+  pillars: {
+    units: {
+      title: 'Plan de Unidades Curriculares',
+      description: 'Secuencia didáctica de 14 prácticas progresivas con formulación de hipótesis, comprobación visual y evidencias de logro.',
+      showDefaultContent: true,
+      blocks: [],
+    },
+    pilot: {
+      title: 'Exploraciones con Processing',
+      description: 'Secuencia didáctica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar.',
+      showDefaultContent: true,
+      blocks: [],
+    },
+    topics: {
+      title: 'Temario y Conceptos Fundamentales',
+      description: 'Lecciones y conceptos seleccionados para construir un recorrido de aprendizaje personalizado.',
+      showDefaultContent: true,
+      blocks: [],
+    },
+    tools: {
+      title: 'Herramientas de Autoría y Creación',
+      description: 'Espacios para experimentar, diseñar clases y construir proyectos propios.',
+      showDefaultContent: true,
+      blocks: [],
+    },
+    philosophy: {
+      title: 'Filosofía de Código Creativo',
+      description: 'La programación como medio artístico, constructivo y experimental.',
+      showDefaultContent: true,
+      blocks: [],
+    },
+  },
+  footer: {
+    visible: true,
+    brand: 'Código Creativo',
+    technology: 'Processing Java 4.3',
+    text: 'Una plataforma educativa para aprender programación mediante creación, experimentación y pensamiento generativo.',
+    showHomeLink: true,
+    showDesignerLink: true,
+    showUnitsLink: true,
+    showCatalogueLink: true,
+    showOopLink: true,
+    showPilotLink: true,
+  },
+  updatedAt: '',
+};
+
 export type NavigationTarget =
   | 'home'
   | 'horse'

@@ -8,7 +8,7 @@ import { GenerativeArtwork } from './generative/GenerativeArtwork';
 import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 import { VariationSeries } from './generative/VariationSeries';
 import { VideoAsciiSplitCanvas } from './generative/VideoAsciiSplitCanvas';
-import { CmsSiteContentCombined } from '../types/cms';
+import { CmsCategory, CmsHomeBlock, CmsHomeConfig, CmsModule, CmsSiteContentCombined, DEFAULT_HOME_CONFIG } from '../types/cms';
 import {
   ArrowRight,
   BookOpen,
@@ -43,6 +43,9 @@ interface HomeViewProps {
   onOpenAuth?: () => void;
   onResetProgress?: () => void;
   siteContent?: CmsSiteContentCombined | null;
+  homeConfig?: CmsHomeConfig;
+  homeModules?: CmsModule[];
+  homeCategories?: CmsCategory[];
   onNavigateAdmin?: () => void;
   topics?: LearningLesson[];
   currentTopicId?: string;
@@ -94,6 +97,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenAuth,
   onResetProgress,
   siteContent,
+  homeConfig = DEFAULT_HOME_CONFIG,
+  homeModules = [],
+  homeCategories = [],
   onNavigateAdmin,
   topics,
   currentTopicId,
@@ -103,6 +109,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [showAsciiCanvas, setShowAsciiCanvas] = useState(true);
 
   const allCurriculumTopics = topics ?? TOPICS_DATA.map(normalizeTopic);
+  const visibleTopics = homeConfig.featuredTopicIds.length
+    ? allCurriculumTopics.filter((topic) => homeConfig.featuredTopicIds.some((id) => id === topic.id || id === `les_${topic.id}`))
+    : allCurriculumTopics;
   const activeProgress = progress || classesProgress || {
     stageCompleted: { 1: false, 2: false, 3: false, 4: false },
     stage3CompletedExercises: [],
@@ -116,7 +125,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const workshopPercentage = Math.round((completedStagesCount / 4) * 100);
   const resumeTopic = allCurriculumTopics.find((topic) => topic.id === (resumeTopicId || currentTopicId)) || allCurriculumTopics[0];
   const resumeLabel = resumeTopicId ? 'Continuar lección' : 'Comenzar recorrido';
-  const foundationTopics = allCurriculumTopics.filter((topic) => topic.unitId === 'u1');
+  const foundationTopics = visibleTopics.filter((topic) => topic.unitId === 'u1');
   const additionalFoundationTopics = foundationTopics.filter(
     (topic) => !['canvas', 'variables'].includes(topic.id),
   );
@@ -133,10 +142,49 @@ export const HomeView: React.FC<HomeViewProps> = ({
     ]),
   ) as Record<'u1' | 'u2' | 'u3', boolean>;
 
+  const renderHomeBlocks = (blocks: CmsHomeBlock[]) => (
+    <div className="space-y-4">
+      {blocks.filter((block) => block.visible).sort((a, b) => a.position - b.position).map((block) => {
+        const columns = block.columns || 2;
+        const items = block.type === 'modules'
+          ? homeModules.filter((item) => !block.sourceIds?.length || block.sourceIds.includes(item.id))
+          : block.type === 'categories'
+            ? homeCategories.filter((item) => !block.sourceIds?.length || block.sourceIds.includes(item.id))
+            : block.type === 'lessons'
+              ? visibleTopics.filter((item) => !block.sourceIds?.length || block.sourceIds.includes(item.id) || block.sourceIds.includes(`les_${item.id}`))
+              : [];
+        return (
+          <div key={block.id} className="space-y-2">
+            {block.title && <h3 className="text-sm font-bold text-[#232A24]">{block.title}</h3>}
+            {block.text && <p className="text-xs text-[#59645C] leading-relaxed whitespace-pre-line">{block.text}</p>}
+            {block.type === 'text' ? null : block.type === 'tools' ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {['Diseñador de Clases', 'Laboratorio POO', 'Exploraciones'].map((tool) => (
+                  <div key={tool} className="p-3 bg-white border border-[#E1E7E1] rounded-xl text-xs font-semibold text-[#232A24]">{tool}</div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {items.map((item) => {
+                  const title = 'title' in item ? item.title : item.name;
+                  const description = 'description' in item ? item.description : 'summary' in item ? item.summary : '';
+                  return <div key={item.id} className="p-3 bg-white border border-[#E1E7E1] rounded-xl space-y-1">
+                    <p className="text-xs font-bold text-[#232A24]">{title}</p>
+                    <p className="text-[11px] text-[#59645C] line-clamp-2">{description}</p>
+                  </div>;
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="space-y-10 sm:space-y-14 animate-in fade-in duration-200">
       {/* 1. HERO SECTION: Limpio, ordenado y con jerarquía editorial */}
-      <section className="space-y-6 pt-2">
+      {homeConfig.sections.hero && <section className="space-y-6 pt-2">
         {/* Soft Ribbon Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3 text-xs text-[#59645C]">
           <div className="flex items-center gap-2 font-medium">
@@ -275,10 +323,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* 2. SECTION NAVIGATOR & FILTER BAR */}
-      <section className="p-5 bg-white border border-[#A4C4B5] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+      {homeConfig.sections.resume && <section className="p-5 bg-white border border-[#A4C4B5] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#407B5D]">Tu recorrido</span>
           <h2 className="text-lg font-bold text-[#232A24]">
@@ -296,7 +344,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         >
           {resumeLabel}
         </button>
-      </section>
+      </section>}
 
       <section className="border-b border-[#E1E7E1] pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -330,7 +378,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
       {/* 3. PILAR 1: UNIDADES CURRICULARES (U1, U2, U3) */}
-      {(activeTab === 'all' || activeTab === 'units') && (
+      {homeConfig.sections.units && (activeTab === 'all' || activeTab === 'units') && (
         <section className="space-y-5 animate-in fade-in duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
             <div>
@@ -341,15 +389,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
-                Plan de Unidades Curriculares
+                {homeConfig.pillars.units.title}
               </h2>
             </div>
             <p className="text-xs text-[#59645C] max-w-md leading-relaxed">
-              Secuencia didáctica de 14 prácticas progresivas con formulación de hipótesis, comprobación visual y evidencias de logro.
+              {homeConfig.pillars.units.description}
             </p>
           </div>
+          {renderHomeBlocks(homeConfig.pillars.units.blocks)}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-5 ${homeConfig.pillars.units.showDefaultContent ? '' : 'hidden'}`}>
             {/* UNIDAD 1 */}
             <div className="p-5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-4 shadow-xs transition-all group">
               <div className="space-y-3">
@@ -519,7 +568,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       )}
 
       {/* 4. PILAR 2: MÓDULO PILOTO Y EJEMPLO FUNDAMENTAL DEL CABALLO */}
-      {(activeTab === 'all' || activeTab === 'pilot' || activeTab === 'horse') && (
+      {homeConfig.sections.pilot && (activeTab === 'all' || activeTab === 'pilot' || activeTab === 'horse') && (
         <section id="caballo-galope" className="p-6 sm:p-7 bg-white border border-[#E1E7E1] rounded-3xl space-y-6 shadow-xs hover:border-[#407B5D]/60 transition-all animate-in fade-in duration-150 scroll-mt-20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
             <div className="space-y-1">
@@ -533,12 +582,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </span>
               </div>
               <h2 className="text-2xl font-extrabold text-[#232A24] tracking-tight">
-                {siteContent?.pilotModuleTitle || 'Exploraciones con Processing'}
+                {homeConfig.pillars.pilot.title || siteContent?.pilotModuleTitle || 'Exploraciones con Processing'}
               </h2>
               <p className="text-xs text-[#59645C] max-w-2xl leading-relaxed">
-                {siteContent?.pilotModuleDescription ||
-                  'Secuencia pedagógica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar, coronada por la instalación audiovisual del caballo de Muybridge.'}
+                {homeConfig.pillars.pilot.description || siteContent?.pilotModuleDescription ||
+                  'Secuencia pedagógica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar.'}
               </p>
+              {renderHomeBlocks(homeConfig.pillars.pilot.blocks)}
             </div>
             {onOpenPilot && (
               <button
@@ -552,7 +602,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* 3 Progressive Exercise Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 ${homeConfig.pillars.pilot.showDefaultContent ? '' : 'hidden'}`}>
             {/* Ejercicio 1 */}
             <div
               onClick={onOpenPilot}
@@ -634,7 +684,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Destacado: Instalación Audiovisual del Caballo de Muybridge (Siempre Visible) */}
-          <div className="pt-4 border-t border-[#E1E7E1] space-y-3">
+          <div className={`pt-4 border-t border-[#E1E7E1] space-y-3 ${homeConfig.pillars.pilot.showDefaultContent ? '' : 'hidden'}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Film className="w-4 h-4 text-[#407B5D]" />
@@ -652,7 +702,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       )}
 
       {/* 5. PILAR 3: TEMARIO CURRICULAR COMPLETO (01 AL 07) */}
-      {(activeTab === 'all' || activeTab === 'topics') && (
+      {homeConfig.sections.topics && (activeTab === 'all' || activeTab === 'topics') && (
         <section className="space-y-6 animate-in fade-in duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
             <div>
@@ -663,21 +713,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
-                Temario y Conceptos Fundamentales
+                {homeConfig.pillars.topics.title}
               </h2>
             </div>
             <span className="text-xs text-[#59645C] font-mono">
-              {allCurriculumTopics.length} Temas con modelos visuales interactivos
+              {visibleTopics.length} Temas con modelos visuales interactivos
             </span>
           </div>
+          {renderHomeBlocks(homeConfig.pillars.topics.blocks)}
+          <p className="text-xs text-[#59645C] max-w-2xl leading-relaxed">
+            {homeConfig.pillars.topics.description}
+          </p>
           {allCurriculumTopics.length === 0 ? (
             <div className="bg-white border border-dashed border-[#E1E7E1] rounded-2xl p-8 text-center space-y-2">
               <p className="text-sm font-semibold text-[#232A24]">No hay temas disponibles en este momento.</p>
               <p className="text-xs text-[#59645C]">Puedes explorar las Unidades Curriculares o los Ejercicios Piloto desde las pestañas superiores.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {allCurriculumTopics.map((topic) => {
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${homeConfig.pillars.topics.showDefaultContent ? '' : 'hidden'}`}>
+            {visibleTopics.map((topic) => {
               const isClasses = topic.id === 'classes';
               const lessonProgress = activeProgress.lessonProgress?.[topic.id];
               const unit = topic.unitId ? CURRICULUM_UNITS.find((candidate) => candidate.id === topic.unitId) : undefined;
@@ -786,7 +840,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       )}
 
       {/* 6. PILAR 4: HERRAMIENTAS DE AUTORÍA Y CREACIÓN (Consolidada sin duplicados) */}
-      {(activeTab === 'all' || activeTab === 'tools') && (
+      {homeConfig.sections.tools && (activeTab === 'all' || activeTab === 'tools') && (
         <section className="space-y-5 animate-in fade-in duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
             <div>
@@ -797,15 +851,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
-                Herramientas de Autoría y Producción
+                {homeConfig.pillars.tools.title}
               </h2>
             </div>
             <p className="text-xs text-[#59645C] max-w-md leading-relaxed">
-              Módulos interactivos autónomos para diseñar arquitecturas de clases, simular instancias dinámicas y exportar código Processing Java.
+              {homeConfig.pillars.tools.description}
             </p>
           </div>
+          {renderHomeBlocks(homeConfig.pillars.tools.blocks)}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-5 ${homeConfig.pillars.tools.showDefaultContent ? '' : 'hidden'}`}>
             {/* Card 1: Diseñador de Clases */}
             <div
               onClick={onOpenClassDesigner}
@@ -967,13 +1022,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
       )}
 
       {/* 7. SERIE DE VARIACIONES GENERATIVAS (Demostración de Principios) */}
-      {(activeTab === 'all' || activeTab === 'topics') && (
+      {homeConfig.sections.philosophy && (activeTab === 'all' || activeTab === 'topics') && (
         <section className="space-y-4 pt-2">
-          <VariationSeries
-            title="Serie de Variaciones Generativas: Familia de Repetición y Módulos"
-            systemDescription="Un mismo algoritmo ejecutado bajo 4 configuraciones paramétricas distintas. Observa cómo el cambio de escala, rotación angular y modulación senoidal genera lenguajes gráficos totalmente diversos a partir de una única regla formal."
+          {renderHomeBlocks(homeConfig.pillars.philosophy.blocks)}
+          {homeConfig.pillars.philosophy.showDefaultContent && <VariationSeries
+            title={homeConfig.pillars.philosophy.title}
+            systemDescription={homeConfig.pillars.philosophy.description}
             family="repetition"
-          />
+          />}
         </section>
       )}
     </div>
