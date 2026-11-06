@@ -1725,9 +1725,10 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                         ['showCatalogueLink', 'Temario'],
                         ['showOopLink', 'Laboratorio POO'],
                         ['showPilotLink', 'Exploraciones'],
+                        ['showPrivacyLink', 'Aviso de Privacidad'],
                       ] as const).map(([field, label]) => (
                         <label key={field} className="flex items-center gap-1.5 text-[11px] text-[#59645C]">
-                          <input type="checkbox" checked={homeConfig.footer[field]} onChange={(event) => setHomeConfig((current) => ({ ...current, footer: { ...current.footer, [field]: event.target.checked } }))} />
+                          <input type="checkbox" checked={homeConfig.footer[field] ?? true} onChange={(event) => setHomeConfig((current) => ({ ...current, footer: { ...current.footer, [field]: event.target.checked } }))} />
                           {label}
                         </label>
                       ))}

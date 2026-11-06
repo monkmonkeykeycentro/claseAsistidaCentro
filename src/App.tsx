@@ -13,6 +13,7 @@ import { FocusedWorkshopView } from './components/FocusedWorkshopView';
 import { TopicsCatalogueModal } from './components/TopicsCatalogueModal';
 import { TopicViewer } from './components/TopicViewer';
 import { AuthModal } from './components/AuthModal';
+import { PrivacyNoticeModal } from './components/PrivacyNoticeModal';
 import { OopLabView } from './components/oopLab/OopLabView';
 import { PilotExercisesView } from './components/pilot/PilotExercisesView';
 import { UnitActivitiesView } from './components/curriculum/UnitActivitiesView';
@@ -42,6 +43,7 @@ export default function App() {
   const [isStudentPreviewMode, setIsStudentPreviewMode] = useState<boolean>(false);
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const canAdmin = isUserAdmin(currentUser);
   const navigation = useAppNavigation(canAdmin);
@@ -572,9 +574,24 @@ export default function App() {
               Exploraciones
             </button>
             </>}
+            {(homeConfig.footer.showPrivacyLink !== false) && <>
+            <span className="text-[#E1E7E1]">·</span>
+            <button
+              onClick={() => setIsPrivacyModalOpen(true)}
+              className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors underline-offset-2 hover:underline"
+              title="Consultar el Aviso de Privacidad Institucional"
+            >
+              Aviso de Privacidad
+            </button>
+            </>}
           </div>
         </div>
       </footer>}
+
+      <PrivacyNoticeModal
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
+      />
     </div>
   );
 }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ClassDesignProject,
   DEFAULT_EMPTY_PROJECT,
@@ -16,6 +16,8 @@ import {
   loadClassDesignFromLocal,
   saveClassDesignToFirestore,
   loadClassDesignsFromFirestore,
+  downloadClassDesignJson,
+  importClassDesignFromJson,
 } from '../../services/classDesignerService';
 import { AppUser } from '../../services/firebase';
 import { Step1ObjectDefinition } from './Step1ObjectDefinition';
@@ -41,6 +43,9 @@ import {
   Eye,
   Maximize2,
   Minimize2,
+  FileJson,
+  Upload,
+  FileUp,
 } from 'lucide-react';
 
 interface ClassDesignerRootProps {
@@ -72,6 +77,12 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
   const [cloudSynced, setCloudSynced] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isLivePreviewExpanded, setIsLivePreviewExpanded] = useState(true);
+  const [jsonNotification, setJsonNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-validate project on every change
   const diagnostics = useMemo(() => validateClassDesign(project), [project]);
@@ -157,6 +168,50 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const handleExportJson = () => {
+    downloadClassDesignJson(project);
+    setJsonNotification({
+      type: 'success',
+      message: `Estructura descargada como diseno_${(project.className || 'clase').toLowerCase()}.json. Puedes guardarla y volver a abrirla para continuar editando.`,
+    });
+    setTimeout(() => setJsonNotification(null), 5000);
+  };
+
+  const handleTriggerJsonImport = () => {
+    if (jsonFileInputRef.current) {
+      jsonFileInputRef.current.value = '';
+      jsonFileInputRef.current.click();
+    }
+  };
+
+  const handleJsonFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content !== 'string') return;
+
+      const result = importClassDesignFromJson(content);
+      if (result.success && result.project) {
+        setProject(result.project);
+        setJsonNotification({
+          type: 'success',
+          message: `Proyecto "${result.project.projectName || result.project.className}" cargado correctamente con ${result.project.fields.length} campos y ${result.project.methods.length} métodos. ¡Todo listo para editar!`,
+        });
+        setTimeout(() => setJsonNotification(null), 6000);
+      } else {
+        setJsonNotification({
+          type: 'error',
+          message: result.error || 'No se pudo leer la estructura del archivo JSON.',
+        });
+        setTimeout(() => setJsonNotification(null), 6000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Header Toolbar */}
@@ -193,6 +248,24 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
           {/* Quick Actions */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
+              onClick={handleExportJson}
+              className="min-h-[36px] px-3 py-1.5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] text-[#232A24] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+              title="Descargar la estructura editable (.json) para guardarla y seguir editando"
+            >
+              <FileJson className="w-3.5 h-3.5 text-[#407B5D]" />
+              <span>Exportar JSON</span>
+            </button>
+
+            <button
+              onClick={handleTriggerJsonImport}
+              className="min-h-[36px] px-3 py-1.5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] text-[#232A24] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+              title="Cargar un archivo .json guardado previamente para continuar editándolo"
+            >
+              <FileUp className="w-3.5 h-3.5 text-[#59645C]" />
+              <span>Importar JSON</span>
+            </button>
+
+            <button
               onClick={handleLoadResorteExample}
               className="min-h-[36px] px-3 py-1.5 bg-[#FFF4DC] hover:bg-[#FFE8B3] border border-[#E6B65A]/50 text-[#9A6700] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
               title="Cargar ejemplo de referencia completo: Resorte / Slinky"
@@ -211,6 +284,41 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Hidden File Input for JSON import */}
+        <input
+          type="file"
+          ref={jsonFileInputRef}
+          onChange={handleJsonFileSelected}
+          accept=".json,application/json"
+          className="hidden"
+        />
+
+        {/* JSON Notification Banner */}
+        {jsonNotification && (
+          <div
+            className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between gap-3 animate-in fade-in ${
+              jsonNotification.type === 'success'
+                ? 'bg-[#E8EEE8] border-[#A4C4B5] text-[#232A24]'
+                : 'bg-red-50 border-red-200 text-red-900'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              {jsonNotification.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-[#407B5D] shrink-0" />
+              ) : (
+                <AlertOctagon className="w-4 h-4 text-red-600 shrink-0" />
+              )}
+              <span>{jsonNotification.message}</span>
+            </div>
+            <button
+              onClick={() => setJsonNotification(null)}
+              className="text-xs underline text-[#59645C] hover:text-[#232A24] cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
 
         {/* 2. Step Navigation Bar (1 to 6) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -281,6 +389,9 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
               project={project}
               diagnostics={diagnostics}
               onNavigateStep={(step) => setCurrentStep(step)}
+              onImportProject={(imported) => {
+                setProject(imported);
+              }}
             />
           )}
 

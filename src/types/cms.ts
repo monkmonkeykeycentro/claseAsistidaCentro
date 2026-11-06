@@ -224,6 +224,7 @@ export interface CmsFooterConfig {
   showCatalogueLink: boolean;
   showOopLink: boolean;
   showPilotLink: boolean;
+  showPrivacyLink?: boolean;
 }
 
 export interface CmsHomeConfig {
@@ -290,6 +291,7 @@ export const DEFAULT_HOME_CONFIG: CmsHomeConfig = {
     showCatalogueLink: true,
     showOopLink: true,
     showPilotLink: true,
+    showPrivacyLink: true,
   },
   updatedAt: '',
 };

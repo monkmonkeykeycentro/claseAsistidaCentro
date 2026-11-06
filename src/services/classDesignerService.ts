@@ -730,3 +730,179 @@ export async function deleteClassDesignFromFirestore(
   const designRef = doc(db, 'users', userId, 'class_designs', safeDocId);
   await deleteDoc(designRef);
 }
+
+export interface ClassDesignExportPackage {
+  format: 'laboratorio-codigo-creativo-class-design';
+  version: '1.0';
+  exportedAt: string;
+  tool: string;
+  project: ClassDesignProject;
+}
+
+/**
+ * Serializes the complete editable class design structure into a formatted JSON string.
+ */
+export function exportClassDesignAsJson(project: ClassDesignProject): string {
+  const exportPackage: ClassDesignExportPackage = {
+    format: 'laboratorio-codigo-creativo-class-design',
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    tool: 'Diseñador de Clases POO · Laboratorio de Código Creativo',
+    project: {
+      ...project,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+  return JSON.stringify(exportPackage, null, 2);
+}
+
+/**
+ * Triggers a browser download of the class design as a .json file.
+ */
+export function downloadClassDesignJson(project: ClassDesignProject): void {
+  const json = exportClassDesignAsJson(project);
+  const safeName = (project.className || 'clase').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+  const filename = `diseno_${safeName}.json`;
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Parses and validates an imported JSON string into an editable ClassDesignProject.
+ * Supports both the packaged envelope ({ format, project }) and raw ClassDesignProject objects.
+ */
+export function importClassDesignFromJson(jsonString: string): {
+  success: boolean;
+  project?: ClassDesignProject;
+  error?: string;
+} {
+  try {
+    if (!jsonString || typeof jsonString !== 'string' || jsonString.trim() === '') {
+      return { success: false, error: 'El contenido JSON está vacío.' };
+    }
+
+    const parsed = JSON.parse(jsonString);
+    if (!parsed || typeof parsed !== 'object') {
+      return { success: false, error: 'El archivo no contiene un objeto JSON válido.' };
+    }
+
+    // Extract project if wrapped in export envelope
+    const rawProject =
+      parsed.format === 'laboratorio-codigo-creativo-class-design' && parsed.project
+        ? parsed.project
+        : parsed;
+
+    if (!rawProject || typeof rawProject !== 'object') {
+      return { success: false, error: 'No se encontró la estructura de diseño en el archivo.' };
+    }
+
+    // Basic structural validation
+    const className = typeof rawProject.className === 'string' ? rawProject.className.trim() : '';
+    const projectName =
+      typeof rawProject.projectName === 'string' && rawProject.projectName.trim() !== ''
+        ? rawProject.projectName.trim()
+        : className
+        ? `Proyecto ${className}`
+        : 'Diseño Importado';
+
+    // Sanitize fields
+    const fields: ClassDesignerField[] = Array.isArray(rawProject.fields)
+      ? rawProject.fields.map((f: any, idx: number) => ({
+          id: typeof f?.id === 'string' && f.id ? f.id : `f-imp-${idx}-${Date.now()}`,
+          name: typeof f?.name === 'string' ? f.name.trim() : `campo${idx + 1}`,
+          type: (['int', 'float', 'boolean', 'String', 'color'].includes(f?.type)
+            ? f.type
+            : 'float') as JavaPrimitiveType,
+          description: typeof f?.description === 'string' ? f.description : '',
+          initStrategy: (['constructor-param', 'default-value', 'later'].includes(f?.initStrategy)
+            ? f.initStrategy
+            : 'constructor-param') as any,
+          defaultValue: typeof f?.defaultValue === 'string' ? f.defaultValue : undefined,
+        }))
+      : [];
+
+    // Sanitize constructorParams
+    const constructorParams: ClassDesignerParam[] = Array.isArray(rawProject.constructorParams)
+      ? rawProject.constructorParams.map((p: any, idx: number) => ({
+          id: typeof p?.id === 'string' && p.id ? p.id : `p-imp-${idx}-${Date.now()}`,
+          name: typeof p?.name === 'string' ? p.name.trim() : `param${idx + 1}`,
+          type: (['int', 'float', 'boolean', 'String', 'color'].includes(p?.type)
+            ? p.type
+            : 'float') as JavaPrimitiveType,
+          targetFieldId: typeof p?.targetFieldId === 'string' ? p.targetFieldId : undefined,
+          description: typeof p?.description === 'string' ? p.description : undefined,
+        }))
+      : [];
+
+    // Sanitize methods
+    const methods: ClassDesignerMethod[] = Array.isArray(rawProject.methods)
+      ? rawProject.methods.map((m: any, idx: number) => ({
+          id: typeof m?.id === 'string' && m.id ? m.id : `m-imp-${idx}-${Date.now()}`,
+          name: typeof m?.name === 'string' ? m.name.trim() : `metodo${idx + 1}`,
+          returnType: (['void', 'int', 'float', 'boolean', 'String', 'color'].includes(m?.returnType)
+            ? m.returnType
+            : 'void') as any,
+          description: typeof m?.description === 'string' ? m.description : '',
+          params: Array.isArray(m?.params)
+            ? m.params.map((mp: any, mpIdx: number) => ({
+                id: typeof mp?.id === 'string' && mp.id ? mp.id : `mp-imp-${mpIdx}-${Date.now()}`,
+                name: typeof mp?.name === 'string' ? mp.name.trim() : `arg${mpIdx + 1}`,
+                type: (['int', 'float', 'boolean', 'String', 'color'].includes(mp?.type)
+                  ? mp.type
+                  : 'float') as JavaPrimitiveType,
+              }))
+            : [],
+          relatedFieldIds: Array.isArray(m?.relatedFieldIds)
+            ? m.relatedFieldIds.filter((id: any) => typeof id === 'string')
+            : [],
+          relationType: (['reads', 'mutates', 'both'].includes(m?.relationType)
+            ? m.relationType
+            : 'mutates') as any,
+        }))
+      : [];
+
+    // Sanitize guiding questions
+    const gq = rawProject.guidingQuestions || {};
+    const guidingQuestions = {
+      realWorldObject: typeof gq.realWorldObject === 'string' ? gq.realWorldObject : '',
+      definingFeatures: typeof gq.definingFeatures === 'string' ? gq.definingFeatures : '',
+      changeableFeatures: typeof gq.changeableFeatures === 'string' ? gq.changeableFeatures : '',
+      actionsAndBehaviors: typeof gq.actionsAndBehaviors === 'string' ? gq.actionsAndBehaviors : '',
+    };
+
+    const sanitizedProject: ClassDesignProject = {
+      id: typeof rawProject.id === 'string' && rawProject.id ? rawProject.id : `diseno-imp-${Date.now()}`,
+      userId: typeof rawProject.userId === 'string' ? rawProject.userId : undefined,
+      projectName,
+      className: className || 'objetoCreativo',
+      conceptDescription:
+        typeof rawProject.conceptDescription === 'string'
+          ? rawProject.conceptDescription
+          : 'Diseño importado para continuar edición.',
+      guidingQuestions,
+      fields,
+      constructorParams,
+      methods,
+      createdAt: typeof rawProject.createdAt === 'string' ? rawProject.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return {
+      success: true,
+      project: sanitizedProject,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: `Error al procesar el archivo JSON: ${err?.message || 'Estructura no válida'}`,
+    };
+  }
+}
+

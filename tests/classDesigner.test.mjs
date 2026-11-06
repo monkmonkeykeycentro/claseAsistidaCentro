@@ -46,6 +46,8 @@ const {
   validateClassDesign,
   generateProcessingClassCode,
   generateProcessingMainSketch,
+  exportClassDesignAsJson,
+  importClassDesignFromJson,
 } = await import('../src/services/classDesignerService.ts');
 
 const {
@@ -150,4 +152,36 @@ test('Sketch generator outputs companion test sketch with setup, draw, and metho
   assert.ok(sketch.includes('miResorte = new resorte('), 'Must instantiate with new');
   assert.ok(sketch.includes('void draw() {'), 'Must include draw()');
   assert.ok(sketch.includes('miResorte.mostrar();'), 'Must invoke mostrar()');
+});
+
+test('Class designer exports complete editable structure as JSON and re-imports cleanly for ongoing editing', () => {
+  const jsonString = exportClassDesignAsJson(RESORTE_EXAMPLE_PROJECT);
+  assert.ok(typeof jsonString === 'string', 'Export must return a string');
+  assert.ok(jsonString.includes('laboratorio-codigo-creativo-class-design'), 'Must include format identifier');
+  assert.ok(jsonString.includes('"className": "resorte"'), 'Must contain class name in structure');
+
+  // Re-import from exported envelope
+  const importResult = importClassDesignFromJson(jsonString);
+  assert.equal(importResult.success, true, 'Import of exported JSON envelope must succeed');
+  assert.ok(importResult.project, 'Imported result must provide project structure');
+  assert.equal(importResult.project.className, 'resorte');
+  assert.equal(importResult.project.fields.length, RESORTE_EXAMPLE_PROJECT.fields.length);
+  assert.equal(importResult.project.methods.length, RESORTE_EXAMPLE_PROJECT.methods.length);
+  assert.equal(importResult.project.constructorParams.length, RESORTE_EXAMPLE_PROJECT.constructorParams.length);
+
+  // Import raw project JSON directly without envelope
+  const rawProjectJson = JSON.stringify(DEFAULT_EMPTY_PROJECT);
+  const rawImportResult = importClassDesignFromJson(rawProjectJson);
+  assert.equal(rawImportResult.success, true, 'Import of raw project structure must succeed');
+  assert.equal(rawImportResult.project.className, 'particula');
+  assert.equal(rawImportResult.project.fields.length, DEFAULT_EMPTY_PROJECT.fields.length);
+
+  // Robust error handling on corrupted or empty input
+  const emptyResult = importClassDesignFromJson('');
+  assert.equal(emptyResult.success, false, 'Empty input must safely return failure');
+  assert.ok(emptyResult.error);
+
+  const corruptedResult = importClassDesignFromJson('{ invalid json');
+  assert.equal(corruptedResult.success, false, 'Invalid JSON must safely return failure');
+  assert.ok(corruptedResult.error);
 });
