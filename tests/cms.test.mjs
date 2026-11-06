@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { parseAppRoute, routeHash } from '../src/app/routeState.ts';
 import { getLessonProgressPercentage, getLessonStatus, getLessonUnitId, getUnitEvaluationSummary, inferUnitId, normalizeTopic } from '../src/types/learning.ts';
 import { areUnitPrerequisitesComplete, normalizeUnit } from '../src/types/learning.ts';
+import { DEFAULT_HOME_CONFIG } from '../src/types/cms.ts';
+import { HomePresentation } from '../src/components/HomePresentation.tsx';
 
 // Exercise the real auth/service code against an in-memory Firebase SDK boundary.
 // These tests do not replace running firestore.rules in the Firebase emulator.
@@ -437,6 +439,21 @@ test('empty lessons render without crashing', async () => {
   assert.match(renderToStaticMarkup(React.createElement(TopicViewer, { topic, onNavigateTopic() {}, onOpenCatalogue() {} })), /aún no tiene contenido/);
 });
 
+test('a resumed lesson starts in the saved section before recording a visit', () => {
+  const topic = {
+    id: 'resume-test', title: 'Lección con progreso', number: 1, category: 'Control y Lógica',
+    sections: [
+      { id: 'first', title: 'Primera sección', blocks: [], didacticTip: '' },
+      { id: 'saved', title: 'Sección guardada', blocks: [], didacticTip: '' },
+    ],
+  };
+  const html = renderToStaticMarkup(React.createElement(TopicViewer, {
+    topic, onNavigateTopic() {}, onOpenCatalogue() {},
+    lessonProgress: { completedSections: ['saved'], currentSectionId: 'saved', lastVisitedAt: '2026-11-06T00:00:00.000Z' },
+  }));
+  assert.match(html, /<h2\b[^>]*>\s*Sección guardada\s*<\/h2>/);
+});
+
 test('CMS controls are absent for visitors and students and visible for verified admins', () => {
   for (const user of [null, identity.mapFirebaseUser(account('admin@example.com')), identity.mapFirebaseUser(account('student@centro.edu.mx'))]) {
     const header = renderToStaticMarkup(React.createElement(Header, { currentView: 'home', currentUser: user, onNavigateAdmin() {} }));
@@ -453,6 +470,48 @@ test('an explicitly empty public catalogue never restores the static curriculum'
   const catalogue = renderToStaticMarkup(React.createElement(TopicsCatalogueModal, { isOpen: true, topics: [], onClose() {}, onSelectTopic() {} }));
   assert.match(catalogue, /0 lecciones disponibles/);
   assert.doesNotMatch(catalogue, /Lienzo y Ciclo de Vida/);
+});
+
+test('the home presentation preserves editorial order, resolves legacy IDs once and hides the filter bar', () => {
+  const makeTopic = (id, title) => ({ id, title, number: 1, category: 'Fundamentos', summary: 'Descripción', sections: [], estimatedTime: '30 min' });
+  const topics = [makeTopic('noise', 'Noise seleccionado'), makeTopic('other', 'Contenido ajeno'), makeTopic('coordinates', 'Coordenadas seleccionadas'), makeTopic('les_coordinates', 'Coordenadas duplicadas'), makeTopic('random', 'Random seleccionado')];
+  const presentation = { enabled: true, title: 'Selección docente', description: '', items: [
+    { type: 'lesson', id: 'les_coordinates' }, { type: 'lesson', id: 'coordinates' },
+    { type: 'lesson', id: 'random' }, { type: 'lesson', id: 'noise' }, { type: 'class-designer', id: 'class-designer' },
+  ] };
+  const config = { ...DEFAULT_HOME_CONFIG, sections: Object.fromEntries(Object.keys(DEFAULT_HOME_CONFIG.sections).map((key) => [key, false])), showSectionNavigator: false, presentation };
+  const html = renderToStaticMarkup(React.createElement(HomeView, { homeConfig: config, topics, onSelectTopic() {}, onOpenWorkshop() {}, currentUser: null }));
+  const headings = [...html.matchAll(/<h3\b[^>]*>(.*?)<\/h3>/g)].map((match) => match[1]);
+  assert.deepEqual(headings, ['Coordenadas duplicadas', 'Random seleccionado', 'Noise seleccionado', 'Diseñador POO']);
+  assert.doesNotMatch(html, /Filtros del laboratorio|Todo el Laboratorio|Contenido ajeno/);
+  assert.match(html, /href="#\/lecciones\/les_coordinates"/);
+  assert.match(html, /href="#\/herramientas"/);
+});
+
+test('unavailable presentation lessons do not expose unrelated lessons or restore the static catalogue', () => {
+  const html = renderToStaticMarkup(React.createElement(HomePresentation, {
+    config: { enabled: true, title: 'Selección', description: '', items: [{ type: 'lesson', id: 'missing' }] },
+    topics: [{ id: 'other', title: 'No seleccionado' }],
+  }));
+  assert.match(html, /cuando se publiquen sus contenidos/);
+  assert.doesNotMatch(html, /No seleccionado|Lienzo y Ciclo/);
+});
+
+test('home selection settings survive saving and subscriptions while older home configurations keep their defaults', async () => {
+  state.documents.set('cms_site_content/home_config', { content: JSON.stringify({ sections: { hero: false } }) });
+  const previous = await cms.getHomeConfig();
+  assert.equal(previous.showSectionNavigator, true);
+  assert.equal(previous.presentation.enabled, false);
+  administrator();
+  const selected = { ...previous, showSectionNavigator: false, presentation: { enabled: true, title: 'Recorrido', description: 'Del inicio a los objetos', items: [{ type: 'lesson', id: 'custom' }, { type: 'class-designer', id: 'class-designer' }] } };
+  await cms.saveHomeConfig(selected);
+  assert.deepEqual(await cms.getHomeConfig(), selected);
+  let live;
+  const stop = cms.subscribeToHomeConfig((value) => { live = value; });
+  assert.deepEqual(live, selected);
+  stop();
+  const backup = await cms.exportCurriculumBackup();
+  assert.deepEqual(JSON.parse(backup.siteContent.find((item) => item.key === 'home_config').content).presentation, selected.presentation);
 });
 
 test('unsafe media and resource protocols are not rendered', () => {

@@ -1,4 +1,5 @@
 import { requireCmsAdmin } from './firebase';
+import { ensurePublicDriveImage, type DriveImageFile } from './driveSharing';
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
@@ -106,13 +107,12 @@ export async function ensureDriveRootFolder(): Promise<{ id: string; name: strin
   });
 }
 
-export async function uploadDriveFile(file: File): Promise<{
-  id: string;
-  name: string;
-  mimeType: string;
-  webViewLink: string;
-  thumbnailLink?: string;
-}> {
+export async function makeDriveImagePublicReadOnly(fileId: string): Promise<DriveImageFile> {
+  await requireCmsAdmin();
+  return ensurePublicDriveImage(fileId, driveRequest);
+}
+
+export async function uploadDriveFile(file: File): Promise<DriveImageFile> {
   const root = await ensureDriveRootFolder();
   const token = accessToken || await requestAccessToken();
   await requireCmsAdmin();
@@ -137,7 +137,15 @@ export async function uploadDriveFile(file: File): Promise<{
     const message = await response.text();
     throw new Error(`No se pudo subir el archivo a Drive (${response.status}): ${message.slice(0, 240)}`);
   }
-  return response.json();
+  const uploaded = await response.json() as DriveImageFile;
+  if (!uploaded.mimeType.startsWith('image/')) return uploaded;
+  try {
+    return await makeDriveImagePublicReadOnly(uploaded.id);
+  } catch {
+    // Keep the successful upload in the library so the author can retry sharing.
+    // Never report public access when a Workspace policy or Drive request fails.
+    return { ...uploaded, publicRead: false, sharingError: 'La imagen se subió a Drive, pero no se pudo configurar el acceso público de lectura. Conecta Drive y pulsa «Hacer pública (lector)» para reintentar. Si vuelve a fallar, revisa las restricciones de tu organización.' };
+  }
 }
 
 export async function getDriveThumbnailObjectUrl(fileId: string): Promise<string | null> {

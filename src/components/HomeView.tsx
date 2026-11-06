@@ -8,19 +8,18 @@ import { GenerativeArtwork } from './generative/GenerativeArtwork';
 import { P5LiveThumbnail } from './generative/P5LiveThumbnail';
 import { VariationSeries } from './generative/VariationSeries';
 import { VideoAsciiSplitCanvas } from './generative/VideoAsciiSplitCanvas';
+import { routeHash } from '../app/routeState';
+import { HomePresentation } from './HomePresentation';
 import { CmsCategory, CmsHomeBlock, CmsHomeConfig, CmsModule, CmsSiteContentCombined, DEFAULT_HOME_CONFIG } from '../types/cms';
 import {
   ArrowRight,
   BookOpen,
-  User,
   Check,
   RotateCcw,
   Sparkles,
-  Layers,
   Code2,
   Sliders,
   PenTool,
-  Compass,
   Film,
   Maximize2,
   Minimize2,
@@ -32,10 +31,8 @@ interface HomeViewProps {
   onOpenWorkshop: (stage?: StageId) => void;
   onOpenOopLab?: () => void;
   onNavigateOopLab?: () => void;
-  onOpenPilot?: () => void;
   onOpenUnits?: (unitId?: 'u1' | 'u2' | 'u3', exerciseId?: string) => void;
   onOpenClassDesigner?: () => void;
-  onNavigateHorse?: () => void;
   onSelectTopic: (topicId: string) => void;
   progress?: UserProgress;
   classesProgress?: UserProgress;
@@ -48,6 +45,7 @@ interface HomeViewProps {
   homeCategories?: CmsCategory[];
   onNavigateAdmin?: () => void;
   topics?: LearningLesson[];
+  isCurriculumLoading?: boolean;
   currentTopicId?: string;
   resumeTopicId?: string;
 }
@@ -86,15 +84,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenWorkshop,
   onOpenOopLab,
   onNavigateOopLab,
-  onOpenPilot,
   onOpenUnits,
   onOpenClassDesigner,
-  onNavigateHorse,
   onSelectTopic,
   progress,
   classesProgress,
-  currentUser,
-  onOpenAuth,
   onResetProgress,
   siteContent,
   homeConfig = DEFAULT_HOME_CONFIG,
@@ -102,11 +96,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
   homeCategories = [],
   onNavigateAdmin,
   topics,
+  isCurriculumLoading = false,
   currentTopicId,
   resumeTopicId,
 }) => {
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [showAsciiCanvas, setShowAsciiCanvas] = useState(true);
+  const activeSection = homeConfig.showSectionNavigator === false ? 'all' : activeTab;
 
   const allCurriculumTopics = topics ?? TOPICS_DATA.map(normalizeTopic);
   const visibleTopics = homeConfig.featuredTopicIds.length
@@ -121,6 +117,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   const handleOpenOop = onNavigateOopLab || onOpenOopLab || (() => {});
+  const pilotDescription = homeConfig.pillars.pilot.description || siteContent?.pilotModuleDescription;
+  const explorationDescription = !pilotDescription || [
+    'Secuencia didáctica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar.',
+    'Secuencia pedagógica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar.',
+    'Secuencia pedagógica de tres ejercicios para asimilar el sistema de coordenadas, las estructuras condicionales y la experimentación audiovisual.',
+  ].includes(pilotDescription) ? DEFAULT_HOME_CONFIG.pillars.pilot.description : pilotDescription;
   const completedStagesCount = Object.values(activeProgress.stageCompleted).filter(Boolean).length;
   const workshopPercentage = Math.round((completedStagesCount / 4) * 100);
   const resumeTopic = allCurriculumTopics.find((topic) => topic.id === (resumeTopicId || currentTopicId)) || allCurriculumTopics[0];
@@ -202,128 +204,29 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         {/* Editorial Headline & Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          {/* Main Title & Intro (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-3 py-1 rounded-full">
-                <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
-                <span>{siteContent?.heroBadge || 'Laboratorio de Código Creativo'}</span>
-              </span>
+        <div className="max-w-4xl space-y-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#407B5D] bg-[#E8EEE8] px-3 py-1 rounded-full">
+            <Sparkles className="w-3.5 h-3.5 text-[#E6B65A]" />
+            <span>{siteContent?.heroBadge || 'Laboratorio de Código Creativo'}</span>
+          </span>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-extrabold tracking-tight text-[#232A24] leading-[1.18]">
-                {siteContent?.heroHeadline || 'Aprende a programar creando arte y sistemas visuales.'}
-              </h1>
+          <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-extrabold tracking-tight text-[#232A24] leading-[1.18]">
+            {siteContent?.heroHeadline || 'Aprende a programar creando arte y sistemas visuales.'}
+          </h1>
 
-              <p className="text-sm sm:text-base text-[#59645C] leading-relaxed pt-1">
-                {siteContent?.heroSubtitle ||
-                  'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.'}
-              </p>
-            </div>
-
-            {/* Quick Action Navigation Buttons */}
-            <div className="pt-2 flex flex-wrap items-center gap-2.5">
-              {onOpenUnits && (
-                <button
-                  onClick={() => onOpenUnits('u1')}
-                  className="min-h-[42px] px-5 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer text-xs"
-                >
-                  <Layers className="w-4 h-4" />
-                  <span>Unidades Curriculares (14 Prácticas)</span>
-                </button>
-              )}
-
-              {onOpenPilot && (
-                <button
-                  onClick={onOpenPilot}
-                  className="min-h-[42px] px-4 py-2.5 border border-[#407B5D] bg-white hover:bg-[#E8EEE8] text-[#407B5D] font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-                >
-                  <Compass className="w-4 h-4" />
-                  <span>Módulo Piloto (3 Ejercicios)</span>
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setActiveTab('horse');
-                  const el = document.getElementById('caballo-galope');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="min-h-[42px] px-4 py-2.5 border border-[#407B5D] bg-[#E8EEE8]/70 hover:bg-[#E8EEE8] text-[#407B5D] font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-              >
-                <Film className="w-4 h-4 text-[#407B5D]" />
-                <span>Caballo al Galope (1878)</span>
-              </button>
-
-              {onOpenClassDesigner && (
-                <button
-                  onClick={onOpenClassDesigner}
-                  className="min-h-[42px] px-4 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#F7F8F4] text-[#232A24] font-semibold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-                >
-                  <PenTool className="w-4 h-4 text-[#407B5D]" />
-                  <span>Diseñador de Clases</span>
-                </button>
-              )}
-
-              <button
-                onClick={handleOpenOop}
-                className="min-h-[42px] px-4 py-2.5 border border-[#E1E7E1] bg-white hover:bg-[#F7F8F4] text-[#232A24] font-semibold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs text-xs"
-              >
-                <Sliders className="w-4 h-4 text-[#407B5D]" />
-                <span>Laboratorio POO</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Generative Principles & Student Profile (5 cols) */}
-          <div className="lg:col-span-5 space-y-3.5">
-            <div className="p-4 sm:p-5 bg-white border border-[#E1E7E1] rounded-2xl space-y-2.5 shadow-xs">
-              <span className="text-xs font-bold text-[#232A24] block">
-                {siteContent?.generativeQuestion || '¿Cómo funciona el pensamiento generativo?'}
-              </span>
-              <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                {(siteContent?.generativePrinciples || [
-                  '1. Código',
-                  '2. Sistema',
-                  '3. Regla',
-                  '4. Variación',
-                  '5. Forma',
-                ]).map((principle, idx, arr) => (
-                  <React.Fragment key={idx}>
-                    <span className="px-2.5 py-1 bg-[#E8EEE8] text-[#407B5D] font-bold rounded-lg text-[11px]">
-                      {principle}
-                    </span>
-                    {idx < arr.length - 1 && (
-                      <span className="text-[#8E8E89] font-semibold text-[11px]">→</span>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-              <p className="text-[11px] text-[#59645C] leading-relaxed pt-1">
-                De instrucciones lógicas elementales a composiciones paramétricas complejas.
-              </p>
-            </div>
-
-            {/* Session / Account Status */}
-            <div className="p-3 bg-white border border-[#E1E7E1] rounded-2xl flex items-center justify-between text-xs text-[#59645C]">
-              <div className="flex items-center gap-2 font-medium">
-                <User className="w-4 h-4 text-[#407B5D]" />
-                <span className="truncate max-w-[210px] sm:max-w-none">
-                  {currentUser ? `${currentUser.displayName} (${currentUser.email})` : 'Modo Invitado (progreso en este navegador)'}
-                </span>
-              </div>
-              {!currentUser && onOpenAuth && (
-                <button
-                  onClick={onOpenAuth}
-                  className="text-[#407B5D] hover:underline font-bold cursor-pointer text-xs shrink-0"
-                >
-                  Conectar
-                </button>
-              )}
-            </div>
-          </div>
+          <p className="max-w-3xl text-sm sm:text-base text-[#59645C] leading-relaxed pt-1">
+            {siteContent?.heroSubtitle ||
+              'Descubre la programación como una herramienta para dar vida a formas, animaciones y patrones visuales. En cada paso escribes código en Processing Java y ves su resultado interactivo de inmediato.'}
+          </p>
         </div>
       </section>}
+
+      {homeConfig.presentation && <HomePresentation
+        config={homeConfig.presentation}
+        topics={allCurriculumTopics}
+        progress={progress || classesProgress}
+        isLoading={isCurriculumLoading}
+      />}
 
       {/* 2. SECTION NAVIGATOR & FILTER BAR */}
       {homeConfig.sections.resume && <section className="p-5 bg-white border border-[#A4C4B5] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
@@ -346,14 +249,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </button>
       </section>}
 
-      <section className="border-b border-[#E1E7E1] pb-3">
+      {homeConfig.showSectionNavigator !== false && <section aria-label="Filtros del laboratorio" className="border-b border-[#E1E7E1] pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1 text-xs">
             {[
               { id: 'all', label: 'Todo el Laboratorio' },
               { id: 'horse', label: 'Caballo al Galope (1878)' },
               { id: 'units', label: 'Unidades Curriculares (14)' },
-              { id: 'pilot', label: 'Módulo Piloto (3)' },
+              { id: 'pilot', label: 'Exploraciones con Processing' },
               { id: 'topics', label: 'Temario 01 al 07' },
               { id: 'tools', label: 'Herramientas de Autoría' },
             ].map((tab) => (
@@ -375,10 +278,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {allCurriculumTopics.length} Temas · 14 Prácticas · 3 Herramientas
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* 3. PILAR 1: UNIDADES CURRICULARES (U1, U2, U3) */}
-      {homeConfig.sections.units && (activeTab === 'all' || activeTab === 'units') && (
+      {homeConfig.sections.units && (activeSection === 'all' || activeSection === 'units') && (
         <section className="space-y-5 animate-in fade-in duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
             <div>
@@ -567,15 +470,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </section>
       )}
 
-      {/* 4. PILAR 2: MÓDULO PILOTO Y EJEMPLO FUNDAMENTAL DEL CABALLO */}
-      {homeConfig.sections.pilot && (activeTab === 'all' || activeTab === 'pilot' || activeTab === 'horse') && (
+      {/* 4. PILAR 2: EXPLORACIONES CON PROCESSING Y ARTE ASCII */}
+      {homeConfig.sections.pilot && (activeSection === 'all' || activeSection === 'pilot' || activeSection === 'horse') && (
         <section id="caballo-galope" className="p-6 sm:p-7 bg-white border border-[#E1E7E1] rounded-3xl space-y-6 shadow-xs hover:border-[#407B5D]/60 transition-all animate-in fade-in duration-150 scroll-mt-20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
                 <span className="text-xs font-bold uppercase tracking-wider font-mono text-[#407B5D]">
-                  Pilar 2 · Módulo Piloto &amp; Instalación Audiovisual
+                  Pilar 2 · Exploraciones visuales
                 </span>
                 <span className="text-[10px] font-bold uppercase font-mono bg-[#E8EEE8] text-[#407B5D] px-2 py-0.5 rounded">
                   Caballo al Galope (1878)
@@ -585,106 +488,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 {homeConfig.pillars.pilot.title || siteContent?.pilotModuleTitle || 'Exploraciones con Processing'}
               </h2>
               <p className="text-xs text-[#59645C] max-w-2xl leading-relaxed">
-                {homeConfig.pillars.pilot.description || siteContent?.pilotModuleDescription ||
-                  'Secuencia pedagógica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar.'}
+                {explorationDescription}
               </p>
               {renderHomeBlocks(homeConfig.pillars.pilot.blocks)}
             </div>
-            {onOpenPilot && (
-              <button
-                onClick={onOpenPilot}
-                className="min-h-[42px] px-5 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0"
-              >
-                <span>Abrir Módulo Piloto</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
+            <a
+              href={routeHash({ view: 'horse' })}
+              className="min-h-[42px] px-5 py-2.5 bg-[#407B5D] hover:bg-[#33654C] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0"
+            >
+              <span>Cómo funciona el arte ASCII</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
 
-          {/* 3 Progressive Exercise Cards */}
-          <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 ${homeConfig.pillars.pilot.showDefaultContent ? '' : 'hidden'}`}>
-            {/* Ejercicio 1 */}
-            <div
-              onClick={onOpenPilot}
-              className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-3 cursor-pointer transition-all group"
-            >
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded">
-                  EJERCICIO 01 · COORDENADAS
-                </span>
-                <h3 className="text-sm font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
-                  {siteContent?.pilotEx1Title || 'Sistemas de coordenadas: Del espacio a la forma'}
-                </h3>
-                <p className="text-xs text-[#59645C] leading-relaxed">
-                  {siteContent?.pilotEx1Objective ||
-                    'Comprender el sistema cartesiano de Processing Java y utilizar coordenadas precisas (X, Y) para posicionar elementos gráficos.'}
-                </p>
-              </div>
-              <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                <span>Practicar coordenadas</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </div>
-
-            {/* Ejercicio 2 */}
-            <div
-              onClick={onOpenPilot}
-              className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-3 cursor-pointer transition-all group"
-            >
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded">
-                  EJERCICIO 02 · CONDICIONALES
-                </span>
-                <h3 className="text-sm font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
-                  {siteContent?.pilotEx2Title || 'Estructuras condicionales: Decisiones visuales'}
-                </h3>
-                <p className="text-xs text-[#59645C] leading-relaxed">
-                  {siteContent?.pilotEx2Objective ||
-                    'Comprender estructuras if, else if y else en Processing Java mediante tres zonas visuales y análisis de valores límite.'}
-                </p>
-              </div>
-              <span className="text-xs font-bold text-[#407B5D] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                <span>Practicar condicionales</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </div>
-
-            {/* Ejercicio 3 */}
-            <div className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] hover:border-[#407B5D] rounded-2xl flex flex-col justify-between space-y-3 transition-all group">
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono font-bold text-[#407B5D] bg-[#E8EEE8] px-2 py-0.5 rounded">
-                  EJERCICIO 03 · AUDIOVISUAL
-                </span>
-                <h3 className="text-sm font-bold text-[#232A24] group-hover:text-[#407B5D] transition-colors">
-                  {siteContent?.pilotEx3Title || 'Discretización audiovisual: Video a ASCII'}
-                </h3>
-                <p className="text-xs text-[#59645C] leading-relaxed">
-                  Cuantización tipográfica en tiempo real. Divide el lienzo con la barra central &lt;&gt; para comparar el fotograma original contra la salida en caracteres.
-                </p>
-              </div>
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <a
-                  href="#caballo-galope"
-                  className="text-xs font-bold text-[#407B5D] hover:underline flex items-center gap-1"
-                >
-                  <Film className="w-3.5 h-3.5" />
-                  <span>Ver instalación abajo</span>
-                </a>
-                {onOpenPilot && (
-                  <button
-                    onClick={onOpenPilot}
-                    className="text-xs text-[#59645C] hover:text-[#232A24] cursor-pointer flex items-center gap-1"
-                  >
-                    <span>Ver en módulo</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Destacado: Instalación Audiovisual del Caballo de Muybridge (Siempre Visible) */}
-          <div className={`pt-4 border-t border-[#E1E7E1] space-y-3 ${homeConfig.pillars.pilot.showDefaultContent ? '' : 'hidden'}`}>
+          {/* Ejemplo visual del módulo ASCII */}
+          <div className={`space-y-3 ${homeConfig.pillars.pilot.showDefaultContent ? '' : 'hidden'}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Film className="w-4 h-4 text-[#407B5D]" />
@@ -702,7 +520,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       )}
 
       {/* 5. PILAR 3: TEMARIO CURRICULAR COMPLETO (01 AL 07) */}
-      {homeConfig.sections.topics && (activeTab === 'all' || activeTab === 'topics') && (
+      {homeConfig.sections.topics && (activeSection === 'all' || activeSection === 'topics') && (
         <section className="space-y-6 animate-in fade-in duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
             <div>
@@ -727,7 +545,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {allCurriculumTopics.length === 0 ? (
             <div className="bg-white border border-dashed border-[#E1E7E1] rounded-2xl p-8 text-center space-y-2">
               <p className="text-sm font-semibold text-[#232A24]">No hay temas disponibles en este momento.</p>
-              <p className="text-xs text-[#59645C]">Puedes explorar las Unidades Curriculares o los Ejercicios Piloto desde las pestañas superiores.</p>
+              <p className="text-xs text-[#59645C]">Puedes explorar las Unidades Curriculares o las Exploraciones con Processing desde las pestañas superiores.</p>
             </div>
           ) : (
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${homeConfig.pillars.topics.showDefaultContent ? '' : 'hidden'}`}>
@@ -840,7 +658,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       )}
 
       {/* 6. PILAR 4: HERRAMIENTAS DE AUTORÍA Y CREACIÓN (Consolidada sin duplicados) */}
-      {homeConfig.sections.tools && (activeTab === 'all' || activeTab === 'tools') && (
+      {homeConfig.sections.tools && (activeSection === 'all' || activeSection === 'tools') && (
         <section className="space-y-5 animate-in fade-in duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E1E7E1] pb-3">
             <div>
@@ -1022,7 +840,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       )}
 
       {/* 7. SERIE DE VARIACIONES GENERATIVAS (Demostración de Principios) */}
-      {homeConfig.sections.philosophy && (activeTab === 'all' || activeTab === 'topics') && (
+      {homeConfig.sections.philosophy && (activeSection === 'all' || activeSection === 'topics') && (
         <section className="space-y-4 pt-2">
           {renderHomeBlocks(homeConfig.pillars.philosophy.blocks)}
           {homeConfig.pillars.philosophy.showDefaultContent && <VariationSeries

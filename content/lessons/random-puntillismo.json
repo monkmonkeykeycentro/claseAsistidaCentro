@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "placement": {
+    "moduleTitle": "Funciones específicas aplicadas al diseño visual",
+    "categoryName": "Modularidad"
+  },
+  "lesson": {
+    "id": "random_puntillismo",
+    "title": "Random: puntillismo y muestreo de imágenes",
+    "summary": "Una sesión para comprender random() a partir del ejemplo actual de puntillismo. Explora sus argumentos y rangos, convierte resultados en coordenadas, consulta colores de una fotografía y diseña variaciones mediante el muestreo, la repetición y las semillas de prueba.",
+    "badge": "random() · imagen y composición",
+    "estimatedTime": "60 min"
+  },
+  "repository": {
+    "url": "https://github.com/monkmonkeykey/puntillismo",
+    "entry": "puntillismo_p5/puntillismo_p5.js"
+  },
+  "sections": [
+    {
+      "key": "observar",
+      "title": "01. Observar: reconstruir una imagen al azar",
+      "summary": "10 min · Pregunta inicial, objetivos y el ejemplo actual de puntillismo en vivo.",
+      "didacticTip": "Separa dos decisiones: dónde dibujar una marca y de dónde obtener su color.",
+      "commonMistake": "Pensar que el programa elige colores al azar: consulta la fotografía en una posición aleatoria.",
+      "blocks": [
+        {
+          "key": "apertura",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>¿Cómo puede el azar ayudar a reconstruir una imagen?</h2><p>Una fotografía aparece poco a poco mediante marcas de color. El programa no decide de antemano todas sus posiciones: utiliza <code>random()</code> para elegir dónde consultar la imagen y dónde dibujar cada figura.</p><p>En esta sesión retomamos el ejemplo de puntillismo para estudiar una función específica de diseño visual. Investigaremos cómo sus argumentos delimitan las posibilidades y cómo las repeticiones transforman esas elecciones en una composición.</p>"
+        },
+        {
+          "key": "objetivos",
+          "type": "callout",
+          "caption": "Al terminar podrás…",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<ul><li>Interpretar los argumentos y el valor devuelto por <code>random()</code>.</li><li>Convertir valores aleatorios positivos en coordenadas enteras de píxeles.</li><li>Distinguir la elección de una posición del color obtenido en esa posición.</li><li>Modificar la región de muestreo sin confundirla con el tamaño o la cantidad de marcas.</li><li>Comparar variaciones mediante una semilla fija y explicar la diferencia con <code>noise()</code>.</li></ul><p><strong>Duración sugerida:</strong> 60 minutos. Utiliza Processing Java o p5.js y un cuaderno o documento para registrar tus pruebas.</p>"
+        },
+        {
+          "content": "/* Pintar con código: reconstrucción de una imagen con marcas aleatorias. */\nPImage imagen;\nint tamanoFigura = 5;\nint figurasPorFotograma = 50;\n\nvoid setup() {\n  size(960, 540);\n  imagen = loadImage(\"3.jpg\");\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}\n\nvoid draw() {\n  for (int i = 0; i < figurasPorFotograma; i++) {\n    int posX = int(random(width));\n    int posY = int(random(height));\n    color colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "type": "code",
+          "filename": "puntillismo.pde",
+          "repositoryUrl": "https://github.com/monkmonkeykey/puntillismo",
+          "showInteractiveExecution": true,
+          "caption": "Puntillismo en vivo · el azar elige la posición; la fotografía aporta el color.",
+          "codeSource": "github",
+          "repositoryEntry": "puntillismo_p5/puntillismo_p5.js",
+          "contentJava": "/* Pintar con código: reconstrucción de una imagen con marcas aleatorias. */\nPImage imagen;\nint tamanoFigura = 5;\nint figurasPorFotograma = 50;\n\nvoid setup() {\n  size(960, 540);\n  imagen = loadImage(\"3.jpg\");\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}\n\nvoid draw() {\n  for (int i = 0; i < figurasPorFotograma; i++) {\n    int posX = int(random(width));\n    int posY = int(random(height));\n    color colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "contentP5": "let imagen;\nlet tamanoFigura = 5;\nlet figurasPorFotograma = 50;\n\nfunction preload() {\n  imagen = loadImage(\"data/3.jpg\");\n}\n\nfunction setup() {\n  createCanvas(960, 540);\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}\n\nfunction draw() {\n  for (let i = 0; i < figurasPorFotograma; i++) {\n    let posX = floor(random(width));\n    let posY = floor(random(height));\n    let colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "codeLanguage": "processing",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "key": "ejemplo"
+        },
+        {
+          "key": "hipotesis",
+          "type": "activity",
+          "caption": "Observa antes de modificar",
+          "contentFormat": "html",
+          "content": "<h3>Observa antes de modificar</h3><ol><li>Observa el ejemplo durante unos segundos: ¿se recorren las posiciones en un orden visible?</li><li>¿Qué partes de la imagen reconoces primero? ¿Qué zonas conservan huecos o superposiciones?</li><li>Formula una hipótesis: si limitamos las posiciones a la mitad derecha del lienzo, ¿se reconstruirá toda la fotografía o solamente esa región?</li></ol>"
+        }
+      ]
+    },
+    {
+      "key": "interpretar",
+      "title": "02. Interpretar: argumentos, intervalos y píxeles",
+      "summary": "10 min · El rango permitido, el límite superior y la conversión a enteros.",
+      "didacticTip": "Distingue el intervalo de valores posibles del valor concreto que sale en una llamada.",
+      "commonMistake": "Suponer que random(width) devuelve siempre width o utilizar round() y generar una coordenada fuera de la imagen.",
+      "blocks": [
+        {
+          "key": "intervalos",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Los argumentos delimitan las posibilidades</h2><p><code>random(80)</code> elige un número desde 0 hasta un límite superior que no incluye 80. <code>random(20, 80)</code> cambia el inicio del intervalo a 20. El resultado puede tener decimales.</p><p>Con un lienzo de 960 × 540, <code>random(width)</code> permite elegir X en el intervalo de 0 a menos de 960. Para consultar un píxel usamos una coordenada entera: <code>int(...)</code> en Java o <code>floor(...)</code> en p5.js. En estos intervalos positivos, ambas conversiones producen los valores 0 a 959. Para Y, los valores válidos son 0 a 539.</p>"
+        },
+        {
+          "key": "coordenadas",
+          "type": "code",
+          "caption": "Fragmento · dos llamadas para elegir una posición en la imagen.",
+          "filename": "fragmento.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "int posX = int(random(width));\nint posY = int(random(height));",
+          "contentJava": "int posX = int(random(width));\nint posY = int(random(height));",
+          "contentP5": "const posX = floor(random(width));\nconst posY = floor(random(height));",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "distribucion",
+          "type": "callout",
+          "caption": "Una posibilidad no es una garantía",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<p>El muestreo del ejemplo no favorece una región del lienzo. Sin embargo, en una cantidad pequeña de marcas pueden aparecer grupos y huecos. Las coordenadas pueden repetirse: el programa no lleva una lista de los píxeles ya elegidos.</p><p>Más llamadas aportan más muestras, pero no garantizan que cada posición nueva sea distinta ni que toda la imagen quede cubierta en un momento exacto.</p>"
+        },
+        {
+          "key": "rangos",
+          "type": "activity",
+          "caption": "Predice los resultados posibles",
+          "contentFormat": "html",
+          "content": "<h3>Predice los resultados posibles</h3><ol><li>¿Qué enteros puede producir <code>int(random(20, 25))</code>? En p5.js, utiliza <code>floor(random(20, 25))</code>.</li><li>Si X se elige entre 480 y menos de 960, ¿qué mitad del lienzo puede recibir marcas?</li><li>¿Por qué el último píxel horizontal válido es 959 y no 960?</li></ol><p><strong>Comprobación:</strong> 20, 21, 22, 23 o 24; la mitad derecha; el primer píxel está en la posición 0.</p>"
+        }
+      ]
+    },
+    {
+      "key": "leer",
+      "title": "03. Leer: de una posición a una marca de color",
+      "summary": "10 min · Muestreo de la fotografía, repetición y acumulación.",
+      "didacticTip": "Sigue una sola marca: posición → consulta de color → relleno → figura.",
+      "commonMistake": "Leer el color del lienzo con get() en lugar de consultar la imagen con imagen.get().",
+      "blocks": [
+        {
+          "key": "muestreo",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>El azar elige dónde; la imagen indica qué color usar</h2><p><code>imagen.get(posX, posY)</code> consulta el color de la fotografía en la posición elegida. <code>fill(colorPixel)</code> prepara el relleno y <code>rect(...)</code> dibuja una marca con ese color en la misma posición.</p><p>La fotografía se ajusta al tamaño del lienzo mediante <code>imagen.resize(width, height)</code>. Así podemos usar la misma pareja de coordenadas para consultar y dibujar. Si cambiáramos de lugar la marca después de leer el color, modificaríamos la relación espacial con la imagen fuente.</p>"
+        },
+        {
+          "key": "marca",
+          "type": "code",
+          "caption": "Fragmento del ciclo · coordenadas, color y dibujo.",
+          "filename": "fragmento.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "int posX = int(random(width));\nint posY = int(random(height));\ncolor colorPixel = imagen.get(posX, posY);\nfill(colorPixel);\nrect(posX, posY, tamanoFigura, tamanoFigura);",
+          "contentJava": "int posX = int(random(width));\nint posY = int(random(height));\ncolor colorPixel = imagen.get(posX, posY);\nfill(colorPixel);\nrect(posX, posY, tamanoFigura, tamanoFigura);",
+          "contentP5": "const posX = floor(random(width));\nconst posY = floor(random(height));\nconst colorPixel = imagen.get(posX, posY);\nfill(colorPixel);\nrect(posX, posY, tamanoFigura, tamanoFigura);",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "repeticion",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Una regla repetida en el tiempo</h3><p>El ciclo <code>for</code> repite esa operación <code>figurasPorFotograma</code> veces antes de terminar una pasada de <code>draw()</code>. El contador del ciclo no decide la posición: las dos llamadas a random() lo hacen.</p><p>Con el valor 50 se intentan dibujar 50 marcas por fotograma. <code>tamanoFigura</code> modifica cada figura; <code>figurasPorFotograma</code> modifica la cantidad por pasada. La frecuencia real de dibujo depende del equipo.</p><p>El fondo se pinta en <code>setup()</code> para conservar las marcas anteriores. Si lo pintamos dentro de <code>draw()</code>, se borra la acumulación en cada fotograma.</p>"
+        },
+        {
+          "key": "explicar",
+          "type": "activity",
+          "caption": "Explica qué ocurriría",
+          "contentFormat": "html",
+          "content": "<h3>Explica qué ocurriría</h3><p>Imagina que todas las llamadas a random() se sustituyen por la posición fija (480, 270). ¿Seguiría apareciendo toda la fotografía?</p><p><strong>Idea para comprobar:</strong> repetiríamos la misma consulta y la misma marca en el centro. La repetición por sí sola no amplía el conjunto de posiciones consultadas.</p>"
+        }
+      ]
+    },
+    {
+      "key": "aplicar",
+      "title": "04. Aplicar: tu fotografía y una semilla de prueba",
+      "summary": "10 min · Preparar la imagen y hacer comparaciones reproducibles.",
+      "didacticTip": "Para comparar dos decisiones visuales, conserva la misma imagen y controla el origen de las posiciones aleatorias.",
+      "commonMistake": "Reiniciar la semilla dentro de draw() y repetir el mismo grupo de posiciones en cada fotograma.",
+      "blocks": [
+        {
+          "key": "preparar",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Trabaja con una copia del ejemplo</h2><ol><li>Copia el programa completo de la primera sección utilizando la pestaña de tu lenguaje.</li><li>En Processing Java, coloca <code>3.jpg</code> en la carpeta <code>data</code> del sketch. La carga utiliza <code>loadImage(\"3.jpg\")</code>.</li><li>En p5.js, coloca la imagen en <code>data</code> y conserva <code>loadImage(\"data/3.jpg\")</code> dentro de <code>preload()</code>.</li><li>Para utilizar otra fotografía, actualiza el nombre del archivo y comprueba la ejecución antes de modificar el muestreo.</li></ol><p>La imagen del ejemplo aparece debajo. Puedes abrirla y guardarla desde su enlace para preparar tu proyecto.</p>"
+        },
+        {
+          "key": "referencia",
+          "type": "image",
+          "content": "https://raw.githubusercontent.com/monkmonkeykey/puntillismo/main/puntillismo_p5/data/3.jpg",
+          "caption": "Imagen fuente del ejemplo actual: 3.jpg. El programa consulta sus colores en posiciones elegidas al azar."
+        },
+        {
+          "key": "semilla",
+          "type": "code",
+          "caption": "Prueba opcional · añade esta instrucción una sola vez dentro de setup().",
+          "filename": "fragmento.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "randomSeed(42);",
+          "contentJava": "randomSeed(42);",
+          "contentP5": "randomSeed(42);",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "reproducir",
+          "type": "callout",
+          "caption": "Qué controla la semilla",
+          "calloutType": "warning",
+          "contentFormat": "html",
+          "content": "<p><code>randomSeed(42)</code> permite repetir una secuencia en el mismo entorno al conservar la semilla y el orden de llamadas. Es útil para comparar, por ejemplo, figuras pequeñas y grandes sobre las mismas posiciones iniciales.</p><p>Reinicia el sketch entre pruebas. Si colocas la instrucción dentro de <code>draw()</code>, reinicias la secuencia en cada pasada: se repite el mismo grupo de coordenadas y la reconstrucción deja de avanzar hacia posiciones nuevas.</p><p>Cambiar la cantidad de llamadas cambia cuánto avanza la secuencia por fotograma. La semilla no exige que Java y p5.js produzcan posiciones idénticas entre sí.</p>"
+        }
+      ]
+    },
+    {
+      "key": "experimentar",
+      "title": "05. Experimentar: diseñar la distribución",
+      "summary": "10 min · Región de muestreo, tamaño y cantidad de marcas.",
+      "didacticTip": "Cambia una sola decisión y compara tras un tiempo similar; usa una semilla fija cuando te ayude a controlar la prueba.",
+      "commonMistake": "Confundir limitar la región consultada con comprimir toda la fotografía en esa región.",
+      "blocks": [
+        {
+          "key": "protocolo",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Diseña las posibilidades del azar</h2><p>En cada prueba registra <strong>predicción, cambio, observación y explicación</strong>. Conserva la misma fotografía y reinicia entre ejecuciones. El azar ocurre dentro del intervalo que tú defines: modificarlo es una decisión de composición.</p>"
+        },
+        {
+          "key": "pruebas",
+          "type": "activity",
+          "caption": "Tres pruebas guiadas",
+          "contentFormat": "html",
+          "content": "<h3>Tres pruebas guiadas</h3><ol><li><strong>Región:</strong> sustituye solo el cálculo de X por el fragmento que aparece abajo. ¿Qué parte de la fotografía se reconstruye? Después vuelve al intervalo original.</li><li><strong>Tamaño:</strong> conserva 50 marcas por fotograma y compara tamaño 2 y 12. Si utilizas una semilla fija y mantienes las mismas llamadas, observa cómo distintas figuras interpretan las posiciones iniciales de la misma secuencia.</li><li><strong>Cantidad:</strong> vuelve al tamaño 5 y compara 10 y 200 marcas por fotograma. ¿Cambia la escala de cada marca o el ritmo de reconstrucción? ¿Qué notas en el rendimiento?</li></ol><p>Compara detalles, superposición y zonas todavía vacías. Evita identificar cantidad de marcas con cantidad de píxeles únicos.</p>"
+        },
+        {
+          "key": "mitad",
+          "type": "code",
+          "caption": "Sustitución temporal · consultar y dibujar únicamente en la mitad derecha.",
+          "filename": "fragmento.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "int posX = int(random(width / 2, width));",
+          "contentJava": "int posX = int(random(width / 2, width));",
+          "contentP5": "const posX = floor(random(width / 2, width));",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "noise",
+          "type": "callout",
+          "caption": "Relaciona esta prueba con la lección de noise()",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<p><code>random()</code> permite elegir nuevas posiciones sin conservar cercanía con la elección anterior. <code>noise()</code>, consultado con entradas próximas, produce valores relacionados. Por eso el primero sirve aquí para distribuir muestras por la fotografía y el segundo para un movimiento continuo.</p><p>Sus argumentos tienen significados distintos: en random() delimitan un intervalo; en noise() indican una coordenada de consulta. Para aplicar la salida de noise() al lienzo también hay que escalarla.</p>"
+        }
+      ]
+    },
+    {
+      "key": "documentar",
+      "title": "06. Documentar: una composición guiada por random()",
+      "summary": "10 min · Propuesta propia, revisión de comprensión y referencias.",
+      "didacticTip": "Justifica qué controla el programa y qué queda abierto a la variación.",
+      "commonMistake": "Explicar el resultado solo como algo aleatorio sin identificar los límites y las reglas de muestreo.",
+      "blocks": [
+        {
+          "key": "propuesta",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Azar con intención visual</h2><p>Elige una imagen y una intención: revelar solo una región, conservar detalles finos o crear una textura de marcas grandes. Define el intervalo de coordenadas, el tamaño y la cantidad que ayuden a conseguirla.</p><p>Conserva el sketch, su imagen, una captura base, una captura final y una explicación breve. Identifica qué argumento, variable o instrucción cambiaste y cómo afectó al resultado. Utiliza el medio de entrega que indique tu docente.</p>"
+        },
+        {
+          "key": "revision",
+          "type": "activity",
+          "caption": "Comprueba lo aprendido",
+          "contentFormat": "html",
+          "content": "<h3>Comprueba lo aprendido</h3><ol><li>¿Qué recibe random() y qué devuelve?</li><li>¿Por qué int(random(width)) no produce la coordenada width en este ejemplo?</li><li>¿Por qué una marca puede caer sobre otra?</li><li>¿Qué diferencia hay entre una posición aleatoria y un color aleatorio?</li><li>¿Qué controla randomSeed() y dónde lo colocarías para comparar ejecuciones?</li><li>¿En qué se diferencia esta distribución de un recorrido construido con noise()?</li></ol><p><strong>Criterios de revisión:</strong> el programa se ejecuta, puedes explicar los intervalos y la consulta de color, comparaste una modificación a la vez y justificas la relación entre tus reglas y la composición.</p>"
+        },
+        {
+          "key": "sintesis",
+          "type": "callout",
+          "caption": "La idea central",
+          "calloutType": "success",
+          "contentFormat": "html",
+          "content": "<p>Random() aporta variación dentro de límites definidos. El sistema visual surge al relacionar esa selección con datos de una imagen, una forma y una regla de repetición. El azar no elimina tus decisiones de diseño: trabaja dentro de ellas.</p>"
+        },
+        {
+          "key": "referencias",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Referencias para seguir estudiando</h3><ul><li><a href=\"https://github.com/monkmonkeykey/puntillismo\">Repositorio actual de puntillismo: código Java, p5.js e imagen</a>.</li><li><a href=\"https://raw.githubusercontent.com/monkmonkeykey/puntillismo/main/puntillismo_p5/data/3.jpg\">Abrir la imagen 3.jpg del ejemplo</a>.</li><li><a href=\"https://processing.org/reference/random_\">Processing: random()</a> y <a href=\"https://processing.org/reference/randomSeed_\">randomSeed()</a>.</li><li><a href=\"https://p5js.org/reference/p5/random/\">p5.js: random()</a> y <a href=\"https://p5js.org/reference/p5/randomSeed/\">randomSeed()</a>.</li></ul>"
+        }
+      ]
+    }
+  ]
+}

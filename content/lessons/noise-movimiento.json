@@ -1,0 +1,268 @@
+{
+  "version": 1,
+  "placement": {
+    "moduleTitle": "Funciones específicas aplicadas al diseño visual",
+    "categoryName": "Modularidad"
+  },
+  "lesson": {
+    "id": "noise_movimiento",
+    "title": "Noise: movimiento orgánico y vuelo de un ave",
+    "summary": "Una sesión para comprender cómo noise() transforma coordenadas de consulta en variaciones suaves y cómo aplicar sus resultados al movimiento de una imagen. Explora la diferencia con random(), separa paso de muestreo y amplitud, y construye una escena en Processing Java o p5.js.",
+    "badge": "noise() · funciones y movimiento",
+    "estimatedTime": "60 min"
+  },
+  "sections": [
+    {
+      "key": "observar",
+      "title": "01. Observar: un movimiento que fluye",
+      "summary": "10 min · Objetivos, pregunta inicial y modelo ejecutable sin imágenes.",
+      "didacticTip": "Observa por separado el desplazamiento horizontal y la variación vertical.",
+      "commonMistake": "Suponer que noise() controla todo el movimiento: en este ejemplo solo determina la altura.",
+      "blocks": [
+        {
+          "key": "apertura",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>¿Cómo podemos generar variación sin producir saltos bruscos?</h2><p>Una figura puede moverse con cambios de altura progresivos, como si recorriera un paisaje invisible. En esta sesión utilizaremos <code>noise()</code> para controlar ese movimiento y después aplicaremos la misma regla a la imagen de un ave sobre un fondo.</p><p>La demostración utiliza un marcador geométrico para estudiar el movimiento sin necesitar archivos de imagen. Más adelante encontrarás el programa completo para trabajar con <code>back.png</code> y <code>bird.png</code>.</p>"
+        },
+        {
+          "key": "objetivos",
+          "type": "callout",
+          "caption": "Al terminar podrás…",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<ul><li>Distinguir el valor que recibe una función del resultado que devuelve.</li><li>Explicar por qué consultar <code>noise()</code> en posiciones cercanas produce una variación continua.</li><li>Comparar un movimiento controlado por <code>noise()</code> con otro basado en <code>random()</code>.</li><li>Separar el paso de muestreo de la amplitud vertical.</li><li>Aplicar una función numérica a una decisión visual: la posición de una imagen.</li></ul><p><strong>Duración sugerida:</strong> 60 minutos. Puedes trabajar en Processing Java o en el editor de p5.js.</p>"
+        },
+        {
+          "key": "modelo",
+          "type": "code",
+          "caption": "Modelo de movimiento · el marcador representa la posición del ave y funciona sin archivos de imagen.",
+          "filename": "movimiento_noise.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "final int TAMANO_AVE = 75;\nfinal float PASO_NOISE = 0.015;\nfloat tiempoNoise = 0;\n\nvoid setup() {\n  size(900, 504);\n  noStroke();\n}\n\nvoid draw() {\n  background(225, 240, 250);\n  int posX = frameCount % width;\n  tiempoNoise += PASO_NOISE;\n  float posY = noise(tiempoNoise) * (height - TAMANO_AVE);\n\n  fill(40, 126, 209);\n  rect(posX, posY, TAMANO_AVE, TAMANO_AVE, 12);\n}",
+          "contentJava": "final int TAMANO_AVE = 75;\nfinal float PASO_NOISE = 0.015;\nfloat tiempoNoise = 0;\n\nvoid setup() {\n  size(900, 504);\n  noStroke();\n}\n\nvoid draw() {\n  background(225, 240, 250);\n  int posX = frameCount % width;\n  tiempoNoise += PASO_NOISE;\n  float posY = noise(tiempoNoise) * (height - TAMANO_AVE);\n\n  fill(40, 126, 209);\n  rect(posX, posY, TAMANO_AVE, TAMANO_AVE, 12);\n}",
+          "contentP5": "const TAMANO_AVE = 75;\nconst PASO_NOISE = 0.015;\nlet tiempoNoise = 0;\n\nfunction setup() {\n  createCanvas(900, 504);\n  noStroke();\n}\n\nfunction draw() {\n  background(225, 240, 250);\n  const posX = frameCount % width;\n  tiempoNoise += PASO_NOISE;\n  const posY = noise(tiempoNoise) * (height - TAMANO_AVE);\n\n  fill(40, 126, 209);\n  rect(posX, posY, TAMANO_AVE, TAMANO_AVE, 12);\n}",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": true
+        },
+        {
+          "key": "hipotesis",
+          "type": "activity",
+          "caption": "Observa antes de modificar",
+          "contentFormat": "html",
+          "content": "<h3>Observa antes de modificar</h3><ol><li>Describe cómo cambia la altura: ¿parece una sucesión de posiciones independientes o un recorrido continuo?</li><li>Observa qué ocurre cuando el marcador llega al borde derecho.</li><li>Predice qué cambiará al aumentar el paso de muestreo. Anota tu hipótesis para revisarla después.</li></ol>"
+        }
+      ]
+    },
+    {
+      "key": "interpretar",
+      "title": "02. Interpretar: entrada y salida de noise()",
+      "summary": "10 min · Coordenadas de consulta, continuidad y escala de los resultados.",
+      "didacticTip": "tiempoNoise es una coordenada de consulta; posY es una posición en píxeles.",
+      "commonMistake": "Interpretar 0.015 como píxeles por fotograma o pensar que noise() devuelve una altura directamente.",
+      "blocks": [
+        {
+          "key": "funcion",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Una función transforma una consulta en un valor</h2><p>En <code>noise(tiempoNoise)</code>, el argumento indica dónde consultar un campo de valores. La función devuelve un número entre 0 y 1. Dentro de una misma ejecución, consultar la misma coordenada conserva su resultado mientras no cambies la configuración del ruido.</p><p>Al consultar coordenadas cercanas, obtenemos valores relacionados. Por eso avanzamos con incrementos pequeños: <code>tiempoNoise += PASO_NOISE;</code>. No estamos sumando ruido a la posición anterior; estamos leyendo otra parte del campo y calculando una altura nueva.</p>"
+        },
+        {
+          "key": "consulta",
+          "type": "code",
+          "caption": "Fragmento · recorrer el campo y convertir su resultado a una altura.",
+          "filename": "ejemplo.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "tiempoNoise += PASO_NOISE;\nfloat valorNoise = noise(tiempoNoise);\nfloat posY = valorNoise * (height - TAMANO_AVE);",
+          "contentJava": "tiempoNoise += PASO_NOISE;\nfloat valorNoise = noise(tiempoNoise);\nfloat posY = valorNoise * (height - TAMANO_AVE);",
+          "contentP5": "tiempoNoise += PASO_NOISE;\nconst valorNoise = noise(tiempoNoise);\nconst posY = valorNoise * (height - TAMANO_AVE);",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "escala",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Del intervalo numérico al lienzo</h3><p>Si el lienzo mide 504 píxeles de alto y el ave ocupa 75, quedan <strong>429 píxeles</strong> para desplazar su esquina superior. Multiplicar el resultado de <code>noise()</code> por <code>height - TAMANO_AVE</code> convierte la salida al intervalo de 0 a 429 y evita que la imagen salga por abajo.</p><p>El <strong>paso</strong> determina la distancia entre consultas; la <strong>amplitud</strong> determina el intervalo vertical disponible. El ruido no tiene por qué alcanzar ambos extremos ni repartir sus valores de forma uniforme.</p>"
+        },
+        {
+          "key": "calculo",
+          "type": "activity",
+          "caption": "Haz una conversión a mano",
+          "contentFormat": "html",
+          "content": "<h3>Haz una conversión a mano</h3><p>Supón que una consulta devuelve <code>0.5</code>. Con el lienzo y el tamaño del ejemplo, la posición será <strong>214.5 píxeles</strong>: 0.5 × 429.</p><p>¿Qué posiciones producirían los valores hipotéticos 0.25 y 0.75? Comprueba tus resultados: <strong>107.25</strong> y <strong>321.75</strong>. Estos números sirven para comprender la escala; no afirman qué devolverá una consulta concreta de noise().</p>"
+        }
+      ]
+    },
+    {
+      "key": "leer",
+      "title": "03. Leer: tiempo, recorrido y comparación con random()",
+      "summary": "10 min · Separar las dos coordenadas y entender cómo se actualiza la escena.",
+      "didacticTip": "Lee la secuencia completa: limpiar → calcular X → avanzar la consulta → calcular Y → dibujar.",
+      "commonMistake": "Esperar que el recorrido vertical se repita al volver X a cero o usar noise(random(...)) para conseguir continuidad.",
+      "blocks": [
+        {
+          "key": "horizontal",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Dos coordenadas con reglas distintas</h2><p><code>frameCount</code> cuenta los fotogramas ejecutados. <code>frameCount % width</code> calcula el residuo de dividir ese contador entre el ancho del lienzo. X avanza un píxel por fotograma y vuelve a 0 al llegar a un múltiplo del ancho.</p><p>Ese retorno es un salto horizontal intencional. La coordenada <code>tiempoNoise</code> sigue aumentando, de modo que volver a la izquierda no reinicia el recorrido vertical. La marca puede quedar parcialmente recortada al salir por el borde derecho.</p><p>El fondo se dibuja de nuevo en cada pasada de <code>draw()</code>, por eso vemos una posición actual en lugar de acumular todo el recorrido. La velocidad por segundo depende de la frecuencia real de ejecución.</p>"
+        },
+        {
+          "key": "comparacion",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>¿Qué cambia al utilizar random()?</h3><p>Una llamada a <code>random()</code> elige un nuevo valor sin mantener una relación de cercanía con el anterior. Puede producir saltos grandes o pequeños. Con <code>noise()</code>, la continuidad depende de consultar posiciones próximas.</p><p>Para comparar, sustituye únicamente el cálculo de Y por la siguiente línea y conserva todo lo demás. Después restaura la versión con noise().</p>"
+        },
+        {
+          "key": "azar",
+          "type": "code",
+          "caption": "Sustitución temporal dentro de draw() · una altura aleatoria en cada fotograma.",
+          "filename": "ejemplo.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "float posY = random(height - TAMANO_AVE);",
+          "contentJava": "float posY = random(height - TAMANO_AVE);",
+          "contentP5": "const posY = random(height - TAMANO_AVE);",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "constante",
+          "type": "callout",
+          "caption": "Una consulta fija no produce una animación vertical",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<p>Si consultas siempre <code>noise(0.5)</code>, mantienes la misma altura. Si consultas <code>noise(tiempoNoise)</code> pero no incrementas <code>tiempoNoise</code>, también mantienes la altura. La variación aparece al recorrer el campo.</p><p><code>noise(random(...))</code> salta entre coordenadas de consulta; por eso pierde la continuidad que buscábamos al usar pasos pequeños.</p>"
+        }
+      ]
+    },
+    {
+      "key": "imagenes",
+      "title": "04. Aplicar: el vuelo de un ave sobre un fondo",
+      "summary": "10 min · Programa simplificado en Java y p5.js, carga de imágenes y orden de dibujo.",
+      "didacticTip": "Comprueba los archivos de imagen antes de investigar un supuesto error en la función noise().",
+      "commonMistake": "Confundir una imagen que no cargó con un problema de movimiento, o mezclar preload() de p5.js con setup() de Java.",
+      "blocks": [
+        {
+          "key": "preparacion",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Del marcador a una imagen</h2><p>Prepara un fondo llamado <code>back.png</code> y la imagen de un ave llamada <code>bird.png</code>. Para que la silueta del ave se integre al fondo, utiliza una imagen con transparencia.</p><ol><li>En Processing Java, guarda el sketch y coloca ambos archivos en su carpeta <code>data</code>. El programa los carga dentro de <code>setup()</code>.</li><li>En p5.js, añade una carpeta <code>data</code> al proyecto y sube allí los archivos. La versión propuesta los carga dentro de <code>preload()</code>, antes de iniciar el dibujo.</li><li>Selecciona la pestaña del lenguaje correspondiente y copia el programa completo que aparece abajo.</li></ol><p>Esta versión necesita los dos archivos. El modelo de la primera sección permite seguir estudiando el movimiento mientras preparas tus imágenes.</p>"
+        },
+        {
+          "key": "ave",
+          "type": "code",
+          "caption": "Programa completo con imágenes · requiere data/back.png y data/bird.png en tu proyecto.",
+          "filename": "ejemplo.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "final int TAMANO_AVE = 75;\nfinal float PASO_NOISE = 0.015;\n\nfloat tiempoNoise = 0;\nPImage fondo;\nPImage ave;\n\nvoid setup() {\n  size(900, 504);\n  pixelDensity(1);\n  fondo = loadImage(\"back.png\");\n  ave = loadImage(\"bird.png\");\n}\n\nvoid draw() {\n  background(255);\n  image(fondo, 0, 0, width, height);\n\n  int posX = frameCount % width;\n  tiempoNoise += PASO_NOISE;\n  float posY = noise(tiempoNoise) * (height - TAMANO_AVE);\n\n  image(ave, posX, posY, TAMANO_AVE, TAMANO_AVE);\n}",
+          "contentJava": "final int TAMANO_AVE = 75;\nfinal float PASO_NOISE = 0.015;\n\nfloat tiempoNoise = 0;\nPImage fondo;\nPImage ave;\n\nvoid setup() {\n  size(900, 504);\n  pixelDensity(1);\n  fondo = loadImage(\"back.png\");\n  ave = loadImage(\"bird.png\");\n}\n\nvoid draw() {\n  background(255);\n  image(fondo, 0, 0, width, height);\n\n  int posX = frameCount % width;\n  tiempoNoise += PASO_NOISE;\n  float posY = noise(tiempoNoise) * (height - TAMANO_AVE);\n\n  image(ave, posX, posY, TAMANO_AVE, TAMANO_AVE);\n}",
+          "contentP5": "const TAMANO_AVE = 75;\nconst PASO_NOISE = 0.015;\n\nlet tiempoNoise = 0;\nlet fondo;\nlet ave;\n\nfunction preload() {\n  fondo = loadImage(\"data/back.png\");\n  ave = loadImage(\"data/bird.png\");\n}\n\nfunction setup() {\n  createCanvas(900, 504);\n  pixelDensity(1);\n}\n\nfunction draw() {\n  background(255);\n  image(fondo, 0, 0, width, height);\n\n  const posX = frameCount % width;\n  tiempoNoise += PASO_NOISE;\n  const posY = noise(tiempoNoise) * (height - TAMANO_AVE);\n\n  image(ave, posX, posY, TAMANO_AVE, TAMANO_AVE);\n}",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "limpieza",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Qué simplificamos del código inicial</h3><ul><li><code>tiempoNoise</code> reemplaza a <code>yOff</code> para expresar la coordenada que avanzamos en el campo.</li><li><code>PASO_NOISE</code> y <code>TAMANO_AVE</code> son constantes; las variables utilizan camelCase.</li><li>X e Y se calculan dentro de <code>draw()</code>; eliminamos la posición inicial de Y, porque el cálculo de ruido la sustituía.</li><li>Retiramos <code>valorRandom</code>, ya que se calculaba sin utilizarse. La comparación con random() se hace como una prueba intencional.</li><li>El fondo se ajusta al lienzo y la altura disponible considera el tamaño del ave.</li></ul><p><code>background(255)</code> limpia el fotograma antes de dibujar el fondo, incluso si este contiene zonas transparentes. Después dibujamos el ave: el orden establece qué imagen queda encima.</p>"
+        },
+        {
+          "key": "archivos",
+          "type": "callout",
+          "caption": "Si no aparece una imagen",
+          "calloutType": "warning",
+          "contentFormat": "html",
+          "content": "<p>Revisa el nombre exacto, la extensión y la ubicación del archivo. En Java, la carga usa <code>\"bird.png\"</code> porque Processing busca en <code>data</code>. En el proyecto p5.js propuesto se utiliza <code>\"data/bird.png\"</code>.</p><p>La función <code>image()</code> toma X e Y como la esquina superior izquierda con la configuración utilizada aquí. Por eso reservamos la altura de la imagen al calcular su posición.</p>"
+        }
+      ]
+    },
+    {
+      "key": "experimentar",
+      "title": "05. Experimentar: suavidad y amplitud",
+      "summary": "10 min · Pruebas comparadas y una aplicación opcional de map().",
+      "didacticTip": "Mantén fijo el intervalo vertical mientras investigas el paso de consulta, y luego invierte la prueba.",
+      "commonMistake": "Cambiar a la vez paso, amplitud y tamaño, o esperar que un paso mayor aumente siempre la altura del vuelo.",
+      "blocks": [
+        {
+          "key": "protocolo",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Cambia una decisión a la vez</h2><p>Trabaja sobre una copia del modelo o del programa con imágenes. Para cada prueba registra <strong>predicción, modificación, observación y explicación</strong>. Reinicia y observa durante un tiempo similar. Busca tendencias; las ejecuciones no tienen por qué recorrer exactamente la misma curva.</p>"
+        },
+        {
+          "key": "pruebas",
+          "type": "activity",
+          "caption": "Tres pruebas guiadas",
+          "contentFormat": "html",
+          "content": "<h3>Tres pruebas guiadas</h3><ol><li><strong>Paso de consulta:</strong> compara <code>PASO_NOISE</code> con valores 0.005, 0.015 y 0.06. Mantén el tamaño y la amplitud. ¿Qué cambios notas en la variación vertical entre fotogramas?</li><li><strong>Amplitud:</strong> vuelve al paso 0.015 y limita el movimiento a una franja vertical usando la expresión con map() que aparece abajo. ¿Se modifica el intervalo de alturas o la velocidad con que consultas el campo?</li><li><strong>Noise frente a random:</strong> utiliza la sustitución propuesta en la tercera sección y compara la continuidad. Recupera después la versión con noise().</li></ol><p>Escribe una conclusión que relacione cada efecto con el parámetro o la función que cambiaste.</p>"
+        },
+        {
+          "key": "franja",
+          "type": "code",
+          "caption": "Variación opcional · limitar el vuelo con map() a una franja con márgenes de 80 píxeles.",
+          "filename": "ejemplo.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "float posY = map(noise(tiempoNoise), 0, 1, 80, height - TAMANO_AVE - 80);",
+          "contentJava": "float posY = map(noise(tiempoNoise), 0, 1, 80, height - TAMANO_AVE - 80);",
+          "contentP5": "const posY = map(noise(tiempoNoise), 0, 1, 80, height - TAMANO_AVE - 80);",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "map",
+          "type": "callout",
+          "caption": "Cambiar de intervalo para diseñar",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<p><code>map()</code> convierte un valor de un intervalo a otro. Con las dimensiones del ejemplo, la franja va de Y = 80 a Y = 349. Modifica esos márgenes para dirigir la composición sin cambiar el paso de muestreo.</p><p><strong>Desafío opcional:</strong> aplica una segunda consulta de noise() al tamaño del ave. Usa un intervalo de tamaños pequeño y comprueba que la posición siga teniendo espacio suficiente para dibujarla.</p>"
+        }
+      ]
+    },
+    {
+      "key": "documentar",
+      "title": "06. Documentar: funciones como decisiones visuales",
+      "summary": "10 min · Propuesta propia, autoevaluación y referencias.",
+      "didacticTip": "Explica la relación entrada → función → intervalo de salida → propiedad visual.",
+      "commonMistake": "Decir únicamente que el vuelo es aleatorio, sin identificar qué regla controla cada coordenada.",
+      "blocks": [
+        {
+          "key": "proyecto",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Diseña un movimiento con intención</h2><p>Define una intención: un vuelo tranquilo, una variación vertical más agitada o un movimiento concentrado en una franja. Escoge el paso de consulta y el intervalo de alturas que ayuden a conseguirla.</p><p>Conserva tu sketch, los archivos necesarios si utilizaste imágenes, una captura y una explicación breve. Indica qué cambiaste, qué esperabas y qué observaste. Usa el medio de entrega que indique tu docente.</p>"
+        },
+        {
+          "key": "revision",
+          "type": "activity",
+          "caption": "Comprueba lo aprendido",
+          "contentFormat": "html",
+          "content": "<h3>Comprueba lo aprendido</h3><ol><li>¿Qué recibe <code>noise()</code> y qué devuelve?</li><li>¿Por qué incrementar una coordenada con pasos pequeños produce continuidad?</li><li>¿Qué diferencia hay entre <code>PASO_NOISE</code> y la amplitud vertical?</li><li>¿Qué ocurre al mantener fija la coordenada de consulta?</li><li>¿Por qué restamos <code>TAMANO_AVE</code> a la altura disponible?</li><li>¿Qué hace <code>frameCount % width</code> y qué sucede al regresar X a cero?</li></ol><p><strong>Criterios de revisión:</strong> el programa se ejecuta, puedes explicar ambas coordenadas, distingues noise() de random(), separas paso y amplitud, y justificas una modificación visual.</p>"
+        },
+        {
+          "key": "sintesis",
+          "type": "callout",
+          "caption": "La idea central",
+          "calloutType": "success",
+          "contentFormat": "html",
+          "content": "<p>Una función numérica se convierte en una herramienta de diseño cuando relacionamos su salida con una propiedad visible. Aquí recorremos un campo de valores y escalamos su resultado para decidir la altura de una figura o una imagen.</p>"
+        },
+        {
+          "key": "referencias",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Referencias para seguir estudiando</h3><ul><li><a href=\"https://processing.org/reference/noise_\">Processing: noise()</a>.</li><li><a href=\"https://p5js.org/reference/p5/noise/\">p5.js: noise()</a>.</li><li><a href=\"https://processing.org/reference/map_\">Processing: map()</a>.</li><li><a href=\"https://processing.org/reference/loadImage_\">Processing: loadImage()</a> y <a href=\"https://p5js.org/reference/p5/loadImage/\">p5.js: loadImage()</a>.</li></ul>"
+        }
+      ]
+    }
+  ]
+}

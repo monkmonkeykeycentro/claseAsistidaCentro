@@ -1,0 +1,333 @@
+{
+  "version": 1,
+  "lesson": {
+    "title": "Puntillismo: pintar con código",
+    "summary": "¿Cómo podemos reconstruir una imagen sin dibujarla directamente? En esta sesión guiada leeremos una fotografía como datos, explicaremos el muestreo aleatorio de sus colores y experimentaremos con variables, ciclos y figuras para crear una interpretación propia. El recorrido combina observación, lectura del código, pruebas comparadas y documentación del proceso.",
+    "badge": "Sesión de estudio",
+    "estimatedTime": "90 min"
+  },
+  "repository": {
+    "url": "https://github.com/monkmonkeykey/puntillismo",
+    "entry": "puntillismo_p5/puntillismo_p5.js"
+  },
+  "sections": [
+    {
+      "key": "observar",
+      "title": "01. Observar: una imagen que aparece",
+      "summary": "10 min · Pregunta inicial, objetivos y observación del ejemplo en vivo.",
+      "didacticTip": "Describe primero lo que ves; después busca en el código una regla que lo explique.",
+      "commonMistake": "Suponer que el programa coloca la fotografía completa en el lienzo. Aquí la reconstruye mediante marcas de color.",
+      "blocks": [
+        {
+          "key": "apertura",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>¿Cómo podemos reconstruir una imagen sin dibujarla directamente?</h2><p>Una fotografía puede convertirse en un conjunto de decisiones: dónde colocar una marca, qué color darle, qué forma tendrá y cuántas veces repetiremos la operación. En esta sesión construiremos una imagen mediante pequeñas figuras y observaremos cómo aparece poco a poco.</p><p>Llamaremos <strong>puntillismo digital</strong> a esta exploración de marcas de color. El ejemplo utiliza cuadrados; más adelante podrás sustituirlos por círculos. El objetivo es comprender el sistema que produce la imagen y utilizarlo para tomar decisiones visuales propias.</p>"
+        },
+        {
+          "key": "objetivos",
+          "type": "callout",
+          "caption": "Al terminar la sesión podrás…",
+          "calloutType": "info",
+          "contentFormat": "html",
+          "content": "<ul><li>Relacionar un píxel con una posición y un color.</li><li>Explicar qué hacen <code>setup()</code>, <code>draw()</code> y el ciclo <code>for</code>.</li><li>Distinguir entre tamaño de las marcas y cantidad de marcas por fotograma.</li><li>Modificar una regla, anticipar su efecto y justificar el resultado con una comparación.</li></ul><p><strong>Duración sugerida:</strong> 90 minutos. Necesitas Processing en modo Java, una imagen y un cuaderno o documento para registrar tus observaciones.</p>"
+        },
+        {
+          "key": "ejemplo",
+          "reuse": "original-code",
+          "type": "code",
+          "caption": "Ejemplo base · p5.js se ejecuta en el navegador; Processing Java se trabaja en tu computadora.",
+          "filename": "puntillismo.pde",
+          "codeSource": "github",
+          "repositoryUrl": "https://github.com/monkmonkeykey/puntillismo",
+          "repositoryEntry": "puntillismo_p5/puntillismo_p5.js",
+          "content": "/* Pintar con código: reconstrucción de una imagen con marcas aleatorias. */\nPImage imagen;\nint tamanoFigura = 5;\nint figurasPorFotograma = 50;\n\nvoid setup() {\n  size(960, 540);\n  imagen = loadImage(\"3.jpg\");\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}\n\nvoid draw() {\n  for (int i = 0; i < figurasPorFotograma; i++) {\n    int posX = int(random(width));\n    int posY = int(random(height));\n    color colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "contentJava": "/* Pintar con código: reconstrucción de una imagen con marcas aleatorias. */\nPImage imagen;\nint tamanoFigura = 5;\nint figurasPorFotograma = 50;\n\nvoid setup() {\n  size(960, 540);\n  imagen = loadImage(\"3.jpg\");\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}\n\nvoid draw() {\n  for (int i = 0; i < figurasPorFotograma; i++) {\n    int posX = int(random(width));\n    int posY = int(random(height));\n    color colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "contentP5": "let imagen;\nlet tamanoFigura = 5;\nlet figurasPorFotograma = 50;\n\nfunction preload() {\n  imagen = loadImage(\"data/3.jpg\");\n}\n\nfunction setup() {\n  createCanvas(960, 540);\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}\n\nfunction draw() {\n  for (let i = 0; i < figurasPorFotograma; i++) {\n    let posX = floor(random(width));\n    let posY = floor(random(height));\n    let colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "codeLanguage": "processing",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": true
+        },
+        {
+          "key": "pregunta",
+          "type": "activity",
+          "caption": "Antes de leer el código",
+          "contentFormat": "html",
+          "content": "<h3>Antes de leer el código</h3><ol><li>Observa el ejemplo durante unos segundos: ¿la imagen aparece de golpe o se acumula?</li><li>Identifica qué cambia entre dos instantes: posiciones, colores, cantidad de marcas o tamaño.</li><li>Formula una hipótesis: ¿qué información necesita el programa para colocar una sola marca?</li></ol><p>Registra tu hipótesis en tu cuaderno. Volverás a ella al cerrar la sesión.</p>"
+        }
+      ]
+    },
+    {
+      "key": "imagen",
+      "title": "02. Interpretar: píxeles, posiciones y colores",
+      "summary": "10 min · La imagen como una fuente de datos que podemos consultar.",
+      "didacticTip": "El color se consulta en la imagen fuente; la figura se dibuja en el lienzo. Son dos superficies distintas.",
+      "commonMistake": "Confundir imagen.get(x, y) con get(x, y): el segundo consulta el lienzo, que inicialmente está negro.",
+      "blocks": [
+        {
+          "key": "referencia",
+          "type": "image",
+          "content": "https://raw.githubusercontent.com/monkmonkeykey/puntillismo/main/puntillismo_p5/data/3.jpg",
+          "caption": "Imagen fuente del repositorio: 3.jpg. Compara sus zonas de color con las marcas del ejemplo."
+        },
+        {
+          "key": "pixeles",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Leer una imagen como información</h2><p>Una imagen digital contiene una retícula de píxeles. Cada posición tiene un color. El programa conserva esa imagen en la variable <code>imagen</code>, de tipo <code>PImage</code>, y consulta sus colores sin dibujarla completa.</p><p>Las coordenadas empiezan en la esquina superior izquierda: <code>x</code> aumenta hacia la derecha y <code>y</code> hacia abajo. Después de ajustar la imagen al lienzo de 960 × 540, las posiciones enteras válidas van de 0 a 959 en X y de 0 a 539 en Y.</p><p><code>imagen.get(posX, posY)</code> obtiene el color de un píxel. <code>fill(colorPixel)</code> establece ese color como relleno y <code>rect(...)</code> lo convierte en una marca visible.</p>"
+        },
+        {
+          "key": "muestreo",
+          "type": "code",
+          "caption": "Fragmento para leer · una sola marca",
+          "filename": "fragmento.pde",
+          "content": "int posX = 480;\nint posY = 270;\ncolor colorPixel = imagen.get(posX, posY);\nfill(colorPixel);\nrect(posX, posY, 20, 20);",
+          "contentJava": "int posX = 480;\nint posY = 270;\ncolor colorPixel = imagen.get(posX, posY);\nfill(colorPixel);\nrect(posX, posY, 20, 20);",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "showCodeJava": true,
+          "showCodeP5": false,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "posicion",
+          "type": "activity",
+          "caption": "Comprueba tu interpretación",
+          "contentFormat": "html",
+          "content": "<h3>Comprueba tu interpretación</h3><p>Imagina que sustituyes las posiciones aleatorias del ejemplo por <code>480</code> y <code>270</code>. ¿La fotografía se reconstruiría con el paso del tiempo? Explica por qué se repetiría una marca en el centro y de dónde saldría su color.</p><p><strong>Idea clave:</strong> variar la posición permite consultar distintas partes de la imagen. Repetir siempre la misma posición no aporta información nueva.</p>"
+        }
+      ]
+    },
+    {
+      "key": "preparar",
+      "title": "03. Preparar: tu sketch en Processing",
+      "summary": "10 min · Organizar el archivo, cargar la imagen y reconocer la estructura inicial.",
+      "didacticTip": "Haz funcionar primero la versión base. Cambia una sola decisión cuando tengas un resultado con el que comparar.",
+      "commonMistake": "Dejar loadImage(\"\") vacío, usar un nombre distinto al archivo real o pegar JavaScript en el editor Java.",
+      "blocks": [
+        {
+          "key": "pasos",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Del navegador a tu computadora</h2><ol><li>Crea y guarda un sketch llamado <code>puntillismo</code> en Processing, en modo Java.</li><li>Desde el bloque del ejemplo, selecciona <strong>Processing (Java)</strong> y copia el programa completo. Los fragmentos de las siguientes secciones sirven para estudiar partes del programa.</li><li>Descarga <code>3.jpg</code> del repositorio y colócala en la carpeta <code>data</code> del sketch. También puedes añadirla mediante <strong>Sketch → Add File…</strong>.</li><li>Comprueba que la instrucción diga <code>imagen = loadImage(\"3.jpg\");</code>. El nombre y la extensión deben coincidir con el archivo.</li><li>Ejecuta y observa si aparecen marcas con colores de la fotografía.</li></ol>"
+        },
+        {
+          "key": "descarga",
+          "type": "resources",
+          "content": "https://raw.githubusercontent.com/monkmonkeykey/puntillismo/main/puntillismo_p5/data/3.jpg",
+          "caption": "Abrir imagen 3.jpg · guárdala con ese nombre en la carpeta data de tu sketch"
+        },
+        {
+          "key": "estructura",
+          "type": "code",
+          "caption": "Lectura de setup() · este fragmento forma parte del programa completo",
+          "filename": "fragmento.pde",
+          "content": "PImage imagen;\nint tamanoFigura = 5;\nint figurasPorFotograma = 50;\n\nvoid setup() {\n  size(960, 540);\n  imagen = loadImage(\"3.jpg\");\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}",
+          "contentJava": "PImage imagen;\nint tamanoFigura = 5;\nint figurasPorFotograma = 50;\n\nvoid setup() {\n  size(960, 540);\n  imagen = loadImage(\"3.jpg\");\n  imagen.resize(width, height);\n  background(0);\n  noStroke();\n  rectMode(CENTER);\n  frameRate(60);\n}",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "showCodeJava": true,
+          "showCodeP5": false,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "configuracion",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<p><code>setup()</code> prepara el programa una vez: crea el lienzo, carga y ajusta la imagen, pinta el fondo y establece las reglas de dibujo. <code>noStroke()</code> elimina el contorno; <code>rectMode(CENTER)</code> indica que X e Y serán el centro de cada cuadrado.</p><p>Al redimensionar la imagen al mismo ancho y alto del lienzo, podemos usar las mismas coordenadas para consultar un color y dibujar su marca. Si la proporción original de la fotografía es distinta, este ajuste puede deformarla: obsérvalo como una decisión que después puedes mejorar.</p>"
+        },
+        {
+          "key": "lenguajes",
+          "type": "callout",
+          "caption": "Dos lenguajes, una misma idea",
+          "calloutType": "warning",
+          "contentFormat": "html",
+          "content": "<p>En el navegador se ejecuta <strong>p5.js</strong>: usa <code>let</code>, <code>function setup()</code>, <code>createCanvas()</code> y carga la imagen en <code>preload()</code>. En tu computadora utilizamos <strong>Processing Java</strong>: <code>PImage</code>, <code>int</code>, <code>void setup()</code> y <code>size()</code>. Conserva cada versión en su entorno correspondiente.</p><p>Si aparece un error al ejecutar <code>imagen.resize(...)</code>, revisa primero la carga de la imagen. Un archivo ausente o una ruta incorrecta impiden obtener una imagen válida.</p>"
+        }
+      ]
+    },
+    {
+      "key": "codigo",
+      "title": "04. Leer: la regla que reconstruye la imagen",
+      "summary": "15 min · Azar, repetición, muestreo y acumulación explicados paso a paso.",
+      "didacticTip": "Sigue una sola iteración antes de imaginar cientos de repeticiones: posición → color → relleno → marca.",
+      "commonMistake": "Interpretar figurasPorFotograma como velocidad garantizada o pensar que cada marca cae en un píxel diferente.",
+      "blocks": [
+        {
+          "key": "variables",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Dos parámetros, dos preguntas distintas</h2><p><code>tamanoFigura = 5</code> responde: <strong>¿qué tan grande será cada marca?</strong> <code>figurasPorFotograma = 50</code> responde: <strong>¿cuántas marcas intentaremos dibujar en cada pasada de draw()?</strong> No controlan lo mismo.</p><p><code>draw()</code> se ejecuta repetidamente. Dentro de él, el ciclo <code>for</code> realiza varias iteraciones antes de que termine un fotograma. El contador <code>i</code> empieza en 0, comprueba si es menor que 50 y aumenta de uno en uno. Por eso recorre los valores 0 a 49: son 50 repeticiones. No determina la posición de las figuras.</p>"
+        },
+        {
+          "key": "bucle",
+          "type": "code",
+          "caption": "Lectura de draw() · el núcleo del sistema",
+          "filename": "fragmento.pde",
+          "content": "void draw() {\n  for (int i = 0; i < figurasPorFotograma; i++) {\n    int posX = int(random(width));\n    int posY = int(random(height));\n    color colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "contentJava": "void draw() {\n  for (int i = 0; i < figurasPorFotograma; i++) {\n    int posX = int(random(width));\n    int posY = int(random(height));\n    color colorPixel = imagen.get(posX, posY);\n    fill(colorPixel);\n    rect(posX, posY, tamanoFigura, tamanoFigura);\n  }\n}",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "showCodeJava": true,
+          "showCodeP5": false,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "secuencia",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<ol><li><strong>Elegir una posición.</strong> <code>random(width)</code> devuelve un valor desde 0 hasta un límite que no incluye <code>width</code>. Como aquí los valores son positivos, <code>int(...)</code> descarta la parte decimal y permite consultar un píxel mediante coordenadas enteras. Lo mismo ocurre con la altura.</li><li><strong>Consultar su color.</strong> El azar elige la posición; el color se toma de la fotografía. No se genera un color aleatorio independiente.</li><li><strong>Dibujar la marca.</strong> <code>fill()</code> prepara el relleno y <code>rect()</code> dibuja el cuadrado centrado en la posición seleccionada.</li><li><strong>Acumular.</strong> El programa vuelve a repetir la regla. Como el fondo se pintó en <code>setup()</code>, las marcas anteriores permanecen.</li></ol>"
+        },
+        {
+          "key": "tiempo",
+          "type": "callout",
+          "caption": "Cantidad no significa cobertura garantizada",
+          "calloutType": "info",
+          "contentFormat": "html",
+          "content": "<p>Con 50 marcas por fotograma y un objetivo de 60 fotogramas por segundo, el programa intentaría dibujar unas 3 000 marcas por segundo si alcanza esa frecuencia. El rendimiento real puede variar.</p><p>Las posiciones pueden repetirse y las figuras pueden superponerse. Por eso 3 000 marcas no equivalen necesariamente a 3 000 píxeles nuevos ni garantizan reconstruir toda la fotografía en un tiempo exacto.</p>"
+        },
+        {
+          "key": "traza",
+          "type": "activity",
+          "caption": "Explica una vuelta del ciclo",
+          "contentFormat": "html",
+          "content": "<h3>Explica una vuelta del ciclo</h3><p>En tu cuaderno, completa esta secuencia con tus propias palabras: <strong>elijo una posición → consulto… → preparo… → dibujo…</strong>.</p><p>Después responde: si una nueva marca cae donde ya había otra, ¿el programa deja de funcionar? ¿Qué ocurriría si pusieras <code>background(0);</code> al principio de <code>draw()</code>?</p>"
+        }
+      ]
+    },
+    {
+      "key": "experimentar",
+      "title": "05. Experimentar: cambiar una decisión a la vez",
+      "summary": "20 min · Comparar tamaño, cantidad y forma con un pequeño protocolo de observación.",
+      "didacticTip": "Reinicia el sketch entre pruebas y compara después del mismo tiempo. Escribe tu predicción antes de ejecutar.",
+      "commonMistake": "Cambiar a la vez tamaño, cantidad, forma e imagen: entonces no podrás atribuir el resultado a una decisión concreta.",
+      "blocks": [
+        {
+          "key": "protocolo",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Convierte una variación en una pregunta</h2><p>Trabaja sobre una copia del sketch. En cada prueba registra: <strong>predicción, cambio realizado, observación y explicación</strong>. Usa la misma fotografía y observa cada ejecución durante unos 10 segundos. Reinicia entre pruebas para partir de un lienzo limpio.</p><p>El muestreo aleatorio produce posiciones distintas en cada ejecución. Busca tendencias visuales, no una correspondencia exacta entre dos imágenes.</p>"
+        },
+        {
+          "key": "pruebas",
+          "type": "activity",
+          "caption": "Tres pruebas guiadas",
+          "contentFormat": "html",
+          "content": "<h3>Tres pruebas guiadas</h3><ol><li><strong>Tamaño:</strong> conserva 50 figuras por fotograma y compara <code>tamanoFigura = 2</code>, <code>5</code> y <code>16</code>. Predice cuál conserva más detalle y cuál cubre más superficie con una sola marca. Observa qué ocurre en bordes y zonas pequeñas.</li><li><strong>Cantidad:</strong> vuelve al tamaño 5 y compara <code>figurasPorFotograma = 10</code>, <code>50</code> y <code>200</code>. ¿Cambia el tamaño de las marcas o el ritmo de aparición? ¿Un valor alto hace que tu computadora responda más lentamente?</li><li><strong>Forma:</strong> vuelve a 5 y 50. Sustituye únicamente <code>rect(...)</code> por <code>ellipse(...)</code>, conservando los mismos argumentos. Compara la textura de círculos y cuadrados.</li></ol><p>Para cada prueba escribe una conclusión que empiece por: <em>Cuando cambié…, observé…, porque…</em>.</p>"
+        },
+        {
+          "key": "circulos",
+          "type": "code",
+          "caption": "Variación de forma · sustituye la llamada a rect() dentro del ciclo",
+          "filename": "fragmento.pde",
+          "content": "// Mismas coordenadas, mismo color y mismo tamaño.\n// Sustituye rect(...) por esta instrucción:\nellipse(posX, posY, tamanoFigura, tamanoFigura);",
+          "contentJava": "// Mismas coordenadas, mismo color y mismo tamaño.\n// Sustituye rect(...) por esta instrucción:\nellipse(posX, posY, tamanoFigura, tamanoFigura);",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "showCodeJava": true,
+          "showCodeP5": false,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "fondo",
+          "type": "callout",
+          "caption": "Prueba adicional: borrar o acumular",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<p>Añade temporalmente <code>background(0);</code> al inicio de <code>draw()</code>, antes del ciclo. Solo quedarán visibles las marcas de la pasada actual. Compáralo con el fondo en <code>setup()</code>, donde las marcas se acumulan. Después retira el cambio para continuar.</p><p><strong>Interpretación:</strong> un lienzo que se llena poco a poco y una imagen que parpadea pueden usar la misma regla de muestreo; la diferencia es cuándo borras lo dibujado.</p>"
+        }
+      ]
+    },
+    {
+      "key": "crear",
+      "title": "06. Crear: una interpretación propia",
+      "summary": "15 min · Elegir una intención visual, producir una variante y conservar una evidencia.",
+      "didacticTip": "Define una intención antes de escoger parámetros: reconocible y detallada, fragmentada, suave o geométrica.",
+      "commonMistake": "Usar una fotografía nueva sin actualizar el nombre en loadImage() o pegar una segunda función draw() en el mismo sketch.",
+      "blocks": [
+        {
+          "key": "encargo",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Diseña una regla con intención</h2><p>Elige una fotografía propia o una imagen que puedas utilizar. Guárdala en la carpeta <code>data</code> y actualiza <code>loadImage()</code> con su nombre real. Decide qué buscas: una imagen reconocible con marcas pequeñas, una textura de fragmentos grandes o una composición de círculos.</p><ol><li>Escribe tu intención en una frase.</li><li>Elige tamaño, cantidad y forma a partir de las pruebas anteriores.</li><li>Ejecuta, observa y ajusta un parámetro si el resultado no coincide con tu intención.</li><li>Conserva una versión base y tu versión final para compararlas.</li></ol>"
+        },
+        {
+          "key": "guardar",
+          "type": "code",
+          "caption": "Extensión opcional · añade estas funciones después de draw()",
+          "filename": "fragmento.pde",
+          "content": "// Reiniciar el lienzo con un clic.\nvoid mousePressed() {\n  background(0);\n}\n\n// Guardar una imagen del resultado en Processing Java.\nvoid keyPressed() {\n  if (key == 's' || key == 'S') {\n    saveFrame(\"puntillismo-####.png\");\n  }\n}",
+          "contentJava": "// Reiniciar el lienzo con un clic.\nvoid mousePressed() {\n  background(0);\n}\n\n// Guardar una imagen del resultado en Processing Java.\nvoid keyPressed() {\n  if (key == 's' || key == 'S') {\n    saveFrame(\"puntillismo-####.png\");\n  }\n}",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "showCodeJava": true,
+          "showCodeP5": false,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "evidencia",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<p>Estas funciones se añaden al final del programa, fuera de <code>setup()</code> y <code>draw()</code>. Si tu copia ya tiene <code>mousePressed()</code> o <code>keyPressed()</code>, integra las instrucciones en la función existente. No dupliques funciones con el mismo nombre.</p><p>Al pulsar S en la ventana del sketch, <code>saveFrame()</code> guarda una imagen en la carpeta del sketch. Los signos <code>####</code> se sustituyen por el número de fotograma, para distinguir capturas.</p>"
+        },
+        {
+          "key": "entrega",
+          "type": "activity",
+          "caption": "Tu evidencia de estudio",
+          "contentFormat": "html",
+          "content": "<h3>Tu evidencia de estudio</h3><p>Conserva en tu carpeta de trabajo:</p><ul><li>El sketch y la imagen necesaria para ejecutarlo.</li><li>Una captura de la versión base y una de tu propuesta.</li><li>Los valores elegidos y una explicación breve de cómo ayudan a lograr tu intención.</li></ul><p>Utiliza el medio de entrega que indique tu docente. Esta actividad presenta la consigna; no incluye un formulario de envío dentro de la lección.</p>"
+        }
+      ]
+    },
+    {
+      "key": "cierre",
+      "title": "07. Documentar: explicar lo que construiste",
+      "summary": "10 min · Síntesis, autoevaluación y referencias para seguir estudiando.",
+      "didacticTip": "Comprender el sketch significa poder anticipar qué cambiará al modificar una regla y explicar por qué.",
+      "commonMistake": "Describir únicamente si el resultado te gusta, sin relacionar decisiones de código con efectos observables.",
+      "blocks": [
+        {
+          "key": "sintesis",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>De la imagen al sistema</h2><p>Volvemos a la pregunta inicial: reconstruimos la imagen leyendo colores de una fotografía y colocándolos en nuevas marcas. El resultado depende de una combinación de <strong>fuente, posición, forma, cantidad y acumulación</strong>.</p><p>El azar decide dónde consultar; la imagen determina el color; las variables controlan la escala y el ritmo; el ciclo repite la operación. Crear con código consiste también en diseñar esas relaciones.</p>"
+        },
+        {
+          "key": "autoevaluacion",
+          "type": "activity",
+          "caption": "Comprueba tu comprensión",
+          "contentFormat": "html",
+          "content": "<h3>Comprueba tu comprensión</h3><ol><li>¿Dónde se obtiene el color de cada marca?</li><li>¿Por qué convertimos las coordenadas aleatorias a enteros?</li><li>¿Qué diferencia hay entre aumentar <code>tamanoFigura</code> y aumentar <code>figurasPorFotograma</code>?</li><li>¿Por qué el fondo está en <code>setup()</code> y no en <code>draw()</code>?</li><li>¿Qué conservaste y qué transformaste de la fotografía original?</li></ol><p><strong>Revisa tu trabajo:</strong> ¿se ejecuta con su imagen?, ¿puedes explicar una iteración?, ¿comparaste un cambio a la vez?, ¿puedes justificar tu propuesta con una observación?</p>"
+        },
+        {
+          "key": "respuestas",
+          "type": "callout",
+          "caption": "Pistas para revisar tus respuestas",
+          "calloutType": "success",
+          "contentFormat": "html",
+          "content": "<p>El color sale de <code>imagen.get()</code>. Las coordenadas enteras identifican píxeles. El tamaño modifica cada marca y la cantidad modifica cuántas se dibujan por pasada. El fondo se prepara una vez para permitir la acumulación. Tu interpretación conserva colores y relaciones espaciales, y transforma su representación mediante marcas y tiempo.</p>"
+        },
+        {
+          "key": "referencias",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Consulta y profundiza</h3><ul><li><a href=\"https://github.com/monkmonkeykey/puntillismo\">Repositorio del ejemplo: versiones Processing Java y p5.js</a>.</li><li><a href=\"https://processing.org/reference/random_\">Processing: random()</a> y <a href=\"https://processing.org/reference/PImage_get_\">PImage.get()</a>.</li><li><a href=\"https://processing.org/reference/loadImage_\">Processing: loadImage()</a> y <a href=\"https://processing.org/reference/draw_\">draw()</a>.</li><li><a href=\"https://processing.org/reference/saveFrame_\">Processing: saveFrame()</a> para guardar resultados.</li></ul>"
+        },
+        {
+          "key": "tablero",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Tablero de trabajo del curso</h3><p>Se conserva el tablero de Miro que acompañaba la lección. Puedes utilizarlo para compartir observaciones si tu docente lo indica. El acceso al tablero depende de sus permisos en Miro.</p>"
+        },
+        {
+          "key": "miro",
+          "reuse": "original-iframe",
+          "type": "iframe",
+          "iframeTitle": "Tablero de trabajo del curso · Puntillismo",
+          "caption": "Recurso complementario del curso"
+        }
+      ]
+    }
+  ]
+}

@@ -603,8 +603,8 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
         </div>
 
         {/* Source Switcher & Code Button */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-[#071520] border border-[#1A3A54] rounded-lg p-0.5">
+        <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
+          <div className="flex flex-wrap items-center max-w-full bg-[#071520] border border-[#1A3A54] rounded-lg p-0.5">
             <button
               onClick={handleSelectDefaultVideo}
               className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
@@ -706,7 +706,7 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
         {/* Floating Split Ratio Badge */}
         <div className="absolute top-3 left-3 pointer-events-none bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg text-[11px] font-mono text-white/90">
-          ◀ Video Original ({Math.round((1 - divisionRatio) * 100)}%) | Efecto ASCII ({Math.round(divisionRatio * 100)}%) ▶
+          ◀ Video Original ({Math.round(divisionRatio * 100)}%) | Efecto ASCII ({Math.round((1 - divisionRatio) * 100)}%) ▶
         </div>
 
         {/* Centered Play Button Overlay if video is paused */}
@@ -785,6 +785,8 @@ export const VideoAsciiSplitCanvas: React.FC<VideoAsciiSplitCanvasProps> = ({
 
           <button
             onClick={() => setShowConfigPanel(!showConfigPanel)}
+            aria-label="Ajustes"
+            aria-expanded={showConfigPanel}
             className={`min-h-[30px] px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
               showConfigPanel
                 ? 'bg-[#006699] border-[#006699] text-white'

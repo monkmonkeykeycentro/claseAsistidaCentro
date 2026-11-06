@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { X, ShieldCheck, Lock, FileText, School, UserCheck, Mail } from 'lucide-react';
+import { X, ShieldCheck } from 'lucide-react';
 
 interface PrivacyNoticeModalProps {
   isOpen: boolean;
@@ -54,10 +54,10 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
                 id="privacy-modal-title"
                 className="text-lg font-bold text-[#232A24]"
               >
-                Aviso de Privacidad Integral
+                Aviso de privacidad
               </h2>
               <p className="text-xs text-[#59645C]">
-                Laboratorio de Código Creativo · CENTRO de diseño, cine y televisión
+                Laboratorio de Código Creativo
               </p>
             </div>
           </div>
@@ -71,117 +71,52 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-6 overflow-y-auto space-y-6 text-xs text-[#232A24] leading-relaxed">
-          {/* Badge & Legal Framework */}
-          <div className="p-4 bg-[#E8EEE8] border border-[#A4C4B5] rounded-2xl flex items-start gap-3">
-            <School className="w-5 h-5 text-[#407B5D] shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-bold text-[#407B5D] block text-sm">
-                Compromiso de Privacidad y Entorno Educativo
-              </span>
-              <p className="text-[11px] text-[#232A24]">
-                En cumplimiento con la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong> y la normativa institucional de <strong>CENTRO de diseño, cine y televisión</strong>, este aviso informa a estudiantes, docentes y visitantes sobre el tratamiento legítimo, controlado e informado de sus datos personales.
-              </p>
-            </div>
-          </div>
+        <div className="p-6 overflow-y-auto space-y-6 text-sm text-[#59645C] leading-relaxed">
+          <p>
+            <strong className="text-[#232A24]">Laboratorio de Código Creativo</strong> es una herramienta educativa diseñada para apoyar el aprendizaje de programación mediante actividades interactivas, ejercicios y seguimiento académico.
+          </p>
 
-          {/* 1. Responsable */}
-          <div className="space-y-2 border-b border-[#E1E7E1] pb-4">
-            <h3 className="text-sm font-bold text-[#232A24] flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#407B5D]" />
-              1. Identidad y Domicilio del Responsable
-            </h3>
-            <p className="text-[#59645C]">
-              El <strong>Laboratorio de Código Creativo</strong>, como iniciativa académica y pedagógica adscrita a <strong>CENTRO de diseño, cine y televisión</strong> (con domicilio en Av. Constituyentes 455, Col. América, Alcaldía Miguel Hidalgo, C.P. 11820, Ciudad de México), es responsable del uso y protección de los datos personales recabados a través de esta plataforma digital.
-            </p>
-          </div>
-
-          {/* 2. Finalidades */}
-          <div className="space-y-2 border-b border-[#E1E7E1] pb-4">
-            <h3 className="text-sm font-bold text-[#232A24] flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-[#407B5D]" />
-              2. Finalidades del Tratamiento de Datos
-            </h3>
-            <p className="text-[#59645C]">
-              Los datos personales recabados son tratados única y exclusivamente con <strong>fines académicos, formativos y de investigación didáctica</strong>:
-            </p>
-            <ul className="list-disc list-inside space-y-1.5 text-[#59645C] pl-2">
-              <li>
-                <strong className="text-[#232A24]">Finalidades primarias:</strong> Registro de sesiones pedagógicas mediante correo institucional (<code className="font-mono text-[#407B5D]">@centro.edu.mx</code>), seguimiento del avance en las unidades curriculares, guardado y sincronización de ejercicios de Processing Java y p5.js, persistencia de proyectos del <em>Diseñador de Clases (POO)</em> y retroalimentación docente.
-              </li>
-              <li>
-                <strong className="text-[#232A24]">Sin fines comerciales:</strong> La plataforma <strong>no contiene publicidad, no monetiza información ni comercializa perfiles</strong> de estudiantes con entidades externas.
-              </li>
+          <section className="space-y-3 border-b border-[#E1E7E1] pb-5">
+            <h3 className="font-bold text-[#232A24]">¿Qué información recopilamos?</h3>
+            <p>Para utilizar la plataforma se registra la siguiente información:</p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li><strong className="text-[#232A24]">Datos de identificación:</strong> identificador de usuario y correo electrónico institucional, necesarios para gestionar el acceso y asociar la información a cada estudiante.</li>
+              <li><strong className="text-[#232A24]">Progreso académico:</strong> información sobre las actividades, lecciones y módulos realizados, así como el estado y seguimiento del aprendizaje.</li>
+              <li><strong className="text-[#232A24]">Contenido de las actividades:</strong> código, respuestas y proyectos desarrollados por el estudiante, cuando sea necesario conservarlos para continuar su trabajo.</li>
             </ul>
-          </div>
+          </section>
 
-          {/* 3. Datos Recabados */}
-          <div className="space-y-2 border-b border-[#E1E7E1] pb-4">
-            <h3 className="text-sm font-bold text-[#232A24] flex items-center gap-2">
-              <Lock className="w-4 h-4 text-[#407B5D]" />
-              3. Datos Personales Recabados
-            </h3>
-            <p className="text-[#59645C]">
-              Para la correcta operación didáctica del laboratorio, recopilamos:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1">
-                <span className="font-bold text-[#232A24] block">Datos de Identificación</span>
-                <p className="text-[11px] text-[#59645C]">
-                  Nombre, fotografía de perfil pública y correo electrónico institucional vinculado a la cuenta de Google Workspace.
-                </p>
-              </div>
-              <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl space-y-1">
-                <span className="font-bold text-[#232A24] block">Datos de Producción Creativa</span>
-                <p className="text-[11px] text-[#59645C]">
-                  Bocetos de código Processing/p5.js, estados de progreso en talleres, estructuras de clases exportadas/guardadas y evidencias de aprendizaje.
-                </p>
-              </div>
-            </div>
-            <p className="text-[11px] text-[#59645C] italic pt-1">
-              * La plataforma no solicita ni almacena datos personales sensibles (como origen étnico, estado de salud o datos financieros).
-            </p>
-          </div>
+          <section className="space-y-3 border-b border-[#E1E7E1] pb-5">
+            <h3 className="font-bold text-[#232A24]">¿Para qué utilizamos esta información?</h3>
+            <p>Los datos se utilizan para gestionar el acceso a la plataforma, registrar el progreso en las actividades y facilitar el seguimiento y la retroalimentación docente.</p>
+          </section>
 
-          {/* 4. Seguridad y Almacenamiento */}
-          <div className="space-y-2 border-b border-[#E1E7E1] pb-4">
-            <h3 className="text-sm font-bold text-[#232A24] flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#407B5D]" />
-              4. Medidas de Seguridad y Almacenamiento
-            </h3>
-            <p className="text-[#59645C]">
-              La información se resguarda mediante infraestructura segura de <strong>Google Cloud Firestore</strong> con reglas de seguridad que restringen el acceso a datos individuales exclusivamente al propio usuario autenticado y al equipo docente administrador. Adicionalmente, el navegador conserva copias locales temporales (<code className="font-mono text-[#232A24]">localStorage</code>) para permitir la continuidad sin pérdida de borradores ante desconexiones.
-            </p>
-          </div>
+          <section className="space-y-3 border-b border-[#E1E7E1] pb-5">
+            <h3 className="font-bold text-[#232A24]">¿Cómo se protege y quién puede consultar la información?</h3>
+            <p>El acceso a la plataforma se realiza mediante una cuenta institucional de Google con el dominio <strong className="text-[#232A24]">@centro.edu.mx</strong>. No se permite el ingreso mediante cuentas personales o externas a este dominio.</p>
+            <p>La plataforma utiliza servicios de <strong className="text-[#232A24]">Google Workspace y Firebase</strong> para la autenticación y gestión de la información.</p>
+            <p>Los registros académicos podrán ser consultados únicamente por el docente responsable y las personas autorizadas para la administración de la plataforma.</p>
+          </section>
 
-          {/* 5. Derechos ARCO */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-bold text-[#232A24] flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#407B5D]" />
-              5. Ejercicio de Derechos ARCO y Dudas
-            </h3>
-            <p className="text-[#59645C]">
-              Cualquier titular tiene derecho a conocer qué datos personales tenemos, para qué los utilizamos y las condiciones de su uso (<strong>Acceso</strong>). Asimismo, puede solicitar la corrección de su información (<strong>Rectificación</strong>), su eliminación de nuestros registros (<strong>Cancelación</strong>), oponerse al tratamiento de los mismos (<strong>Oposición</strong>), o solicitar la exportación de sus creaciones y proyectos de clase.
+          <section className="space-y-3 border-b border-[#E1E7E1] pb-5">
+            <h3 className="font-bold text-[#232A24]">¿Cuánto tiempo conservamos los datos?</h3>
+            <p>La información académica se conservará durante el semestre en el que el estudiante esté inscrito en los cursos de Código Creativo. Al finalizar este periodo, los registros se eliminarán o anonimizarán, salvo aquellos que deban conservarse por obligaciones legales.</p>
+          </section>
+
+          <section className="space-y-3 border-b border-[#E1E7E1] pb-5">
+            <h3 className="font-bold text-[#232A24]">¿Puedo consultar, corregir o eliminar mis datos?</h3>
+            <p>Sí. Puedes solicitar el acceso, rectificación, cancelación u oposición al tratamiento de tus datos personales, así como consultar las opciones para limitar su uso o revocar tu consentimiento cuando corresponda.</p>
+            <p>Para realizar una solicitud, escribe a{' '}
+              <a href="mailto:jmartineza@centro.edu.mx" className="font-bold text-[#407B5D] underline underline-offset-2">jmartineza@centro.edu.mx</a>, indicando tu nombre, cuenta institucional y el motivo de la solicitud. Recibirás una respuesta conforme a los plazos establecidos por la legislación aplicable.
             </p>
-            <div className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl flex items-center gap-3">
-              <Mail className="w-4 h-4 text-[#407B5D] shrink-0" />
-              <div className="text-[11px]">
-                <span className="font-bold text-[#232A24] block">Contacto del Laboratorio:</span>
-                <span className="text-[#59645C]">
-                  Coordinación académica de Código Creativo ·{' '}
-                  <a
-                    href="mailto:jmartineza@centro.edu.mx"
-                    className="text-[#407B5D] font-mono hover:underline"
-                  >
-                    jmartineza@centro.edu.mx
-                  </a>
-                </span>
-              </div>
-            </div>
-            <p className="text-[10px] text-[#59645C] pt-2 text-right">
-              Fecha de última actualización: <strong>Noviembre de 2026</strong>.
-            </p>
-          </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="font-bold text-[#232A24]">Responsable y actualizaciones</h3>
+            <p><strong className="text-[#232A24]">Responsable:</strong> Josué Javier Martínez Alcántara, docente de Código Creativo | Estudios Integrales.</p>
+            <p>Cualquier modificación a este aviso se comunicará mediante su publicación en esta sección.</p>
+            <p><strong className="text-[#232A24]">Última actualización:</strong> 5 de noviembre de 2026.</p>
+          </section>
         </div>
 
         {/* Modal Footer */}

@@ -18,7 +18,7 @@ import { OopLabView } from './components/oopLab/OopLabView';
 import { PilotExercisesView } from './components/pilot/PilotExercisesView';
 import { UnitActivitiesView } from './components/curriculum/UnitActivitiesView';
 import { ClassDesignerRoot } from './components/classDesigner/ClassDesignerRoot';
-import { VideoAsciiSplitCanvas } from './components/generative/VideoAsciiSplitCanvas';
+import { AsciiArtModuleView } from './components/AsciiArtModuleView';
 import {
   AppUser,
   subscribeToAuth,
@@ -180,19 +180,11 @@ export default function App() {
 
       <Header
         currentView={activeView === 'admin' && !canAdmin ? 'home' : activeView}
-        onNavigateHome={() => {
-          setActiveView('home');
-          if (window.location.hash.includes('caballo') || window.location.hash.includes('horse')) {
-            try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch { window.location.hash = ''; }
-          }
-        }}
+        onNavigateHome={navigateHome}
         onOpenCatalogue={() => setIsCatalogueOpen(true)}
         onNavigateOopLab={() => setActiveView('oop-lab')}
-        onNavigatePilot={() => setActiveView('pilot')}
-        onNavigateHorse={() => {
-          setActiveView('horse');
-          window.location.hash = '#caballo';
-        }}
+        onNavigatePilot={() => navigate({ view: 'pilot' })}
+        onNavigateHorse={() => navigate({ view: 'horse' })}
         onNavigateUnits={() => {
           setSelectedCurriculumExercise(undefined);
           setActiveView('units');
@@ -254,7 +246,6 @@ export default function App() {
               }
             }}
             onOpenOopLab={() => setActiveView('oop-lab')}
-            onOpenPilot={() => setActiveView('pilot')}
             onOpenUnits={(unitId, exId) => {
               if (unitId) setSelectedCurriculumUnit(unitId);
               if (exId) setSelectedCurriculumExercise(exId);
@@ -264,10 +255,6 @@ export default function App() {
             onOpenClassDesigner={() => {
               setActiveView('class-designer');
               window.location.hash = '#disenador-clases';
-            }}
-            onNavigateHorse={() => {
-              setActiveView('horse');
-              window.location.hash = '#caballo';
             }}
             progress={progress}
             currentUser={currentUser}
@@ -279,6 +266,7 @@ export default function App() {
             homeCategories={homeCategories}
             onNavigateAdmin={canAdmin ? handleNavigateAdmin : undefined}
             topics={displayedTopics}
+            isCurriculumLoading={isCurriculumLoading}
             currentTopicId={currentTopicId}
             resumeTopicId={resumeTopicId}
           />
@@ -423,62 +411,8 @@ export default function App() {
             onOpenCatalogue={() => setIsCatalogueOpen(true)}
           />
         )}
-        {/* VIEW 8: Ejemplo Fundamental: El Caballo al Galope (Muybridge 1878) */}
-        {activeView === 'horse' && (
-          <section className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setActiveView('home');
-                      window.location.hash = '';
-                    }}
-                    className="text-xs font-bold text-[#407B5D] hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>← Inicio</span>
-                  </button>
-                  <span className="text-[#8E8E89]">/</span>
-                  <span className="text-[11px] font-mono font-bold uppercase bg-[#E8EEE8] text-[#407B5D] px-2.5 py-0.5 rounded">
-                    Ejemplo Fundamental · 1878
-                  </span>
-                  <span className="text-[11px] font-mono text-[#8A6318] bg-[#FDF5E6] px-2 py-0.5 rounded">
-                    Sallie Gardner at a Gallop
-                  </span>
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#232A24] tracking-tight">
-                  El Caballo al Galope: Discretización de Video a ASCII
-                </h1>
-                <p className="text-xs sm:text-sm text-[#59645C] max-w-3xl leading-relaxed">
-                  Instalación interactiva basada en el histórico estudio de movimiento de Eadweard Muybridge. Arrastra la barra divisoria <code className="bg-[#E8EEE8] px-1.5 py-0.5 rounded font-mono font-bold text-[#232A24]">&lt;&gt;</code> para comparar el metraje original contra la cuantización tipográfica en Processing Java.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    setActiveView('pilot');
-                    window.location.hash = '#piloto';
-                  }}
-                  className="px-3.5 py-2 border border-[#E1E7E1] hover:bg-[#E8EEE8] text-xs font-semibold rounded-xl text-[#232A24] transition-all cursor-pointer"
-                >
-                  Ver módulo piloto completo
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveView('home');
-                    window.location.hash = '';
-                  }}
-                  className="px-4 py-2 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
-                >
-                  Volver al inicio
-                </button>
-              </div>
-            </div>
-
-            <VideoAsciiSplitCanvas defaultVideoSrc="/video.mp4" />
-          </section>
-        )}
+        {/* VIEW 8: Módulo explicativo de arte ASCII */}
+        {activeView === 'horse' && <AsciiArtModuleView onBackToHome={navigateHome} />}
         </ErrorBoundary>
       </main>
 
@@ -517,7 +451,7 @@ export default function App() {
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[#59645C]">
             {homeConfig.footer.showHomeLink && <>
             <button
-              onClick={() => setActiveView('home')}
+              onClick={navigateHome}
               className="text-[#59645C] hover:text-[#407B5D] cursor-pointer transition-colors"
             >
               Inicio

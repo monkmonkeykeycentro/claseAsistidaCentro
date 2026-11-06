@@ -231,14 +231,37 @@ export interface CmsFooterConfig {
 export interface CmsHomeConfig {
   key: 'home_config';
   sections: Record<HomeSectionId, boolean>;
+  showSectionNavigator?: boolean;
+  presentation?: CmsHomePresentation;
   featuredTopicIds: string[];
   pillars: Record<Exclude<HomeSectionId, 'hero' | 'resume'>, CmsHomePillar>;
   footer: CmsFooterConfig;
   updatedAt: string;
 }
 
+export interface CmsHomePresentationItem {
+  type: 'lesson' | 'class-designer';
+  id: string;
+}
+
+export interface CmsHomePresentation {
+  enabled: boolean;
+  title: string;
+  description: string;
+  items: CmsHomePresentationItem[];
+}
+
+export const DEFAULT_HOME_PRESENTATION: CmsHomePresentation = {
+  enabled: false,
+  title: 'Un recorrido para comenzar',
+  description: 'De la posición en el lienzo a la construcción de objetos: explora estos contenidos en orden.',
+  items: [],
+};
+
 export const DEFAULT_HOME_CONFIG: CmsHomeConfig = {
   key: 'home_config',
+  showSectionNavigator: true,
+  presentation: DEFAULT_HOME_PRESENTATION,
   sections: {
     hero: true,
     resume: true,
@@ -258,7 +281,7 @@ export const DEFAULT_HOME_CONFIG: CmsHomeConfig = {
     },
     pilot: {
       title: 'Exploraciones con Processing',
-      description: 'Secuencia didáctica de tres ejercicios con metodología: Observar → Interpretar → Escribir → Experimentar → Documentar.',
+      description: 'Explora cómo el código transforma una imagen en movimiento en caracteres. Compara el video original con su versión ASCII y descubre cómo cambian el detalle y la textura al modificar sus parámetros.',
       showDefaultContent: true,
       blocks: [],
     },
@@ -393,6 +416,8 @@ export interface CmsMediaResource {
   driveThumbnailLink?: string;
   driveShortUrl?: string;
   driveFolderId?: string;
+  drivePublicRead?: boolean;
+  driveSharingError?: string;
 }
 
 export interface CmsRevision {

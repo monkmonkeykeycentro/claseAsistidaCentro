@@ -42,6 +42,7 @@ import {
   saveHomeConfig,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
+import { AdminHomePresentationEditor } from './AdminHomePresentationEditor';
 import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
 import { AdminComposableContentView } from './AdminComposableContentView';
 import { AdminClassDesignerContentView } from './AdminClassDesignerContentView';
@@ -51,7 +52,7 @@ import { mediaResourceKind, mediaResourceUrl } from '../../utils/mediaUrls';
 import { AppUser, isUserAdmin, db } from '../../services/firebase';
 import { firebaseRuntime } from '../../config/firebaseRuntime';
 import { describeCmsError } from '../../utils/cmsErrors';
-import { connectGoogleDrive, isDriveConfigured, uploadDriveFile } from '../../services/googleDriveService';
+import { connectGoogleDrive, isDriveConfigured, makeDriveImagePublicReadOnly, uploadDriveFile } from '../../services/googleDriveService';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import {
   PilotEvidenceRecord,
@@ -693,6 +694,8 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
         driveFileId: uploaded.id,
         mimeType: uploaded.mimeType,
         provider: 'google-drive',
+        drivePublicRead: uploaded.publicRead,
+        driveSharingError: uploaded.sharingError,
         altText: uploaded.name,
         category: file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'imagenes' : 'documentos',
         createdAt: new Date().toISOString(),
@@ -700,7 +703,8 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
 
       await saveCmsMediaResource(resource);
       setMediaList((current) => [resource, ...current]);
-      showToast(`"${uploaded.name}" se subió a Google Drive y se registró en el CMS.`);
+      if (uploaded.sharingError) setActionError(uploaded.sharingError);
+      showToast(uploaded.publicRead ? `"${uploaded.name}" se subió y quedó pública con permiso de lectura.` : `"${uploaded.name}" se subió a Google Drive y se registró en el CMS.`);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'No se pudo subir el archivo a Google Drive.');
     } finally {
@@ -721,6 +725,18 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'No se pudo conectar Google Drive.');
     }
+  };
+
+  const handlePublishDriveImage = async (media: CmsMediaResource) => {
+    if (!isDriveConnected) throw new Error('Conecta Drive para compartir esta imagen como lectura pública.');
+    const id = media.driveFileId;
+    if (!id) throw new Error('Este recurso no tiene identificador de archivo de Drive.');
+    const shared = await makeDriveImagePublicReadOnly(id);
+    const updated: CmsMediaResource = { ...media, url: shared.webViewLink, driveWebViewLink: shared.webViewLink,
+      driveThumbnailLink: shared.thumbnailLink, drivePublicRead: true, driveSharingError: '' };
+    await saveCmsMediaResource(updated);
+    setMediaList((current) => current.map((item) => item.id === media.id ? updated : item));
+    showToast('Imagen pública por enlace, con permiso de lectura verificado.');
   };
 
   const handleDeleteMedia = async (mediaId: string) => {
@@ -760,7 +776,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       const data: CurriculumExportData = JSON.parse(text);
       const destination = `${firebaseRuntime.config.projectId} / ${firebaseRuntime.config.firestoreDatabaseId || '(default)'}`;
       const origin = data.source ? `${data.source.projectId} / ${data.source.databaseId}` : 'no especificado (respaldo anterior)';
-      const total = ['modules', 'lessons', 'sections', 'blocks', 'siteContent', 'media', 'categories', 'nodes', 'nodeRelations', 'nodeBlocks']
+      const total = (['modules', 'lessons', 'sections', 'blocks', 'siteContent', 'media', 'categories', 'nodes', 'nodeRelations', 'nodeBlocks'] as const)
         .reduce((count, key) => count + (Array.isArray(data[key]) ? data[key].length : 0), 0);
       if (!confirm(`Importar ${total} documentos del CMS.\n\nOrigen: ${origin}\nDestino: ${destination}${firebaseRuntime.useEmulators ? ' (LOCAL)' : ' (PRODUCCIÓN)'}\n\nSe actualizarán documentos con el mismo ID y se añadirán los nuevos. No se borrarán documentos adicionales. Antes se creará un respaldo del destino.\n\n¿Continuar?`)) return;
       setIsLoading(true);
@@ -1718,6 +1734,16 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                     <Save className="w-3.5 h-3.5" /> Guardar portada
                   </button>
                 </div>
+                <AdminHomePresentationEditor
+                  value={homeConfig.presentation}
+                  lessons={lessons}
+                  modules={modules}
+                  onChange={(presentation) => setHomeConfig((current) => ({ ...current, presentation }))}
+                />
+                <label className="flex items-center gap-2 text-xs font-semibold text-[#232A24]">
+                  <input type="checkbox" checked={homeConfig.showSectionNavigator !== false} onChange={(event) => setHomeConfig((current) => ({ ...current, showSectionNavigator: event.target.checked }))} />
+                  Mostrar barra de filtros del laboratorio
+                </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {([
                     ['hero', 'Hero y bienvenida'],
@@ -2050,7 +2076,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                     Biblioteca de Recursos Multimedia
                   </h3>
                   <p className="text-xs text-[#59645C]">
-                    Diagramas, esquemas y capturas que puedes enlazar en cualquier lección o bloque.
+                    Las imágenes nuevas se comparten automáticamente con cualquier persona que tenga el enlace, solo como lector. Los demás archivos conservan sus permisos.
                   </p>
                 </div>
                 <button
@@ -2109,7 +2135,9 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                           {m.url}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between pt-1 border-t border-[#E1E7E1]">
+                      {m.drivePublicRead && <p className="text-[11px] font-semibold text-[#407B5D]">Pública por enlace · Lector</p>}
+                      {m.driveSharingError && <p className="text-[11px] text-[#9A5A18]">{m.driveSharingError}</p>}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#E1E7E1]">
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(mediaResourceUrl(m));
@@ -2119,6 +2147,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                         >
                           Copiar URL
                         </button>
+                        {m.provider === 'google-drive' && mediaResourceKind(m) === 'image' && <button type="button" disabled={isWorking} onClick={() => runAction(() => handlePublishDriveImage(m))} className="text-[11px] font-semibold text-[#407B5D] hover:underline disabled:opacity-40">{m.drivePublicRead ? 'Comprobar lectura pública' : 'Hacer pública (lector)'}</button>}
                         <button type="button" onClick={() => setPreviewMedia(m)} className="text-[11px] font-semibold text-[#407B5D] hover:underline">Consultar</button>
                         {mediaResourceUrl(m) && (
                           <a

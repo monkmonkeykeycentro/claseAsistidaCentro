@@ -40,7 +40,11 @@ export const TopicViewer: React.FC<TopicViewerProps> = ({
   nextTopicId,
 }) => {
   const learningTopic = 'sections' in topic ? topic : normalizeTopic(topic);
-  const [activeConceptIdx, setActiveConceptIdx] = useState<number>(0);
+  // Start at the saved section before the visit effect can overwrite it.
+  const [activeConceptIdx, setActiveConceptIdx] = useState<number>(() => Math.max(
+    0,
+    learningTopic.sections.findIndex((section) => section.id === lessonProgress?.currentSectionId),
+  ));
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
   const [showAnswerFeedback, setShowAnswerFeedback] = useState<boolean>(false);
 

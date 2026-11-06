@@ -1,0 +1,262 @@
+{
+  "version": 1,
+  "placement": {
+    "moduleTitle": "Lógica y estructuras de decisión",
+    "categoryName": "Control y Lógica"
+  },
+  "lesson": {
+    "id": "caminata_aleatoria",
+    "title": "Caminata aleatoria: decisiones que dibujan",
+    "summary": "Una sesión para comprender cómo las variables, las comparaciones y las estructuras if, else if y else controlan un recorrido visual. Observa una caminata aleatoria, interpreta sus cuatro reglas, verifica cada alternativa y crea una variación propia en Processing Java o p5.js.",
+    "badge": "Lógica y decisiones",
+    "estimatedTime": "60 min"
+  },
+  "sections": [
+    {
+      "key": "observar",
+      "title": "01. Observar: un recorrido hecho de decisiones",
+      "summary": "10 min · Pregunta inicial, objetivos y ejemplo ejecutable.",
+      "didacticTip": "Observa la dirección de cada paso y busca si coincide con el color de la marca.",
+      "commonMistake": "Pensar que el color y la dirección se eligen por separado: ambos dependen de la misma decisión.",
+      "blocks": [
+        {
+          "key": "apertura",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>¿Cómo puede una regla sencilla producir un recorrido diferente cada vez?</h2><p>En esta sesión construiremos una <strong>caminata aleatoria</strong>. Una figura parte del centro del lienzo y, en cada fotograma, elige uno de cuatro movimientos. Cada decisión modifica su posición y deja una marca de color.</p><p>La forma final no está dibujada de antemano: aparece al repetir las reglas. La posición actual conserva la historia de los pasos anteriores.</p>"
+        },
+        {
+          "key": "objetivos",
+          "type": "callout",
+          "caption": "Al terminar podrás…",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<ul><li>Leer una condición como una pregunta con resultado verdadero o falso.</li><li>Explicar cómo <code>if</code>, <code>else if</code> y <code>else</code> seleccionan un comportamiento.</li><li>Relacionar una decisión con un cambio en X o Y y un color.</li><li>Distinguir las constantes del sistema de las variables que cambian.</li><li>Modificar una regla y justificar su efecto visual.</li></ul><p><strong>Duración sugerida:</strong> 60 minutos. Para experimentar con el código, utiliza Processing en modo Java o el editor de p5.js.</p>"
+        },
+        {
+          "key": "base",
+          "type": "code",
+          "caption": "Programa completo · Processing Java para tu computadora y p5.js para el navegador.",
+          "filename": "caminata_aleatoria.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "final int DIAMETRO = 5;\nfinal int PASO = 5;\n\nint posX;\nint posY;\n\nvoid setup() {\n  size(1280, 720);\n  background(255);\n  noStroke();\n\n  posX = width / 2;\n  posY = height / 2;\n}\n\nvoid draw() {\n  int direccion = int(random(1, 5));\n\n  if (direccion == 1) {\n    // Derecha: azul.\n    posX += PASO;\n    fill(#287ED1);\n  } else if (direccion == 2) {\n    // Izquierda: amarillo.\n    posX -= PASO;\n    fill(#F0E479);\n  } else if (direccion == 3) {\n    // Arriba: verde.\n    posY -= PASO;\n    fill(#64A569);\n  } else {\n    // Abajo: rojo.\n    posY += PASO;\n    fill(#ED4A58);\n  }\n\n  ellipse(posX, posY, DIAMETRO, DIAMETRO);\n}",
+          "contentJava": "final int DIAMETRO = 5;\nfinal int PASO = 5;\n\nint posX;\nint posY;\n\nvoid setup() {\n  size(1280, 720);\n  background(255);\n  noStroke();\n\n  posX = width / 2;\n  posY = height / 2;\n}\n\nvoid draw() {\n  int direccion = int(random(1, 5));\n\n  if (direccion == 1) {\n    // Derecha: azul.\n    posX += PASO;\n    fill(#287ED1);\n  } else if (direccion == 2) {\n    // Izquierda: amarillo.\n    posX -= PASO;\n    fill(#F0E479);\n  } else if (direccion == 3) {\n    // Arriba: verde.\n    posY -= PASO;\n    fill(#64A569);\n  } else {\n    // Abajo: rojo.\n    posY += PASO;\n    fill(#ED4A58);\n  }\n\n  ellipse(posX, posY, DIAMETRO, DIAMETRO);\n}",
+          "contentP5": "const DIAMETRO = 5;\nconst PASO = 5;\n\nlet posX;\nlet posY;\n\nfunction setup() {\n  createCanvas(1280, 720);\n  background(255);\n  noStroke();\n\n  posX = width / 2;\n  posY = height / 2;\n}\n\nfunction draw() {\n  const direccion = floor(random(1, 5));\n\n  if (direccion === 1) {\n    // Derecha: azul.\n    posX += PASO;\n    fill(\"#287ED1\");\n  } else if (direccion === 2) {\n    // Izquierda: amarillo.\n    posX -= PASO;\n    fill(\"#F0E479\");\n  } else if (direccion === 3) {\n    // Arriba: verde.\n    posY -= PASO;\n    fill(\"#64A569\");\n  } else {\n    // Abajo: rojo.\n    posY += PASO;\n    fill(\"#ED4A58\");\n  }\n\n  ellipse(posX, posY, DIAMETRO, DIAMETRO);\n}",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": true
+        },
+        {
+          "key": "hipotesis",
+          "type": "activity",
+          "caption": "Antes de leer el programa",
+          "contentFormat": "html",
+          "content": "<h3>Antes de leer el programa</h3><ol><li>Observa cómo crece el recorrido. ¿Se desplaza siempre en la misma dirección?</li><li>¿La figura vuelve a pasar por posiciones anteriores? ¿Qué sucede con los colores que se superponen?</li><li>Escribe una hipótesis sobre cómo el programa elige hacia dónde moverse.</li></ol><p>Registra tus respuestas en tu cuaderno o documento de trabajo.</p>"
+        }
+      ]
+    },
+    {
+      "key": "estado",
+      "title": "02. Interpretar: posición, constantes y tiempo",
+      "summary": "10 min · Qué cambia, qué permanece y cómo se conserva el recorrido.",
+      "didacticTip": "Distingue el valor actual de una variable de la instrucción que lo modifica.",
+      "commonMistake": "Pensar que aumentar Y hace subir a la figura: en el lienzo, Y aumenta hacia abajo.",
+      "blocks": [
+        {
+          "key": "variables",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>El estado del sistema</h2><p><code>posX</code> y <code>posY</code> son variables: almacenan la posición actual y cambian después de cada decisión. <code>DIAMETRO</code> y <code>PASO</code> son constantes: fijan el tamaño de la marca y la distancia recorrida en un movimiento.</p><p>Con el lienzo de 1280 × 720, la posición inicial es <strong>(640, 360)</strong>. X aumenta hacia la derecha; Y aumenta hacia abajo. Restar a Y produce un movimiento hacia arriba.</p><p><code>posX += PASO;</code> equivale a <code>posX = posX + PASO;</code>: se calcula un valor nuevo utilizando el anterior y después se guarda.</p>"
+        },
+        {
+          "key": "estado",
+          "type": "code",
+          "caption": "Fragmento de declaraciones · observa qué valores pueden cambiar.",
+          "filename": "fragmento.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "final int DIAMETRO = 5;\nfinal int PASO = 5;\nint posX;\nint posY;",
+          "contentJava": "final int DIAMETRO = 5;\nfinal int PASO = 5;\nint posX;\nint posY;",
+          "contentP5": "const DIAMETRO = 5;\nconst PASO = 5;\nlet posX;\nlet posY;",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "tiempo",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Preparar una vez, decidir muchas veces</h3><p><code>setup()</code> crea el lienzo, pinta el fondo, elimina el contorno y coloca la figura en el centro. <code>draw()</code> se repite y ejecuta una nueva decisión en cada fotograma. La frecuencia real depende del entorno de ejecución.</p><p>Como <code>background(255)</code> está en <code>setup()</code>, las marcas se acumulan. Si se colocara al principio de <code>draw()</code>, el lienzo se borraría en cada pasada y veríamos solo la marca actual.</p>"
+        },
+        {
+          "key": "coordenadas",
+          "type": "activity",
+          "caption": "Predice una posición",
+          "contentFormat": "html",
+          "content": "<h3>Predice una posición</h3><p>Desde <strong>(640, 360)</strong>, un movimiento a la izquierda con paso 5 lleva a <strong>(635, 360)</strong>. Si el siguiente movimiento es hacia abajo, la posición pasa a <strong>(635, 365)</strong>.</p><p>Ahora calcula dos movimientos hacia arriba y uno hacia la derecha a partir de esa última posición. Después comprueba tu respuesta: <strong>(640, 355)</strong>.</p>"
+        }
+      ]
+    },
+    {
+      "key": "decisiones",
+      "title": "03. Leer: condiciones y alternativas",
+      "summary": "10 min · Igualdad, valores booleanos y una cadena de cuatro posibilidades.",
+      "didacticTip": "Lee la cadena de arriba abajo: la primera condición verdadera selecciona su bloque.",
+      "commonMistake": "Confundir asignar un valor con comparar dos valores, o esperar que else tenga una condición propia.",
+      "blocks": [
+        {
+          "key": "azar",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Del azar a una decisión</h2><p>En Java, <code>int(random(1, 5))</code> produce uno de los valores <strong>1, 2, 3 o 4</strong>. En p5.js utilizamos <code>floor(random(1, 5))</code>. El límite superior 5 queda excluido y la conversión elimina la parte decimal de estos valores positivos.</p><p>Las cuatro opciones tienen la misma probabilidad de ser elegidas. Eso no exige que aparezcan la misma cantidad de veces en un recorrido corto, ni que se alternen en orden.</p><p>La expresión <code>direccion == 1</code> en Java o <code>direccion === 1</code> en JavaScript plantea una comparación. Su resultado es booleano: verdadero o falso. En cambio, <code>=</code> asigna un valor.</p>"
+        },
+        {
+          "key": "cadena",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Una decisión, una rama</h3><ul><li>Si la dirección es <strong>1</strong>, aumenta X y utiliza azul.</li><li>Si no lo fue y es <strong>2</strong>, disminuye X y utiliza amarillo.</li><li>Si tampoco lo fue y es <strong>3</strong>, disminuye Y y utiliza verde.</li><li>En el caso restante, aumenta Y y utiliza rojo.</li></ul><p>En una cadena <code>if / else if / else</code> se ejecuta una sola rama. Después continúa el programa con <code>ellipse()</code>, que utiliza la posición y el relleno resultantes.</p>"
+        },
+        {
+          "key": "condicion",
+          "type": "code",
+          "caption": "Fragmento · una condición vincula movimiento y color.",
+          "filename": "fragmento.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "if (direccion == 1) {\n  posX += PASO;\n  fill(#287ED1);\n}",
+          "contentJava": "if (direccion == 1) {\n  posX += PASO;\n  fill(#287ED1);\n}",
+          "contentP5": "if (direccion === 1) {\n  posX += PASO;\n  fill(\"#287ED1\");\n}",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "else",
+          "type": "callout",
+          "caption": "¿Por qué el último caso usa else?",
+          "calloutType": "warning",
+          "contentFormat": "html",
+          "content": "<p>El generador solo produce 1, 2, 3 o 4. Después de descartar los tres primeros valores, el restante es 4. Por eso basta con <code>else</code>.</p><p>Si más adelante cambias el rango del generador, vuelve a revisar esta regla: <code>else</code> recogerá cualquier valor que no haya coincidido con las condiciones anteriores.</p>"
+        },
+        {
+          "key": "traza",
+          "type": "activity",
+          "caption": "Sigue una secuencia a mano",
+          "contentFormat": "html",
+          "content": "<h3>Sigue una secuencia a mano</h3><p>Desde el centro y con paso 5, calcula los resultados de esta secuencia: <strong>1 → 3 → 2 → 4</strong>. Anota después de cada paso la posición, la rama ejecutada y el color.</p><p><strong>Comprobación:</strong> (645, 360) azul → (645, 355) verde → (640, 355) amarillo → (640, 360) rojo. El recorrido vuelve al centro. La marca roja puede cubrir parte de lo dibujado antes.</p>"
+        }
+      ]
+    },
+    {
+      "key": "escribir",
+      "title": "04. Escribir: del comportamiento al código",
+      "summary": "10 min · Preparar el sketch y verificar una regla antes de usar el azar.",
+      "didacticTip": "Prueba una dirección fija para comprobar una regla; después recupera la elección aleatoria.",
+      "commonMistake": "Pegar JavaScript en Processing Java o copiar solo un fragmento como si fuera el programa completo.",
+      "blocks": [
+        {
+          "key": "preparacion",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Ejecuta tu propia copia</h2><ol><li>Crea un sketch en Processing, en modo Java, y guárdalo como <code>caminata_aleatoria</code>. Si trabajas en p5.js, crea un sketch en su editor.</li><li>Copia el <strong>programa completo</strong> de la primera sección, seleccionando la pestaña de tu entorno.</li><li>Ejecuta y comprueba que aparecen marcas a partir del centro.</li><li>Detén o reinicia el sketch para comparar siempre desde la misma posición inicial.</li></ol><p>Puedes consultar ambas versiones en las pestañas del código. Conserva en cada entorno la sintaxis de su lenguaje.</p>"
+        },
+        {
+          "key": "equivalencias",
+          "type": "callout",
+          "caption": "Misma regla, sintaxis distinta",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<ul><li>Processing Java declara enteros con <code>int</code> y constantes con <code>final int</code>; p5.js utiliza <code>let</code> y <code>const</code>.</li><li>Java usa <code>void setup()</code> y <code>size()</code>; p5.js utiliza <code>function setup()</code> y <code>createCanvas()</code>.</li><li>La igualdad de este ejemplo se escribe <code>==</code> en Java y <code>===</code> en JavaScript.</li><li>Los colores se escriben como <code>#287ED1</code> en Java y como cadenas, por ejemplo <code>\"#287ED1\"</code>, en p5.js.</li></ul>"
+        },
+        {
+          "key": "fija",
+          "type": "code",
+          "caption": "Prueba temporal · sustituye únicamente la declaración de direccion dentro de draw().",
+          "filename": "fragmento.pde",
+          "codeSource": "inline",
+          "codeLanguage": "processing",
+          "content": "int direccion = 1;",
+          "contentJava": "int direccion = 1;",
+          "contentP5": "const direccion = 1;",
+          "showCodeJava": true,
+          "showCodeP5": true,
+          "showInteractiveExecution": false
+        },
+        {
+          "key": "verificar",
+          "type": "activity",
+          "caption": "Comprueba cada alternativa",
+          "contentFormat": "html",
+          "content": "<h3>Comprueba cada alternativa</h3><ol><li>Utiliza dirección 1: ¿la figura avanza a la derecha y deja marcas azules?</li><li>Reinicia y repite con los valores 2, 3 y 4. Anticipa el movimiento y el color antes de ejecutar.</li><li>Cuando hayas comprobado las cuatro ramas, restaura la declaración con <code>random()</code>.</li></ol><p>Con una dirección fija, la figura puede salir pronto del lienzo. Eso ocurre porque este ejemplo no limita su posición: reinicia para volver al centro.</p>"
+        }
+      ]
+    },
+    {
+      "key": "experimentar",
+      "title": "05. Experimentar: modificar las reglas",
+      "summary": "10 min · Variaciones comparadas de paso, diámetro, color y acumulación.",
+      "didacticTip": "Cambia una sola decisión, reinicia y observa durante un tiempo similar antes de comparar.",
+      "commonMistake": "Cambiar el diámetro esperando que aumente el desplazamiento, o cambiar el paso esperando que crezca la figura.",
+      "blocks": [
+        {
+          "key": "pregunta",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>¿Qué decisión produce cada cambio visual?</h2><p>Trabaja sobre una copia. Para cada prueba escribe una predicción, el cambio realizado y lo que observaste. El azar producirá recorridos distintos; compara sus características, no la coincidencia exacta de sus posiciones.</p>"
+        },
+        {
+          "key": "variaciones",
+          "type": "activity",
+          "caption": "Cuatro pruebas breves",
+          "contentFormat": "html",
+          "content": "<h3>Cuatro pruebas breves</h3><ol><li><strong>Distancia:</strong> conserva diámetro 5 y compara paso 2, 5 y 15. ¿Las marcas consecutivas se superponen, se tocan o quedan separadas?</li><li><strong>Tamaño:</strong> vuelve al paso 5 y compara diámetro 3 y 12. ¿Qué cambia en el grosor del recorrido y en la superposición?</li><li><strong>Relación color-dirección:</strong> cambia únicamente el color de una rama. ¿Cambió el movimiento? Explica por qué una decisión puede producir varios efectos, aunque cada instrucción tenga una función distinta.</li><li><strong>Memoria visual:</strong> añade temporalmente <code>background(255);</code> al principio de <code>draw()</code>. ¿Qué diferencia hay entre ver una posición y ver la historia de un recorrido? Retira el cambio al terminar.</li></ol>"
+        },
+        {
+          "key": "extension",
+          "type": "callout",
+          "caption": "Desafío opcional: cambiar una regla",
+          "calloutType": "tip",
+          "contentFormat": "html",
+          "content": "<p>Haz que la dirección 4 se mueva en diagonal hacia abajo y a la derecha, actualizando tanto <code>posX</code> como <code>posY</code> dentro de esa rama. Predice qué puede cambiar en la tendencia del recorrido y compruébalo en varias ejecuciones.</p><p>La diagonal modifica dos coordenadas en una decisión. El conjunto deja de tener exactamente las cuatro direcciones cardinales del ejemplo base.</p>"
+        }
+      ]
+    },
+    {
+      "key": "documentar",
+      "title": "06. Documentar: explicar una decisión visual",
+      "summary": "10 min · Una propuesta propia, criterios de revisión y referencias.",
+      "didacticTip": "Justifica tu propuesta relacionando una condición, una actualización de posición y un efecto observable.",
+      "commonMistake": "Explicar el resultado solo por el azar, sin reconocer las reglas y parámetros que tú diseñaste.",
+      "blocks": [
+        {
+          "key": "propuesta",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h2>Diseña una caminata con intención</h2><p>Elige una intención visual: un recorrido fino, una trama de marcas grandes, pasos separados o una relación particular entre dirección y color. Modifica los parámetros o una rama para conseguirla y explica tu elección.</p><p>Conserva en tu carpeta el sketch, una captura y una explicación breve. Registra qué condición modificaste, qué esperabas y qué observaste. Entrega el trabajo por el medio que indique tu docente.</p>"
+        },
+        {
+          "key": "revision",
+          "type": "activity",
+          "caption": "Comprueba lo aprendido",
+          "contentFormat": "html",
+          "content": "<h3>Comprueba lo aprendido</h3><ol><li>¿Qué diferencia hay entre <code>DIAMETRO</code>, <code>PASO</code> y <code>posX</code>?</li><li>¿Qué pregunta responde una condición como <code>direccion == 2</code>?</li><li>¿Por qué solo se ejecuta una rama de esta cadena?</li><li>¿Qué valor representa el caso <code>else</code> en el ejemplo base y por qué?</li><li>¿Qué sucede si el fondo se dibuja en cada fotograma?</li><li>¿Cómo se relaciona la posición actual con las decisiones anteriores?</li></ol><p><strong>Criterios de revisión:</strong> el programa se ejecuta, las cuatro ramas corresponden a sus direcciones, puedes calcular una secuencia corta y justificas al menos una modificación visual.</p>"
+        },
+        {
+          "key": "sintesis",
+          "type": "callout",
+          "caption": "La idea que conecta el ejercicio",
+          "calloutType": "success",
+          "contentFormat": "html",
+          "content": "<p>Una variable conserva el estado, una comparación plantea una pregunta y una estructura de decisión elige qué instrucciones ejecutar. Al repetir ese proceso, el sistema construye un recorrido. El azar aporta variación dentro de las posibilidades que definiste.</p>"
+        },
+        {
+          "key": "referencias",
+          "type": "rich-text",
+          "contentFormat": "html",
+          "content": "<h3>Referencias para seguir estudiando</h3><ul><li><a href=\"https://processing.org/reference/if.html\">Processing: if</a> y <a href=\"https://processing.org/reference/else.html\">else</a>.</li><li><a href=\"https://processing.org/reference/random_\">Processing: random()</a>.</li><li><a href=\"https://p5js.org/reference/p5/random/\">p5.js: random()</a> y <a href=\"https://p5js.org/reference/p5/fill/\">fill()</a>.</li><li><a href=\"https://editor.p5js.org/\">Editor de p5.js</a>.</li></ul>"
+        }
+      ]
+    }
+  ]
+}

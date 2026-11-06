@@ -32,7 +32,7 @@ export function parseAppRoute(location: Location): AppRoute {
   if (['#u1', '#u2', '#u3'].includes(legacyHash)) return { view: 'units', unitId: legacyHash.slice(1) as AppRoute['unitId'] };
   if (['#exploraciones', '#piloto', '#coordenadas', '#condicionales', '#audiovisual'].includes(legacyHash) || search.has('pilot') || search.has('exploraciones')) return { view: 'pilot' };
   if (['#disenador-clases', '#disenador', '#class-designer', '#herramientas'].includes(legacyHash) || search.has('disenador') || search.has('designer')) return { view: 'class-designer' };
-  if (['#caballo', '#caballo-galope', '#muybridge', '#horse', '#video-ascii'].includes(legacyHash) || search.has('horse') || search.has('caballo')) return { view: 'horse' };
+  if (['#caballo', '#caballo-galope', '#muybridge', '#horse', '#video-ascii', '#arte-ascii', '#ascii-art'].includes(legacyHash) || search.has('horse') || search.has('caballo')) return { view: 'horse' };
   return { view: 'home' };
 }
 

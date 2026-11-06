@@ -311,8 +311,10 @@ una segunda URL de imagen. Si ninguna carga, se muestra un mensaje y el botón
 
 **Conectar Drive** solo es necesario para subir archivos desde el CMS. Los
 videos y documentos usan el visor `/preview` de Drive; los archivos de audio o
-descarga pueden insertarse como **Recurso**. Los permisos se conservan y no se
-publican archivos automáticamente. Las miniaturas temporales de la API no se
+descarga pueden insertarse como **Recurso**. Las imágenes nuevas se comparten
+automáticamente como **Públicas por enlace · Lector**; los demás archivos conservan
+sus permisos. Para imágenes anteriores usa **Hacer pública (lector)** en la
+biblioteca. La acción verifica el permiso de lectura y no modifica la carpeta. Las miniaturas temporales de la API no se
 usan como enlaces persistentes del contenido.
 
 ## Verificación

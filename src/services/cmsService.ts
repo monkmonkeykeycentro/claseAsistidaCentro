@@ -33,6 +33,7 @@ import {
 } from '../types/cms';
 import { TOPICS_DATA, TopicItem, TopicConcept } from '../data/topicsData';
 import { CURRICULUM_UNITS } from '../data/unitsData';
+import { normalizeHomePresentation } from '../utils/homePresentation';
 
 // ============================================================================
 // 1. DEFAULT SITE CONTENT
@@ -1198,6 +1199,8 @@ export async function getHomeConfig(): Promise<CmsHomeConfig> {
     ...data,
     sections: { ...DEFAULT_HOME_CONFIG.sections, ...(data.sections || {}) },
     featuredTopicIds: Array.isArray(data.featuredTopicIds) ? data.featuredTopicIds : [],
+    showSectionNavigator: data.showSectionNavigator !== false,
+    presentation: normalizeHomePresentation(data.presentation),
     pillars,
     footer: { ...DEFAULT_HOME_CONFIG.footer, ...(data.footer || {}) },
   };
@@ -1233,6 +1236,8 @@ export function subscribeToHomeConfig(callback: (config: CmsHomeConfig) => void)
           ...data,
           sections: { ...DEFAULT_HOME_CONFIG.sections, ...(data.sections || {}) },
           featuredTopicIds: Array.isArray(data.featuredTopicIds) ? data.featuredTopicIds : [],
+          showSectionNavigator: data.showSectionNavigator !== false,
+          presentation: normalizeHomePresentation(data.presentation),
           pillars,
           footer: { ...DEFAULT_HOME_CONFIG.footer, ...(data.footer || {}) },
         });

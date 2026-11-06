@@ -57,6 +57,17 @@ durante desarrollo está disponible `npm run dev:production` en el puerto 3001;
 sus escrituras sí afectan a producción. El flujo local utiliza la base `(default)`
 y la configuración de producción conserva su base con nombre.
 
+## Transferir el CMS a producción
+
+Usa **Exportar Respaldo** en el CMS local y **Restaurar Respaldo** en el CMS de
+producción actualizado. El formato v2 incluye categorías y contenido composable,
+además del contenido de la herramienta y el temario. No transfiere cuentas del
+emulador ni diseños personales. El diálogo de importación identifica la base de
+origen y la de destino antes de modificar datos.
+
+Consulta el procedimiento completo y la revisión de archivos para Git en
+[SECURITY_AND_PUBLISHING.md](SECURITY_AND_PUBLISHING.md).
+
 ## Verificación
 
 ```sh
