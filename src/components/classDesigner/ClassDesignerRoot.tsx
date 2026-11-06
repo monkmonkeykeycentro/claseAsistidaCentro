@@ -3,23 +3,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   ClassDesignProject,
-  DEFAULT_EMPTY_PROJECT,
-  RESORTE_EXAMPLE_PROJECT,
 } from '../../types/classDesigner';
 import {
   validateClassDesign,
   generateProcessingClassCode,
   saveClassDesignToLocal,
   loadClassDesignFromLocal,
+  loadClassDesignDraftFromLocal,
   saveClassDesignToFirestore,
   loadClassDesignsFromFirestore,
   downloadClassDesignJson,
   importClassDesignFromJson,
 } from '../../services/classDesignerService';
 import { AppUser } from '../../services/firebase';
+import { firebaseRuntime } from '../../config/firebaseRuntime';
+import { DEFAULT_CLASS_DESIGNER_CONTENT, CLASS_DESIGNER_STEPS } from '../../data/classDesignerContent';
+import { subscribeToClassDesignerContent, instantiateClassDesignerTemplate } from '../../services/classDesignerContentService';
+import { ClassDesignerContentContext } from './ClassDesignerContentContext';
+import { ClassDesignerContentBlocks } from './ClassDesignerContentBlocks';
 import { Step1ObjectDefinition } from './Step1ObjectDefinition';
 import { Step2FieldsEditor } from './Step2FieldsEditor';
 import { Step3ConstructorEditor } from './Step3ConstructorEditor';
@@ -46,6 +50,9 @@ import {
   FileJson,
   Upload,
   FileUp,
+  Save,
+  FolderOpen,
+  Loader2,
 } from 'lucide-react';
 
 interface ClassDesignerRootProps {
@@ -56,25 +63,30 @@ interface ClassDesignerRootProps {
 
 type StepNumber = 1 | 2 | 3 | 4 | 5 | 6;
 
-const STEP_DEFINITIONS: { step: StepNumber; shortTitle: string; title: string }[] = [
-  { step: 1, shortTitle: 'Objeto', title: 'Definir el objeto' },
-  { step: 2, shortTitle: 'Campos', title: 'Identificar campos' },
-  { step: 3, shortTitle: 'Constructor', title: 'Configurar constructor' },
-  { step: 4, shortTitle: 'Métodos', title: 'Diseñar métodos' },
-  { step: 5, shortTitle: 'Relaciones', title: 'Establecer relaciones' },
-  { step: 6, shortTitle: 'Código', title: 'Revisar y exportar' },
-];
-
 export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
   onBackToHome,
   currentUser,
 }) => {
   const [currentStep, setCurrentStep] = useState<StepNumber>(1);
+  const [initialDraft] = useState(loadClassDesignDraftFromLocal);
+  const [toolContent, setToolContent] = useState(DEFAULT_CLASS_DESIGNER_CONTENT);
+  const [contentReady, setContentReady] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
+  const [selectedExampleId, setSelectedExampleId] = useState('resorte');
+  const needsInitialTemplate = useRef(!initialDraft);
   const [project, setProject] = useState<ClassDesignProject>(() => {
-    return loadClassDesignFromLocal();
+    return initialDraft ?? loadClassDesignFromLocal();
   });
-  const [isCloudSaving, setIsCloudSaving] = useState(false);
-  const [cloudSynced, setCloudSynced] = useState(false);
+  const [sync, setSync] = useState<{
+    project: ClassDesignProject;
+    userId: string;
+    status: 'saving' | 'saved' | 'error';
+    error?: string;
+  } | null>(null);
+  const [savedDesigns, setSavedDesigns] = useState<ClassDesignProject[]>([]);
+  const [isDesignListOpen, setIsDesignListOpen] = useState(false);
+  const [isLoadingDesigns, setIsLoadingDesigns] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isLivePreviewExpanded, setIsLivePreviewExpanded] = useState(true);
   const [jsonNotification, setJsonNotification] = useState<{
@@ -83,6 +95,28 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
   } | null>(null);
 
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
+  const saveRequest = useRef(0);
+  const loadRequest = useRef(0);
+  const currentContext = useRef({ project, userId: currentUser?.uid });
+  currentContext.current = { project, userId: currentUser?.uid };
+  const databaseName = firebaseRuntime.useEmulators ? 'Firebase local' : 'Firebase';
+  const currentSync = sync?.project === project && sync.userId === currentUser?.uid ? sync : null;
+  const isDatabaseSaving = currentSync?.status === 'saving';
+  const selectedExample = toolContent.examples.find((example) => example.id === selectedExampleId) ?? toolContent.examples[0];
+
+  useEffect(() => subscribeToClassDesignerContent((content) => {
+    setToolContent(content);
+    setContentReady(true);
+    setContentError(null);
+    if (needsInitialTemplate.current) {
+      needsInitialTemplate.current = false;
+      setProject(instantiateClassDesignerTemplate(content.defaultProject));
+    }
+  }, (error) => {
+    setContentReady(true);
+    needsInitialTemplate.current = false;
+    setContentError(error instanceof Error ? error.message : 'No se pudo leer la configuración del diseñador.');
+  }), []);
 
   // Auto-validate project on every change
   const diagnostics = useMemo(() => validateClassDesign(project), [project]);
@@ -95,49 +129,74 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
 
   // Save to local storage on change
   useEffect(() => {
+    if (!contentReady) return;
     saveClassDesignToLocal(project);
-  }, [project]);
+  }, [project, contentReady]);
 
-  // Debounced auto-save to Firestore if user is authenticated
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const timeout = setTimeout(async () => {
-      try {
-        setIsCloudSaving(true);
-        await saveClassDesignToFirestore(currentUser.uid, project);
-        setCloudSynced(true);
-      } catch (err) {
-        console.warn('Error al sincronizar clase con Firestore:', err);
-      } finally {
-        setIsCloudSaving(false);
+  const saveToDatabase = useCallback(async (design: ClassDesignProject, userId: string) => {
+    const request = ++saveRequest.current;
+    setSync({ project: design, userId, status: 'saving' });
+    try {
+      await saveClassDesignToFirestore(userId, design);
+      if (request === saveRequest.current && currentContext.current.userId === userId && currentContext.current.project === design) {
+        setSync({ project: design, userId, status: 'saved' });
       }
-    }, 1500);
+    } catch (error) {
+      if (request === saveRequest.current && currentContext.current.userId === userId && currentContext.current.project === design) {
+        setSync({ project: design, userId, status: 'error', error: error instanceof Error ? error.message : 'Inténtalo de nuevo.' });
+      }
+    }
+  }, []);
 
+  // Save after edits; a completion for an older draft must not mark a newer one saved.
+  useEffect(() => {
+    if (!currentUser || !contentReady) return;
+    const timeout = setTimeout(() => { void saveToDatabase(project, currentUser.uid); }, 1500);
     return () => clearTimeout(timeout);
-  }, [project, currentUser]);
+  }, [project, currentUser?.uid, saveToDatabase, contentReady]);
+
+  useEffect(() => {
+    loadRequest.current++;
+    setSavedDesigns([]);
+    setIsDesignListOpen(false);
+    setIsLoadingDesigns(false);
+    setLoadError(null);
+  }, [currentUser?.uid]);
+
+  const handleOpenSavedDesigns = async () => {
+    if (!currentUser) return;
+    const userId = currentUser.uid;
+    const request = ++loadRequest.current;
+    setIsDesignListOpen(true);
+    setIsLoadingDesigns(true);
+    setLoadError(null);
+    try {
+      const designs = await loadClassDesignsFromFirestore(userId);
+      if (request === loadRequest.current && currentContext.current.userId === userId) setSavedDesigns(designs);
+    } catch (error) {
+      if (request === loadRequest.current && currentContext.current.userId === userId) {
+        setLoadError(error instanceof Error ? error.message : 'No se pudieron leer los diseños.');
+      }
+    } finally {
+      if (request === loadRequest.current && currentContext.current.userId === userId) setIsLoadingDesigns(false);
+    }
+  };
 
   const handleLoadResorteExample = () => {
+    if (!selectedExample) return;
     if (
       window.confirm(
-        '¿Deseas cargar la plantilla pedagógica "Resorte (Slinky)"? Se sobrescribirá el borrador actual.'
+        `¿Deseas cargar la plantilla "${selectedExample.label}"? Se sustituirá el borrador activo.`
       )
     ) {
-      setProject(RESORTE_EXAMPLE_PROJECT);
+      setProject(instantiateClassDesignerTemplate(selectedExample.project));
       setCurrentStep(1);
     }
   };
 
   const handleResetToNew = () => {
     if (window.confirm('¿Deseas iniciar un diseño nuevo en blanco?')) {
-      const freshProject: ClassDesignProject = {
-        ...DEFAULT_EMPTY_PROJECT,
-        id: `diseno-${Date.now()}`,
-        projectName: 'Mi Nueva Clase',
-        className: 'particula',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const freshProject = instantiateClassDesignerTemplate(toolContent.defaultProject);
       setProject(freshProject);
       setCurrentStep(1);
     }
@@ -212,8 +271,12 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
     reader.readAsText(file);
   };
 
+  if (!contentReady) return <p role="status" className="text-sm text-[#59645C]">Cargando contenido del diseñador…</p>;
+
   return (
+    <ClassDesignerContentContext.Provider value={toolContent}>
     <div className="space-y-6 animate-in fade-in duration-200">
+      {contentError && <p role="alert" className="text-xs text-amber-900">Se muestra el contenido disponible del diseñador. {contentError}</p>}
       {/* 1. Header Toolbar */}
       <div className="bg-white border border-[#E1E7E1] rounded-3xl p-4 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
@@ -230,23 +293,43 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#407B5D]" />
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#407B5D] font-mono">
-                  Herramienta de Creación · POO
+                  {toolContent.subtitle}
                 </span>
                 {currentUser && (
-                  <span className="text-[10px] text-[#59645C] flex items-center gap-1 font-mono">
+                  <span role="status" className="text-[10px] text-[#59645C] flex items-center gap-1 font-mono">
                     <Cloud className="w-3 h-3 text-[#407B5D]" />
-                    {isCloudSaving ? 'Guardando en la nube...' : 'Sincronizado'}
+                    {isDatabaseSaving ? `Guardando en ${databaseName}…`
+                      : currentSync?.status === 'saved' ? `Guardado en ${databaseName}`
+                      : currentSync?.status === 'error' ? 'Error al guardar'
+                      : 'Cambios pendientes de guardar'}
                   </span>
                 )}
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#232A24] tracking-tight">
-                Diseñador de Clases en Processing Java
+                {toolContent.title}
               </h1>
+              <p className="mt-1 text-xs text-[#59645C] whitespace-pre-wrap">{toolContent.introduction}</p>
             </div>
           </div>
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => { if (currentUser) void saveToDatabase(project, currentUser.uid); }}
+              disabled={!currentUser || isDatabaseSaving}
+              className="min-h-[36px] px-3 py-1.5 bg-[#407B5D] hover:bg-[#33654C] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDatabaseSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              <span>Guardar en {databaseName}</span>
+            </button>
+            <button
+              onClick={() => { void handleOpenSavedDesigns(); }}
+              disabled={!currentUser || isLoadingDesigns}
+              className="min-h-[36px] px-3 py-1.5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] text-[#232A24] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span>Mis diseños</span>
+            </button>
             <button
               onClick={handleExportJson}
               className="min-h-[36px] px-3 py-1.5 bg-white border border-[#E1E7E1] hover:border-[#407B5D] text-[#232A24] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
@@ -265,14 +348,17 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
               <span>Importar JSON</span>
             </button>
 
-            <button
+            {toolContent.examples.length > 1 && <select aria-label="Plantilla de ejemplo" className="rounded-xl border border-[#E1E7E1] p-2 text-xs" value={selectedExample?.id ?? ''} onChange={(event) => setSelectedExampleId(event.target.value)}>
+              {toolContent.examples.map((example) => <option key={example.id} value={example.id}>{example.label}</option>)}
+            </select>}
+            {selectedExample && <button
               onClick={handleLoadResorteExample}
               className="min-h-[36px] px-3 py-1.5 bg-[#FFF4DC] hover:bg-[#FFE8B3] border border-[#E6B65A]/50 text-[#9A6700] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-              title="Cargar ejemplo de referencia completo: Resorte / Slinky"
+              title={`Cargar ejemplo: ${selectedExample.label}`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Plantilla: Resorte (Slinky)</span>
-            </button>
+              <span>Plantilla: {selectedExample.label}</span>
+            </button>}
 
             <button
               onClick={handleResetToNew}
@@ -285,7 +371,40 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
           </div>
         </div>
 
+        {!currentUser && <p className="text-xs text-[#59645C]">Inicia sesión para guardar y recuperar tus diseños en {databaseName}.</p>}
+        {currentSync?.status === 'error' && (
+          <p role="alert" className="text-xs text-red-800">
+            No se pudo guardar el diseño en {databaseName}. {currentSync.error} Usa el botón Guardar para reintentar.
+          </p>
+        )}
+        {isDesignListOpen && (
+          <section aria-label="Diseños guardados" className="space-y-3 rounded-2xl border border-[#E1E7E1] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold">Mis diseños en {databaseName}</h2>
+              <button className="text-xs underline cursor-pointer" onClick={() => setIsDesignListOpen(false)}>Cerrar</button>
+            </div>
+            {isLoadingDesigns ? <p role="status" className="text-xs">Cargando diseños…</p>
+              : loadError ? <p role="alert" className="text-xs text-red-800">No se pudieron cargar los diseños. {loadError}</p>
+              : savedDesigns.length === 0 ? <p className="text-xs text-[#59645C]">Todavía no tienes diseños guardados. Guarda el proyecto actual para verlo aquí.</p>
+              : <ul className="space-y-2">
+                {savedDesigns.map((design) => (
+                  <li key={design.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#F7F8F4] p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold">{design.projectName || design.className}</p>
+                      <p className="text-[11px] text-[#59645C]">{design.className} · {new Date(design.updatedAt).toLocaleString()}</p>
+                    </div>
+                    <button
+                      className="text-xs font-bold text-[#407B5D] underline cursor-pointer"
+                      onClick={() => { setProject(design); setCurrentStep(1); setIsDesignListOpen(false); }}
+                    >Abrir</button>
+                  </li>
+                ))}
+              </ul>}
+          </section>
+        )}
+
         {/* Hidden File Input for JSON import */}
+        <ClassDesignerContentBlocks blocks={toolContent.blocks} label="Contenido de presentación del diseñador" />
         <input
           type="file"
           ref={jsonFileInputRef}
@@ -322,7 +441,8 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
 
         {/* 2. Step Navigation Bar (1 to 6) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          {STEP_DEFINITIONS.map((def) => {
+          {CLASS_DESIGNER_STEPS.map((step) => {
+            const def = { step, ...toolContent.steps[step] };
             const isActive = currentStep === def.step;
             const isCompleted = currentStep > def.step;
             const stepDiags = diagnostics.filter((d) => d.stage === def.step);
@@ -349,7 +469,7 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
                   ) : null}
                 </div>
                 <div className="text-xs font-semibold truncate">{def.shortTitle}</div>
-                <div className="text-[10px] opacity-75 truncate">{def.title}</div>
+                <div className="text-[10px] opacity-75 truncate">{def.navigationTitle}</div>
               </button>
             );
           })}
@@ -516,5 +636,6 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
         )}
       </div>
     </div>
+    </ClassDesignerContentContext.Provider>
   );
 };

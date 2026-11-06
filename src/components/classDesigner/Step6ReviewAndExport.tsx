@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
+import { ClassDesignerStepIntro } from './ClassDesignerContentContext';
 import {
   ClassDesignProject,
   ClassDesignerDiagnostic,
@@ -150,23 +151,7 @@ export const Step6ReviewAndExport: React.FC<Step6Props> = ({
         className="hidden"
       />
 
-      {/* Intro Header */}
-      <div className="space-y-1.5 border-b border-[#E1E7E1] pb-4">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-[#E8EEE8] text-[#407B5D] text-xs font-bold rounded-md">
-            Etapa 6 de 6
-          </span>
-          <span className="text-xs font-medium text-[#59645C]">
-            Revisión Estructural, Exportación y Respaldo
-          </span>
-        </div>
-        <h2 className="text-xl font-bold text-[#232A24]">
-          Inspecciona tu clase, exporta la estructura o descárgala para Processing Java
-        </h2>
-        <p className="text-xs text-[#59645C] leading-relaxed">
-          Revisa el diagnóstico de tu diseño para asegurar consistencia sintáctica. Puedes descargar el código Java (<code className="bg-[#E8EEE8] px-1 py-0.5 rounded text-[#232A24] font-bold">.pde</code>) o exportar la estructura completa en formato <strong className="text-[#407B5D]">.json editable</strong> para guardarla y seguir modificándola en cualquier momento.
-        </p>
-      </div>
+      <ClassDesignerStepIntro step={6} className={project.className} />
 
       {/* Feedback Banner for Import */}
       {importStatus && (

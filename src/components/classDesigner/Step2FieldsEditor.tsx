@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { ClassDesignerStepIntro, useClassDesignerContent } from './ClassDesignerContentContext';
 import {
   ClassDesignProject,
   ClassDesignerField,
@@ -37,6 +38,7 @@ const PRIMITIVE_TYPES: { value: JavaPrimitiveType; label: string; desc: string }
 ];
 
 export const Step2FieldsEditor: React.FC<Step2Props> = ({ project, onChange }) => {
+  const content = useClassDesignerContent();
   const handleAddField = () => {
     const newId = `f-${Date.now()}`;
     const newField: ClassDesignerField = {
@@ -91,44 +93,28 @@ export const Step2FieldsEditor: React.FC<Step2Props> = ({ project, onChange }) =
 
   return (
     <div className="space-y-6">
-      {/* Intro Header */}
-      <div className="space-y-1.5 border-b border-[#E1E7E1] pb-4">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-[#E8EEE8] text-[#407B5D] text-xs font-bold rounded-md">
-            Etapa 2 de 6
-          </span>
-          <span className="text-xs font-medium text-[#59645C]">
-            Campos y Variables de Estado
-          </span>
-        </div>
-        <h2 className="text-xl font-bold text-[#232A24]">
-          ¿Qué datos necesita recordar cada instancia de tu clase?
-        </h2>
-        <p className="text-xs text-[#59645C] leading-relaxed">
-          Los <strong className="text-[#232A24]">campos</strong> (o atributos) son las variables que residen dentro del objeto. Definen su aspecto, posición espacial, tamaño, color y variables físicas.
-        </p>
-      </div>
+      <ClassDesignerStepIntro step={2} className={project.className} />
 
       {/* Strategy Explanation Card */}
       <div className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
         <div className="p-3 bg-white border border-[#E1E7E1] rounded-xl space-y-1">
-          <span className="font-bold text-[#407B5D] block">Estrategia A · Constructor</span>
+          <span className="font-bold text-[#407B5D] block">{content.fieldStrategies['constructor-param'].title}</span>
           <p className="text-[11px] text-[#59645C] leading-relaxed">
-            Se recibe como argumento al instanciar (<code className="bg-[#E8EEE8] px-1 rounded">new Objeto(...)</code>). Ideal para posición o colores únicos.
+            {content.fieldStrategies['constructor-param'].description}
           </p>
         </div>
 
         <div className="p-3 bg-white border border-[#E1E7E1] rounded-xl space-y-1">
-          <span className="font-bold text-[#2868D9] block">Estrategia B · Valor Interno</span>
+          <span className="font-bold text-[#2868D9] block">{content.fieldStrategies['default-value'].title}</span>
           <p className="text-[11px] text-[#59645C] leading-relaxed">
-            Nace con un valor constante o fijo para todas las instancias (ej: <code className="bg-[#E8EEE8] px-1 rounded">velocidad = 0.0</code>).
+            {content.fieldStrategies['default-value'].description}
           </p>
         </div>
 
         <div className="p-3 bg-white border border-[#E1E7E1] rounded-xl space-y-1">
-          <span className="font-bold text-[#9A6700] block">Estrategia C · Posterior</span>
+          <span className="font-bold text-[#9A6700] block">{content.fieldStrategies.later.title}</span>
           <p className="text-[11px] text-[#59645C] leading-relaxed">
-            Se calcula o inicializa más tarde dentro de un método interactivo o de actualización.
+            {content.fieldStrategies.later.description}
           </p>
         </div>
       </div>

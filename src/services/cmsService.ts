@@ -11,6 +11,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db, requireCmsAdmin } from './firebase';
+import { firebaseRuntime } from '../config/firebaseRuntime';
 import {
   CmsModule,
   CmsCategory,
@@ -602,7 +603,7 @@ export async function migrateLegacyContentToComposable(): Promise<ComposableMigr
     const id = nodeId('node_block', legacyBlock.id);
     const sectionNodeId = nodeId('node_section', legacyBlock.sectionId);
     addNode({ id: sectionNodeId, type: 'section', title: 'Sección migrada', status: 'published', visible: true, position: 0, capabilities: ['content', 'container'], metadata: { legacyId: legacyBlock.sectionId }, createdAt: now, updatedAt: now });
-    addBlock({ id, nodeId: sectionNodeId, type: legacyBlock.type, position: legacyBlock.position, data: { content: legacyBlock.content, contentP5: legacyBlock.contentP5 || '', contentJava: legacyBlock.contentJava || '', codeLanguage: legacyBlock.codeLanguage || '', showInteractiveExecution: legacyBlock.showInteractiveExecution === true, filename: legacyBlock.filename || '', caption: legacyBlock.caption || '', calloutType: legacyBlock.calloutType || '', activityConfig: legacyBlock.activityConfig || '' }, createdAt: legacyBlock.createdAt || now, updatedAt: legacyBlock.updatedAt || now });
+    addBlock({ id, nodeId: sectionNodeId, type: legacyBlock.type, position: legacyBlock.position, data: { content: legacyBlock.content, contentFormat: legacyBlock.contentFormat, contentP5: legacyBlock.contentP5 || '', contentJava: legacyBlock.contentJava || '', codeLanguage: legacyBlock.codeLanguage || '', showInteractiveExecution: legacyBlock.showInteractiveExecution === true, filename: legacyBlock.filename || '', caption: legacyBlock.caption || '', calloutType: legacyBlock.calloutType || '', activityConfig: legacyBlock.activityConfig || '' }, createdAt: legacyBlock.createdAt || now, updatedAt: legacyBlock.updatedAt || now });
   });
   media.forEach((resource, position) => {
     const id = nodeId('node_resource', resource.id);
@@ -715,6 +716,7 @@ function composableBlockToCmsBlock(block: CmsNodeBlock, sectionId: string): CmsB
     sectionId,
     type: block.type,
     content: typeof data.content === 'string' ? data.content : typeof data.url === 'string' ? data.url : '',
+    contentFormat: data.contentFormat === 'html' ? 'html' : undefined,
     contentP5: typeof data.contentP5 === 'string' ? data.contentP5 : undefined,
     contentJava: typeof data.contentJava === 'string' ? data.contentJava : undefined,
     repositoryUrl: typeof data.repositoryUrl === 'string' ? data.repositoryUrl : undefined,
@@ -1409,27 +1411,51 @@ export async function getCmsRevisions(entityId?: string): Promise<CmsRevision[]>
 }
 export async function exportCurriculumBackup(): Promise<CurriculumExportData> {
   const user = await requireCmsAdmin();
-  const [modules, lessons, sections, blocks, siteContent, media] = await Promise.all([
+  const [modules, lessons, sections, blocks, siteDocuments, media, categories, nodes, nodeRelations, nodeBlocks] = await Promise.all([
     readCollection<CmsModule>('cms_modules'), readCollection<CmsLesson>('cms_lessons'),
     readCollection<CmsSection>('cms_sections'), readCollection<CmsBlock>('cms_blocks'),
-    getAllSiteContent(), getCmsMediaResources(),
+    readCollection<CmsSiteContent & { id: string }>('cms_site_content'), getCmsMediaResources(),
+    readCollection<CmsCategory>('cms_categories'), readCollection<CmsNode>('cms_nodes'),
+    readCollection<CmsNodeRelation>('cms_node_relations'), readCollection<CmsNodeBlock>('cms_node_blocks'),
   ]);
-  const backup = { version: '1.0.0', exportedAt: new Date().toISOString(), exportedBy: user.email || user.uid,
-    modules, lessons, sections, blocks, siteContent: Object.values(siteContent), media };
+  const siteContent = siteDocuments.map(({ id, ...item }) => ({ ...item, key: id }));
+  const backup: CurriculumExportData = { version: '2.0.0', exportedAt: new Date().toISOString(), exportedBy: user.email || user.uid,
+    source: { projectId: firebaseRuntime.config.projectId, databaseId: firebaseRuntime.config.firestoreDatabaseId || '(default)', environment: firebaseRuntime.useEmulators ? 'emulator' : 'production' },
+    modules, lessons, sections, blocks, siteContent, media, categories, nodes, nodeRelations, nodeBlocks };
   await createCmsRevision('full_backup', 'curriculum', backup, 'Exportación de respaldo general');
   return backup;
 }
 export async function importCurriculumBackup(backup: CurriculumExportData): Promise<void> {
   await requireCmsAdmin();
   if (!backup || !Array.isArray(backup.modules) || !Array.isArray(backup.lessons)) throw new Error('Respaldo no válido.');
-  await exportCurriculumBackup();
   const groups: [string, { id?: string; key?: string }[]][] = [
     ['cms_modules', backup.modules], ['cms_lessons', backup.lessons], ['cms_sections', backup.sections || []],
     ['cms_blocks', backup.blocks || []], ['cms_site_content', backup.siteContent || []], ['cms_media', backup.media || []],
+    ['cms_categories', backup.categories || []], ['cms_nodes', backup.nodes || []],
+    ['cms_node_relations', backup.nodeRelations || []], ['cms_node_blocks', backup.nodeBlocks || []],
   ];
+  // Validate the whole file before making the destination backup or any writes.
+  // Older v1 backups remain usable; missing new collections are left untouched.
   for (const [name, items] of groups) {
-    for (const item of items) await persist(name, (name === 'cms_site_content' ? item.key : item.id)!, item);
+    if (!Array.isArray(items)) throw new Error(`Respaldo no válido: ${name} debe ser una lista.`);
+    const seen = new Set<string>();
+    for (const item of items) {
+      const id = name === 'cms_site_content' ? item?.key : item?.id;
+      if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id) || seen.has(id)) {
+        throw new Error(`Respaldo no válido: ${name} contiene identificadores inválidos o repetidos.`);
+      }
+      seen.add(id);
+    }
   }
+  await exportCurriculumBackup();
+  const writes: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
+  for (const [name, items] of groups) {
+    for (const item of items) {
+      const id = (name === 'cms_site_content' ? item.key : item.id)!;
+      writes.push((batch) => batch.set(doc(db, name, id), cleanDocument(item), { merge: true }));
+    }
+  }
+  await commitInChunks(writes);
 }
 
 async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: boolean): Promise<TopicItem> {
@@ -1453,7 +1479,7 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
         showCodeJava: block.showCodeJava ?? lesson.showCodeJava,
         showCodeP5: block.showCodeP5 ?? lesson.showCodeP5,
         repositoryUrl: block.repositoryUrl || lesson.repositoryUrl,
-        repositoryEntry: block.repositoryEntry || lesson.repositoryEntry,
+        repositoryEntry: block.repositoryEntry || (block.repositoryUrl ? undefined : lesson.repositoryEntry),
         codeSource: block.codeSource || (block.repositoryUrl || lesson.repositoryUrl ? 'github' : 'inline'),
       };
     });
@@ -1470,7 +1496,7 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
       codeSnippetJava: javaCode || originalConcept?.codeSnippetJava || '',
       codeSnippetP5: p5Code,
       repositoryUrl: codeBlock?.repositoryUrl || lesson.repositoryUrl,
-      repositoryEntry: codeBlock?.repositoryEntry || lesson.repositoryEntry,
+      repositoryEntry: codeBlock?.repositoryUrl ? codeBlock.repositoryEntry : lesson.repositoryEntry,
       showCodeJava: codeBlock?.showCodeJava ?? lesson.showCodeJava ?? true,
       showCodeP5: codeBlock?.showCodeP5 ?? lesson.showCodeP5 ?? false,
       showInteractiveExecution: codeBlock?.showInteractiveExecution ?? lesson.showInteractiveExecution ?? false,

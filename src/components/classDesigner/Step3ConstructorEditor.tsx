@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { ClassDesignerStepIntro } from './ClassDesignerContentContext';
 import {
   ClassDesignProject,
   ClassDesignerParam,
@@ -115,23 +116,7 @@ export const Step3ConstructorEditor: React.FC<Step3Props> = ({ project, onChange
 
   return (
     <div className="space-y-6">
-      {/* Intro Header */}
-      <div className="space-y-1.5 border-b border-[#E1E7E1] pb-4">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-[#E8EEE8] text-[#407B5D] text-xs font-bold rounded-md">
-            Etapa 3 de 6
-          </span>
-          <span className="text-xs font-medium text-[#59645C]">
-            Configurar Constructor y Asignaciones
-          </span>
-        </div>
-        <h2 className="text-xl font-bold text-[#232A24]">
-          ¿Cómo se inicializa cada objeto en el momento de su nacimiento?
-        </h2>
-        <p className="text-xs text-[#59645C] leading-relaxed">
-          El <strong className="text-[#232A24]">constructor</strong> es la función especial que se ejecuta cuando escribes <code className="bg-[#E8EEE8] px-1 py-0.5 rounded text-[#232A24] font-bold">new {project.className || 'Clase'}(...)</code>. Recibe valores temporales a través de sus parámetros y los almacena en los campos permanentes del objeto.
-        </p>
-      </div>
+      <ClassDesignerStepIntro step={3} className={project.className} />
 
       {/* Conceptual Flow Diagram */}
       <div className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-3">

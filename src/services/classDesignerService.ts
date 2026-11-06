@@ -69,7 +69,7 @@ export function validateClassDesign(project: ClassDesignProject): ClassDesignerD
         title: 'Identificador no válido en Java',
         message: `"${project.className}" no es un nombre válido. No uses espacios, guiones ni comiences con números.`
       });
-    } else if (JAVA_RESERVED_KEYWORDS.has(project.className.toLowerCase())) {
+    } else if (JAVA_RESERVED_KEYWORDS.has(project.className)) {
       diagnostics.push({
         id: 'diag-class-reserved',
         severity: 'error',
@@ -78,14 +78,14 @@ export function validateClassDesign(project: ClassDesignProject): ClassDesignerD
         title: 'Palabra reservada o comando protegido',
         message: `"${project.className}" coincide con una palabra clave o función nativa de Processing/Java.`
       });
-    } else if (!isCamelCase(project.className)) {
+    } else if (!isPascalCase(project.className)) {
       diagnostics.push({
-        id: 'diag-class-camel',
+        id: 'diag-class-pascal',
         severity: 'suggestion',
         stage: 1,
         stageName: 'Definir el objeto',
-        title: 'Convención camelCase',
-        message: 'Usamos la convención camelCase con minúscula inicial (ej: "particula", "resorte", "criatura").'
+        title: 'Convención PascalCase para clases',
+        message: 'Los nombres de clase usan PascalCase, con mayúscula inicial (ej: "Particula", "Resorte", "CriaturaVisual").'
       });
     }
   }
@@ -432,7 +432,7 @@ export function generateProcessingClassCode(
   project: ClassDesignProject,
   options: Partial<CodeGenerationOptions> = {}
 ): string {
-  const className = project.className.trim() || 'miClase';
+  const className = project.className.trim() || 'MiClase';
   const lines: string[] = [];
 
   // File header banner
@@ -570,7 +570,7 @@ export function generateProcessingMainSketch(
   project: ClassDesignProject,
   instanceName = 'miObjeto'
 ): string {
-  const className = project.className.trim() || 'miClase';
+  const className = project.className.trim() || 'MiClase';
   const lines: string[] = [];
 
   lines.push(`// ==========================================================`);
@@ -662,7 +662,7 @@ export function saveClassDesignToLocal(project: ClassDesignProject): void {
   }
 }
 
-export function loadClassDesignFromLocal(): ClassDesignProject {
+export function loadClassDesignDraftFromLocal(): ClassDesignProject | null {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_ACTIVE_KEY);
     if (saved) {
@@ -674,7 +674,14 @@ export function loadClassDesignFromLocal(): ClassDesignProject {
   } catch {
     // fallback
   }
-  return DEFAULT_EMPTY_PROJECT;
+  return null;
+}
+
+export function loadClassDesignFromLocal(): ClassDesignProject {
+  const draft = loadClassDesignDraftFromLocal();
+  if (draft) return draft;
+  const now = new Date().toISOString();
+  return { ...DEFAULT_EMPTY_PROJECT, id: `diseno-${crypto.randomUUID()}`, createdAt: now, updatedAt: now };
 }
 
 export function listSavedDesignsFromLocal(): ClassDesignProject[] {
@@ -694,32 +701,26 @@ export async function saveClassDesignToFirestore(
   userId: string,
   project: ClassDesignProject
 ): Promise<void> {
-  const safeDocId = project.id.replace(/[^a-zA-Z0-9_-]/g, '_') || 'diseno_principal';
+  if (!userId) throw new Error('Inicia sesión para guardar tu diseño.');
+  const safeDocId = project.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 128) || 'diseno_principal';
   const designRef = doc(db, 'users', userId, 'class_designs', safeDocId);
-  const dataToSave = {
+  const dataToSave = JSON.parse(JSON.stringify({
     ...project,
+    id: safeDocId,
     userId,
     updatedAt: new Date().toISOString(),
-  };
-  await setDoc(designRef, dataToSave, { merge: true });
+  }));
+  await setDoc(designRef, dataToSave);
 }
 
 export async function loadClassDesignsFromFirestore(
   userId: string
 ): Promise<ClassDesignProject[]> {
-  try {
-    const colRef = collection(db, 'users', userId, 'class_designs');
-    const q = query(colRef, orderBy('updatedAt', 'desc'));
-    const snapshot = await getDocs(q);
-    const list: ClassDesignProject[] = [];
-    snapshot.forEach((d) => {
-      list.push(d.data() as ClassDesignProject);
-    });
-    return list;
-  } catch (err) {
-    console.warn('Error loading designs from Firestore:', err);
-    return [];
-  }
+  if (!userId) throw new Error('Inicia sesión para abrir tus diseños.');
+  const colRef = collection(db, 'users', userId, 'class_designs');
+  const q = query(colRef, orderBy('updatedAt', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((saved) => ({ ...saved.data(), id: saved.id }) as ClassDesignProject);
 }
 
 export async function deleteClassDesignFromFirestore(
@@ -881,7 +882,7 @@ export function importClassDesignFromJson(jsonString: string): {
       id: typeof rawProject.id === 'string' && rawProject.id ? rawProject.id : `diseno-imp-${Date.now()}`,
       userId: typeof rawProject.userId === 'string' ? rawProject.userId : undefined,
       projectName,
-      className: className || 'objetoCreativo',
+      className: className || 'ObjetoCreativo',
       conceptDescription:
         typeof rawProject.conceptDescription === 'string'
           ? rawProject.conceptDescription

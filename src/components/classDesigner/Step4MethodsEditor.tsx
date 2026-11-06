@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { ClassDesignerStepIntro } from './ClassDesignerContentContext';
 import {
   ClassDesignProject,
   ClassDesignerMethod,
@@ -124,36 +125,7 @@ export const Step4MethodsEditor: React.FC<Step4Props> = ({ project, onChange }) 
 
   return (
     <div className="space-y-6">
-      {/* Intro Header */}
-      <div className="space-y-1.5 border-b border-[#E1E7E1] pb-4">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-[#E8EEE8] text-[#407B5D] text-xs font-bold rounded-md">
-            Etapa 4 de 6
-          </span>
-          <span className="text-xs font-medium text-[#59645C]">
-            Diseñar Métodos y Comportamientos
-          </span>
-        </div>
-        <h2 className="text-xl font-bold text-[#232A24]">
-          ¿Qué acciones o transformaciones puede ejecutar tu objeto?
-        </h2>
-        <p className="text-xs text-[#59645C] leading-relaxed">
-          Los <strong className="text-[#232A24]">métodos</strong> son las funciones internas del objeto. Permiten que se dibuje en el lienzo (<code className="bg-[#E8EEE8] px-1 py-0.5 rounded text-[#232A24] font-bold">mostrar()</code>), altere sus variables (<code className="bg-[#E8EEE8] px-1 py-0.5 rounded text-[#232A24] font-bold">estirar(fuerza)</code>) o responda al paso del tiempo (<code className="bg-[#E8EEE8] px-1 py-0.5 rounded text-[#232A24] font-bold">oscilar()</code>).
-        </p>
-      </div>
-
-      {/* Pedagogical Notice */}
-      <div className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl flex items-start gap-3">
-        <Lightbulb className="w-5 h-5 text-[#E6B65A] shrink-0 mt-0.5" />
-        <div className="text-xs space-y-1">
-          <span className="font-bold text-[#232A24] block">
-            Principio Pedagógico del Diseñador
-          </span>
-          <p className="text-[#59645C] leading-relaxed">
-            Esta herramienta genera la estructura anatómica limpia y comentarios orientadores con <code className="bg-white px-1.5 py-0.5 border border-[#E1E7E1] rounded text-[#232A24] font-mono">// TODO: [descripción]</code>. El código visual final lo escribes tú en Processing para desarrollar tu propio criterio creativo y resolución de algoritmos.
-          </p>
-        </div>
-      </div>
+      <ClassDesignerStepIntro step={4} className={project.className} />
 
       {/* Methods List */}
       <div className="space-y-3">

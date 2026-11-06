@@ -142,19 +142,26 @@ export async function uploadDriveFile(file: File): Promise<{
 
 export async function getDriveThumbnailObjectUrl(fileId: string): Promise<string | null> {
   if (!accessToken) return null;
-  const metadataResponse = await fetch(
-    `${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=thumbnailLink`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
-  if (!metadataResponse.ok) return null;
-  const metadata = await metadataResponse.json() as { thumbnailLink?: string };
-  if (!metadata.thumbnailLink) return null;
-
-  const thumbnailResponse = await fetch(metadata.thumbnailLink, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!thumbnailResponse.ok) return null;
-  return URL.createObjectURL(await thumbnailResponse.blob());
+  try {
+    await requireCmsAdmin();
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    const metadataResponse = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=thumbnailLink,mimeType,size`, { headers });
+    if (!metadataResponse.ok) return null;
+    const metadata = await metadataResponse.json() as { thumbnailLink?: string; mimeType?: string; size?: string };
+    if (metadata.thumbnailLink) {
+      try {
+        const thumbnail = new URL(metadata.thumbnailLink);
+        if (thumbnail.protocol === 'https:' && (thumbnail.hostname.endsWith('.googleusercontent.com') || thumbnail.hostname.endsWith('.google.com'))) {
+          const response = await fetch(thumbnail.href, { headers });
+          if (response.ok && response.headers.get('Content-Type')?.startsWith('image/')) return URL.createObjectURL(await response.blob());
+        }
+      } catch { /* Some thumbnail hosts reject CORS. Try the authenticated image API. */ }
+    }
+    if (!metadata.mimeType?.startsWith('image/') || Number(metadata.size || 0) > 20 * 1024 * 1024) return null;
+    const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`, { headers });
+    if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/')) return null;
+    return URL.createObjectURL(await response.blob());
+  } catch { return null; }
 }
 
 export function isDriveConfigured(): boolean {

@@ -20,6 +20,9 @@ import {
 } from '../../services/cmsService';
 import { StudentPreviewModal } from './StudentPreviewModal';
 import { ProcessingCodeBlock } from '../ProcessingCodeBlock';
+import { RichTextEditor } from './RichTextEditor';
+import { MediaResourcePicker } from './MediaResourcePicker';
+import { MediaImage } from '../MediaImage';
 import { P5LiveThumbnail } from '../generative/P5LiveThumbnail';
 import { fetchGithubSketchSource } from '../../services/githubRepositoryService';
 import {
@@ -66,6 +69,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
   const [isLoadingRepository, setIsLoadingRepository] = useState(false);
+  const [loadingRepositoryBlockId, setLoadingRepositoryBlockId] = useState<string | null>(null);
 
   const savingRef = useRef(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -154,18 +158,42 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     setActionError(null);
     try {
       const source = await fetchGithubSketchSource(formData.repositoryUrl, formData.repositoryEntry || undefined);
-      setFormData((current) => ({
+      setFormData((current) => current.repositoryUrl !== formData.repositoryUrl || current.repositoryEntry !== formData.repositoryEntry ? current : ({
         ...current,
         thumbnailP5: source.code,
+        displayCodeJava: source.codeJava,
         repositoryEntry: source.entry,
       }));
       setHasUnsavedChanges(true);
-      setSaveSuccessMsg(`Código cargado desde ${source.entry}. Guarda la lección para conservarlo.`);
+      setSaveSuccessMsg(`p5.js y Processing Java cargados. Guarda la lección para conservarlos.`);
       setTimeout(() => setSaveSuccessMsg(null), 4000);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'No se pudo cargar el proyecto desde GitHub.');
     } finally {
       setIsLoadingRepository(false);
+    }
+  };
+
+  const handleLoadBlockRepository = async (sectionId: string, block: CmsBlock) => {
+    if (!block.repositoryUrl?.trim()) return;
+    setLoadingRepositoryBlockId(block.id);
+    setActionError(null);
+    try {
+      const source = await fetchGithubSketchSource(block.repositoryUrl, block.repositoryEntry);
+      setBlocksBySection((current) => ({
+        ...current,
+        [sectionId]: (current[sectionId] || []).map((item) => item.id === block.id && item.repositoryUrl === block.repositoryUrl && item.repositoryEntry === block.repositoryEntry ? {
+          ...item, content: source.codeJava, contentJava: source.codeJava, contentP5: source.code,
+          repositoryEntry: source.entry, filename: source.javaEntry.split('/').at(-1),
+        } : item),
+      }));
+      setHasUnsavedChanges(true);
+      setSaveSuccessMsg('p5.js y Processing Java cargados. Guarda los cambios para conservarlos.');
+      setTimeout(() => setSaveSuccessMsg(null), 4000);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No se pudo cargar el código desde GitHub.');
+    } finally {
+      setLoadingRepositoryBlockId(null);
     }
   };
 
@@ -279,13 +307,19 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
     field: keyof CmsBlock,
     value: any
   ) => {
-    const currentBlocks = blocksBySection[secId] || [];
-    const updatedBlocks = currentBlocks.map((b) =>
-      b.id === blockId ? { ...b, [field]: value, updatedAt: new Date().toISOString() } : b
-    );
-    setBlocksBySection((prev) => ({ ...prev, [secId]: updatedBlocks }));
-    const targetBlock = updatedBlocks.find((b) => b.id === blockId);
-    if (targetBlock) setHasUnsavedChanges(true);
+    setBlocksBySection((prev) => ({
+      ...prev,
+      [secId]: (prev[secId] || []).map((b) => b.id === blockId ? {
+        ...b, [field]: value, updatedAt: new Date().toISOString(),
+        ...(field === 'repositoryUrl' ? { repositoryEntry: '' } : {}),
+      } : b),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleUpdateRichText = (sectionId: string, blockId: string, content: string) => {
+    handleUpdateBlockField(sectionId, blockId, 'content', content);
+    handleUpdateBlockField(sectionId, blockId, 'contentFormat', 'html');
   };
 
   const handleDeleteBlock = async (secId: string, blockId: string) => {
@@ -344,7 +378,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
           <span className="text-[#E1E7E1]">/</span>
           <div>
             <label className="font-semibold text-[#59645C] block mb-1 text-[11px]">
-              Repositorio público de GitHub (opcional):
+              Repositorio o carpeta pública de GitHub (opcional):
             </label>
             <input
               type="url"
@@ -352,7 +386,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
               placeholder="https://github.com/usuario/proyecto"
               onChange={(e) => {
                 setHasUnsavedChanges(true);
-                setFormData({ ...formData, repositoryUrl: e.target.value });
+                setFormData({ ...formData, repositoryUrl: e.target.value, repositoryEntry: '' });
               }}
               className="w-full p-2 border border-[#E1E7E1] rounded-xl text-xs bg-[#F7F8F4] text-[#232A24] focus:outline-none focus:border-[#407B5D]"
             />
@@ -367,7 +401,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
               className="w-full mt-1 p-2 border border-[#E1E7E1] rounded-xl font-mono text-[11px] bg-[#F7F8F4] text-[#232A24] focus:outline-none focus:border-[#407B5D]"
             />
             <p className="text-[10px] text-[#7A867E] mt-1">
-              Se detectan automáticamente las carpetas raíz y el único archivo .js dentro de *_p5.
+              Acepta la raíz del repositorio o /tree/rama/carpeta. Dentro de esa ubicación: *_p5 se ejecuta y la carpeta Java se muestra como ejemplo.
             </p>
             <button
               type="button"
@@ -900,19 +934,16 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                         </div>
                       </div>
 
+                      {(['image', 'video', 'iframe', 'resources'] as const).some((type) => type === block.type) && (
+                        <MediaResourcePicker kind={block.type as 'image' | 'video' | 'iframe' | 'resources'} onSelect={(resource, url) => {
+                          handleUpdateBlockField(activeSection.id, block.id, 'content', url);
+                          if (!block.caption) handleUpdateBlockField(activeSection.id, block.id, 'caption', resource.altText || resource.title);
+                        }} />
+                      )}
                       {/* Content editor based on block type */}
                       {block.type === 'rich-text' && (
-                        <div className="space-y-2">
-                          <textarea
-                            rows={4}
-                            value={block.content}
-                            onChange={(e) =>
-                              handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)
-                            }
-                            className="w-full p-3 bg-white border border-[#E1E7E1] rounded-xl text-xs text-[#232A24] focus:outline-none focus:border-[#407B5D]"
-                            placeholder="Escribe el texto de la lección..."
-                          />
-                        </div>
+                        <RichTextEditor key={block.id} label="Texto de la lección" value={block.content} format={block.contentFormat}
+                          onChange={(content) => handleUpdateRichText(activeSection.id, block.id, content)} />
                       )}
 
                       {block.type === 'code' && (
@@ -958,16 +989,22 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                                 type="url"
                                 value={block.repositoryUrl || ''}
                                 onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'repositoryUrl', e.target.value)}
-                                placeholder="Repositorio GitHub público"
+                                placeholder="Repositorio o carpeta GitHub (/tree/main/a1)"
                                 className="px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl text-xs"
                               />
                               <input
                                 type="text"
                                 value={block.repositoryEntry || ''}
                                 onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'repositoryEntry', e.target.value)}
-                                placeholder="Ruta opcional del archivo .js"
+                                placeholder="Ruta .js opcional, relativa a la carpeta o al repositorio"
                                 className="px-2.5 py-2 bg-white border border-[#E1E7E1] rounded-xl font-mono text-xs"
                               />
+                              <p className="text-[11px] text-[#59645C] md:col-span-2">
+                                Dentro de la ubicación indicada, *_p5 se ejecuta en el navegador y los archivos .pde de la carpeta Java se muestran al alumno.
+                              </p>
+                              <button type="button" onClick={() => handleLoadBlockRepository(activeSection.id, block)} disabled={loadingRepositoryBlockId !== null || !block.repositoryUrl?.trim()} className="px-3 py-2 rounded-lg bg-[#407B5D] text-white text-xs disabled:opacity-50">
+                                {loadingRepositoryBlockId === block.id ? 'Cargando desde GitHub…' : 'Cargar p5.js y Processing Java desde GitHub'}
+                              </button>
                             </div>
                           )}
 
@@ -1085,20 +1122,17 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                               className="flex-1 px-2.5 py-1 bg-white border border-[#E1E7E1] rounded-lg text-xs"
                             />
                           </div>
-                          <textarea
-                            rows={2}
-                            value={block.content}
-                            onChange={(e) =>
-                              handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)
-                            }
-                            className="w-full p-2.5 bg-white border border-[#E1E7E1] rounded-xl text-xs"
-                            placeholder="Contenido de la nota..."
-                          />
+                          <RichTextEditor key={block.id} label="Texto del aviso" value={block.content} format={block.contentFormat}
+                            onChange={(content) => handleUpdateRichText(activeSection.id, block.id, content)} />
                         </div>
                       )}
 
-                      {(block.type === 'resources' || block.type === 'activity') && (
-                        <textarea rows={4} value={block.content} onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)} placeholder={block.type === 'resources' ? 'URL o descripción del recurso' : 'Instrucciones de la actividad'} className="w-full p-3 rounded-xl border border-[#E1E7E1] text-sm" />
+                      {block.type === 'activity' && (
+                        <RichTextEditor key={block.id} label="Instrucciones de la actividad" value={block.content} format={block.contentFormat}
+                          onChange={(content) => handleUpdateRichText(activeSection.id, block.id, content)} />
+                      )}
+                      {block.type === 'resources' && (
+                        <textarea rows={4} value={block.content} onChange={(e) => handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)} placeholder="URL o descripción del recurso" className="w-full p-3 rounded-xl border border-[#E1E7E1] text-sm" />
                       )}
 
                       {block.type === 'image' && (
@@ -1122,7 +1156,7 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                             className="w-full px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl"
                           />
                           {block.content && (
-                            <img
+                            <MediaImage
                               src={block.content}
                               alt={block.caption || ''}
                               className="max-h-36 rounded-lg border border-[#E1E7E1] mx-auto mt-2"

@@ -4,7 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev": "node scripts/firebase-local.mjs",
+    "dev:local": "node scripts/firebase-local.mjs",
+    "dev:app": "vite --mode emulator --port=3000 --host=127.0.0.1 --strictPort",
+    "dev:production": "vite --port=3001 --host=127.0.0.1 --strictPort",
+    "firebase:local": "node scripts/firebase-local.mjs start",
+    "test": "node --experimental-test-module-mocks --import tsx --test tests/*.test.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
@@ -13,6 +18,11 @@
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@tiptap/extension-text-align": "^3.33.0",
+    "@tiptap/extension-text-style": "^3.33.0",
+    "@tiptap/pm": "^3.33.0",
+    "@tiptap/react": "^3.33.0",
+    "@tiptap/starter-kit": "^3.33.0",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
@@ -21,13 +31,16 @@
     "motion": "^12.23.24",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "sanitize-html": "^2.18.1",
     "vite": "^8.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/sanitize-html": "^2.16.2",
     "autoprefixer": "^10.4.21",
+    "firebase-tools": "15.35.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2"

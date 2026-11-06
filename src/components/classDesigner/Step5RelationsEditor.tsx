@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { ClassDesignerStepIntro } from './ClassDesignerContentContext';
 import {
   ClassDesignProject,
   MethodRelationType,
@@ -56,23 +57,7 @@ export const Step5RelationsEditor: React.FC<Step5Props> = ({ project, onChange }
 
   return (
     <div className="space-y-6">
-      {/* Intro Header */}
-      <div className="space-y-1.5 border-b border-[#E1E7E1] pb-4">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-[#E8EEE8] text-[#407B5D] text-xs font-bold rounded-md">
-            Etapa 5 de 6
-          </span>
-          <span className="text-xs font-medium text-[#59645C]">
-            Mapeo de Relaciones: Métodos ↔ Campos
-          </span>
-        </div>
-        <h2 className="text-xl font-bold text-[#232A24]">
-          ¿Qué métodos leen o transforman el estado del objeto?
-        </h2>
-        <p className="text-xs text-[#59645C] leading-relaxed">
-          En la Programación Orientada a Objetos, los métodos no están aislados: colaboran a través de la memoria interna. Esta matriz visual te permite mapear cómo fluye la información dentro de la clase.
-        </p>
-      </div>
+      <ClassDesignerStepIntro step={5} className={project.className} />
 
       {/* Legend Card */}
       <div className="p-4 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">

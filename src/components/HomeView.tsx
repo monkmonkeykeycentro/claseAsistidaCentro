@@ -757,7 +757,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       <P5LiveThumbnail
                         p5Code={topic.thumbnailP5 || topic.sections[0]?.codeSnippetP5}
                         repositoryUrl={topic.repositoryUrl || topic.sections[0]?.repositoryUrl}
-                        repositoryEntry={topic.repositoryEntry || topic.sections[0]?.repositoryEntry}
+                        repositoryEntry={topic.repositoryUrl ? topic.repositoryEntry : topic.sections[0]?.repositoryEntry}
                         fallbackTopicNumber={topic.number}
                         width={280}
                         height={125}

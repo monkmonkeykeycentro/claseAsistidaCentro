@@ -1,5 +1,38 @@
 # Administración de contenidos
 
+## Editar el contenido del Diseñador POO
+
+Entra en **CMS → Diseñador POO**. Este apartado permite editar el título y la
+introducción de la herramienta, los nombres e instrucciones de las seis etapas,
+las preguntas guía, la explicación de las estrategias de inicialización y las
+plantillas que se ofrecen a los estudiantes.
+
+En **Plantilla inicial y ejemplos**, selecciona la plantilla que quieras cambiar.
+Puedes editar visualmente sus campos, parámetros, métodos y relaciones, importar
+un diseño JSON o agregar otros ejemplos. Usa **Guardar contenido** para confirmar
+la actualización en Firebase y **Abrir herramienta** para revisarla.
+
+La presentación y cada etapa admiten bloques como las lecciones. En **Bloques de
+presentación** o **Bloques de etapa N**, elige Texto, Imagen, Video, Iframe, Código,
+Aviso, Recurso o enlace, o Actividad, y pulsa **Agregar bloque**. Puedes editar el
+contenido, mover los bloques con las flechas, ocultarlos con **Mostrar bloque**,
+eliminarlos y activar **Vista previa de bloques** antes de guardar. Los bloques
+de una etapa aparecen junto a sus instrucciones, antes de los controles de diseño.
+Para video se admiten enlaces de YouTube o archivos MP4, WebM y OGG; los iframes
+aceptan una URL o el código de inserción, con título y altura configurables.
+
+La configuración se guarda en `cms_site_content/class_designer_config`, con el
+mismo formato de contenido JSON que otras configuraciones del sitio, y se incluye
+en los respaldos del CMS. Las instrucciones se actualizan en la herramienta al
+guardar; la plantilla inicial se aplica a **Nuevo Proyecto** y los ejemplos al
+cargarlos. Los proyectos personales ya creados conservan sus datos.
+
+En desarrollo local estos cambios se guardan en el emulador. Para pasarlos a
+producción, publica primero esta versión de la aplicación y después importa el
+respaldo del CMS que contiene la configuración de la herramienta.
+
+## Acceso al panel
+
 El botón **CMS** aparece después de iniciar sesión con una cuenta administradora. Las rutas `#admin`, `#cms`, `/admin`, `/cms` y el atajo Ctrl/Cmd + Shift + A también requieren ese permiso. Al cerrar sesión o revocar el permiso, el panel deja de estar disponible.
 
 La cuenta inicial es **jmartineza@centro.edu.mx**, con correo verificado en Firebase Authentication. Para autorizar otras cuentas, un administrador del proyecto puede crear un documento `admins/<UID de Firebase Authentication>` en Firestore. La existencia de ese documento concede acceso; eliminarlo revoca el permiso. El campo `role` del perfil del usuario y los correos que empiezan por `admin@` no conceden acceso.
@@ -262,6 +295,26 @@ no romper el contenido existente.
 
 El CMS puede subir recursos del administrador a Google Drive mediante Google Identity Services. Configura `VITE_GOOGLE_CLIENT_ID` con el Client ID OAuth de la aplicación web y agrega los orígenes autorizados de desarrollo y producción en Google Cloud. La integración usa únicamente `drive.file`, crea la carpeta `Clase Asistida Centro` automáticamente y guarda la metadata del archivo en `cms_media`; no se almacenan Client Secrets ni tokens en Firestore.
 
+En **Recursos Multimedia**, usa **Consultar** para abrir una vista previa o **Abrir**
+para consultar el archivo en Drive. **Copiar URL** copia un enlace permanente al
+archivo. Para insertarlo en una lección o en el diseñador de POO, crea un bloque
+de imagen, video, iframe o recurso y pulsa **Elegir de la biblioteca multimedia**.
+Busca el archivo, pulsa **Usar este recurso** y guarda el contenido del editor.
+También puedes pegar el enlace de Drive que ya tenías: el renderizador adapta
+los enlaces `/file/d/…/view`, `/open?id=…` y `/uc?id=…`, conservando `resourcekey`.
+
+Las imágenes públicas se muestran directamente mediante URLs de imagen, sin
+conectar Drive, iniciar sesión ni abrir el visor externo. Los enlaces de Drive
+se convierten al formato de imagen pública; si ese servicio falla, se intenta
+una segunda URL de imagen. Si ninguna carga, se muestra un mensaje y el botón
+**Reintentar imagen**, sin insertar una pantalla de acceso de Google.
+
+**Conectar Drive** solo es necesario para subir archivos desde el CMS. Los
+videos y documentos usan el visor `/preview` de Drive; los archivos de audio o
+descarga pueden insertarse como **Recurso**. Los permisos se conservan y no se
+publican archivos automáticamente. Las miniaturas temporales de la API no se
+usan como enlaces persistentes del contenido.
+
 ## Verificación
 
 Con Node.js 24 y las dependencias instaladas:
@@ -274,10 +327,29 @@ npm run build
 
 Las pruebas usan un SDK de Firebase simulado y renderizado estático de React. Cubren autorización, revocación, errores de persistencia, guardado completo, inicialización y lecciones públicas. No sustituyen las pruebas de `firestore.rules` en el emulador ni una comprobación de Google Sign-In en el dominio publicado. Para esa comprobación, el dominio debe estar autorizado en Firebase Authentication.
 
+## Formato de texto
+
+Los bloques **Texto**, **Aviso** e **Instrucciones de la actividad** tienen un editor
+visual, tanto en las lecciones como en el diseñador de POO. Selecciona una parte
+del texto y utiliza la barra para aplicar negritas, cursivas, subrayado, tachado o
+color. También puedes insertar títulos, listas y enlaces, alinear párrafos,
+deshacer cambios o limpiar el formato. Usa **Guardar Borrador** o **Publicar Lección** en la lección, o
+**Guardar contenido** en el diseñador para conservarlo. La vista del alumno y
+las vistas previas muestran el mismo formato.
+
+Los textos anteriores se abren como texto literal; al editarlos se guardan como
+HTML con `contentFormat: "html"`. Esa marca se conserva en las copias de seguridad
+y en los bloques composables. El renderizador solo admite etiquetas y estilos
+de texto autorizados; los iframes y el código continúan usando sus propios bloques.
+
 ## Proyectos p5.js desde GitHub
 
 Las lecciones y los bloques de código pueden utilizar un repositorio público de GitHub
-como fuente de ejecución. En el editor se completa el enlace; la ruta manual es opcional.
+o una carpeta de ese repositorio. En el editor se completa el enlace; la ruta manual
+del archivo `.js` es opcional. El botón **Cargar código desde GitHub** de la lección
+o **Cargar p5.js y Processing Java desde GitHub** del bloque importa ambos lenguajes;
+hay que guardar los cambios para conservar esa copia en el CMS. Los bloques con
+fuente GitHub consultan el repositorio para mostrar el Java y ejecutar el p5 actual.
 
 Cada bloque de código permite elegir entre **Código independiente** (los campos escritos
 en el bloque) y **Repositorio GitHub**. La ejecución interactiva solo usa la fuente
@@ -294,9 +366,13 @@ usuarios autenticados puedan verlos; el CMS no puede evitar las restricciones de
 privacidad o de inserción definidas por Miro.
 
 - **Repositorio GitHub:** `https://github.com/usuario/repositorio`
-- **Archivo de entrada:** opcional; si se omite, se detecta el único `.js` de la carpeta `*_p5`
+- **Carpeta GitHub:** `https://github.com/usuario/repositorio/tree/main/a1`
+- **Archivo de entrada:** opcional; si se omite, se detecta el único `.js` de la carpeta `*_p5`.
+  Si se indica, puede ser relativo a la carpeta seleccionada (`Ejemplo_p5/sketch.js`)
+  o al repositorio (`a1/Ejemplo_p5/sketch.js`). Siempre debe estar dentro de `*_p5`.
 
-El sistema detecta la rama predeterminada del repositorio y carga el archivo desde
+Los enlaces a la raíz usan la rama predeterminada. Los enlaces `/tree/rama/carpeta`
+usan la rama y el directorio indicados, incluidas carpetas anidadas. Se carga el código desde
 `raw.githubusercontent.com`. Las rutas relativas se conservan mediante una base URL,
 por lo que un sketch puede usar recursos organizados así:
 
@@ -313,7 +389,14 @@ proyecto/
 ```
 
 En el código p5.js se pueden referenciar como `data/imagen.png`, `data/audio.mp3`
-y `data/video.mp4`. La plataforma exige una carpeta Java y una carpeta con sufijo
-`_p5` en la raíz; si no se proporciona una ruta manual, debe existir un único `.js`
-dentro de `*_p5`. Por ahora solo se admiten repositorios públicos; no se deben
-introducir tokens de GitHub en el navegador.
+y `data/video.mp4`. La plataforma busca las carpetas Java y `*_p5` directamente
+dentro de la ubicación indicada, sin mezclar otros ejercicios. Por ejemplo,
+`/tree/main/a1` busca `a1/Ejemplo/` y `a1/Ejemplo_p5/`; el enlace a la raíz sigue
+buscando el par situado en la raíz, aunque haya otras carpetas como `a1` o `docs`.
+Se prefiere la carpeta Java cuyo nombre coincide con el de `*_p5` sin el sufijo;
+si los nombres difieren, debe existir una única carpeta con archivos `.pde`.
+Las pestañas `.pde` se muestran juntas, primero el archivo principal del sketch.
+Si hay varias carpetas `*_p5`, indica el archivo de entrada para elegir una.
+Si hay varios `.js` en ella, también debes indicar cuál ejecutar; no se concatenan
+automáticamente sus dependencias. Por ahora solo se admiten repositorios públicos;
+no se deben introducir tokens de GitHub en el navegador.

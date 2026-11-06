@@ -98,7 +98,7 @@ export const JAVA_RESERVED_KEYWORDS = new Set([
 export const DEFAULT_EMPTY_PROJECT: ClassDesignProject = {
   id: 'nuevo-diseno',
   projectName: 'Mi Nueva Clase',
-  className: 'particula',
+  className: 'Particula',
   conceptDescription: 'Un elemento visual autónomo que se dibuja en el lienzo e interactúa con el espacio.',
   guidingQuestions: {
     realWorldObject: 'Una partícula de polvo de luz que flota en el aire.',
@@ -181,7 +181,7 @@ export const DEFAULT_EMPTY_PROJECT: ClassDesignProject = {
 export const RESORTE_EXAMPLE_PROJECT: ClassDesignProject = {
   id: 'ejemplo-resorte',
   projectName: 'Simulador de Resorte (Slinky)',
-  className: 'resorte',
+  className: 'Resorte',
   conceptDescription: 'Modelo mecánico y visual de un muelle helicoidal que responde a la elasticidad de la Ley de Hooke y oscila con amortiguación.',
   guidingQuestions: {
     realWorldObject: 'Un resorte o muelle de acero sujeto por un extremo que se deforma al jalarlo.',

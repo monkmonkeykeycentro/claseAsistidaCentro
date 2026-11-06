@@ -1,6 +1,7 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import {
   getAuth,
+  connectAuthEmulator,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
@@ -9,17 +10,20 @@ import {
 } from 'firebase/auth';
 import {
   getFirestore,
+  connectFirestoreEmulator,
   doc,
   getDoc,
   setDoc,
   getDocFromServer,
   onSnapshot,
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { firebaseRuntime } from '../config/firebaseRuntime';
 import { UserProgress, BuilderState } from '../types/classStructure';
 
 // Initialize Firebase app once
-export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const firebaseConfig = firebaseRuntime.config;
+const appName = firebaseRuntime.useEmulators ? 'firebase-local' : '[DEFAULT]';
+export const app = getApps().find((existing) => existing.name === appName) ?? initializeApp(firebaseConfig, appName);
 
 export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 export { firebaseConfig };
@@ -27,6 +31,12 @@ export { firebaseConfig };
 const databaseId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
 export const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 export const auth = getAuth(app);
+
+if (firebaseRuntime.useEmulators && !auth.emulatorConfig) {
+  connectAuthEmulator(auth, firebaseRuntime.authEmulatorUrl);
+  const { host, port } = firebaseRuntime.firestoreEmulator;
+  connectFirestoreEmulator(db, host, port);
+}
 
 // Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();

@@ -90,3 +90,23 @@ pre::-webkit-scrollbar-thumb:hover,
   color: #4A6076;
   letter-spacing: 0.05em;
 }
+
+/* Shared prose styles keep the CMS editor and student view consistent. */
+.cms-rich-text { overflow-wrap: anywhere; }
+.cms-rich-text p { margin: 0.65em 0; white-space: pre-wrap; }
+.cms-rich-text h2 { margin: 1em 0 0.5em; font-size: 1.4em; font-weight: 800; line-height: 1.35; }
+.cms-rich-text h3 { margin: 0.85em 0 0.4em; font-size: 1.15em; font-weight: 750; line-height: 1.4; }
+.cms-rich-text strong, .cms-rich-text b { font-weight: 700; }
+.cms-rich-text em, .cms-rich-text i { font-style: italic; }
+.cms-rich-text u { text-decoration: underline; }
+.cms-rich-text s { text-decoration: line-through; }
+.cms-rich-text ul, .cms-rich-text ol { margin: 0.7em 0; padding-left: 1.6em; }
+.cms-rich-text ul { list-style-type: disc; }
+.cms-rich-text ol { list-style-type: decimal; }
+.cms-rich-text li p { margin: 0.2em 0; }
+.cms-rich-text blockquote { margin: 0.8em 0; border-left: 3px solid #A4C4B5; padding-left: 1em; color: #59645C; }
+.cms-rich-text a { color: #006699; text-decoration: underline; text-underline-offset: 2px; }
+.cms-rich-text code { border-radius: 0.25em; background: #F4F8FB; padding: 0.1em 0.3em; font-size: 0.9em; }
+.cms-rich-text p:empty::after { content: '\00a0'; }
+.cms-rich-text > :first-child { margin-top: 0; }
+.cms-rich-text > :last-child { margin-bottom: 0; }

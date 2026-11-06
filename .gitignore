@@ -2,7 +2,34 @@ node_modules/
 build/
 dist/
 coverage/
+.firebase/
 .DS_Store
 *.log
 .env*
 !.env.example
+
+# Local backups and emulator exports may contain personal data.
+backups/
+exports/
+respaldo_curriculum_*.json
+firebase-export-metadata.json
+auth_export/
+firestore_export/
+
+# Downloaded OAuth, service-account and local CLI credentials.
+secrets/
+.aws/
+.config/gcloud/
+application_default_credentials.json
+credentials.json
+token.json
+client_secret*.json
+*firebase-adminsdk*.json
+service-account*.json
+serviceAccount*.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519

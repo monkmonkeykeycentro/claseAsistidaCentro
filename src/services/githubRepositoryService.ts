@@ -1,12 +1,11 @@
 export interface GithubSketchSource {
   code: string;
+  codeJava: string;
+  javaEntry: string;
   rawUrl: string;
   baseUrl: string;
+  /** Repository-relative path, including the selected directory. */
   entry: string;
-}
-
-interface GithubRepository {
-  default_branch: string;
 }
 
 interface GithubTreeEntry {
@@ -14,106 +13,157 @@ interface GithubTreeEntry {
   type: 'blob' | 'tree';
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+interface GithubTree {
+  tree: GithubTreeEntry[];
+  truncated?: boolean;
 }
 
-function resolveDataAssetPaths(code: string, tree: GithubTreeEntry[], p5Directory: string): string {
-  const dataFiles = tree
-    .filter((item) => item.type === 'blob' && item.path.startsWith(`${p5Directory}/data/`))
-    .map((item) => item.path.slice(`${p5Directory}/data/`.length))
-    .filter((path) => !path.includes('/'));
-
-  return dataFiles.reduce((result, fileName) => {
-    const escaped = escapeRegExp(fileName);
-    const callPattern = new RegExp(`((?:loadImage|loadSound|createVideo|loadFont|loadStrings|loadJSON)\\s*\\(\\s*)(["'])${escaped}\\2`, 'g');
-    return result.replace(callPattern, '$1$2data/' + fileName + '$2');
-  }, code);
-}
-
-function parseRepositoryUrl(repositoryUrl: string): { owner: string; repo: string } {
+function parseRepositoryUrl(repositoryUrl: string) {
   let url: URL;
+  let parts: string[];
   try {
-    url = new URL(repositoryUrl);
+    url = new URL(repositoryUrl.trim());
+    parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
   } catch {
     throw new Error('El enlace del repositorio no es válido.');
   }
-
-  if (url.protocol !== 'https:' || url.hostname !== 'github.com') {
+  if (url.protocol !== 'https:' || url.hostname !== 'github.com' || url.port || url.username || url.password) {
     throw new Error('Solo se admiten repositorios públicos de github.com.');
   }
-
-  const [owner, repo] = url.pathname.split('/').filter(Boolean);
-  if (!owner || !repo || repo.includes('.')) {
-    throw new Error('Usa un enlace con el formato https://github.com/usuario/repositorio.');
+  const [owner, repository, view, ...location] = parts;
+  const repo = repository?.replace(/\.git$/, '');
+  if (!owner || !repo || (view && (view !== 'tree' || !location.length))) {
+    throw new Error('Usa https://github.com/usuario/repositorio o un enlace a una carpeta /tree/rama/carpeta.');
   }
-  return { owner, repo: repo.replace(/\.git$/, '') };
+  return { owner, repo, location };
 }
 
-export async function fetchGithubSketchSource(
-  repositoryUrl: string,
-  entry?: string,
-): Promise<GithubSketchSource> {
-  const { owner, repo } = parseRepositoryUrl(repositoryUrl);
-  const requestedEntry = entry?.trim().replace(/^\/+/, '');
-  if (requestedEntry?.includes('..')) {
-    throw new Error('La ruta del archivo de entrada no es válida.');
-  }
-
+function githubRequest<T>(url: string, format: 'json' | 'text', message: string, allowMissing?: false): Promise<T>;
+function githubRequest<T>(url: string, format: 'json' | 'text', message: string, allowMissing: true): Promise<T | null>;
+async function githubRequest<T>(url: string, format: 'json' | 'text', message: string, allowMissing = false): Promise<T | null> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 10000);
-  let repositoryResponse: Response;
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
-    repositoryResponse = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, {
+    const response = await fetch(url, {
       headers: { Accept: 'application/vnd.github+json' },
       signal: controller.signal,
     });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('GitHub tardó demasiado en responder.');
+    if (allowMissing && response.status === 404) return null;
+    if (response.status === 403 || response.status === 429) {
+      throw new Error('GitHub rechazó la consulta temporalmente. Intenta de nuevo en unos minutos.');
     }
-    throw new Error('No se pudo conectar con GitHub.');
+    if (!response.ok) throw new Error(message);
+    return await (format === 'json' ? response.json() : response.text()) as T;
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('GitHub tardó demasiado en responder.');
+    if (error instanceof TypeError) throw new Error('No se pudo conectar con GitHub.');
+    throw error;
   } finally {
-    window.clearTimeout(timeout);
+    clearTimeout(timeout);
   }
-  if (!repositoryResponse.ok) {
-    if (repositoryResponse.status === 403) throw new Error('GitHub rechazó la consulta temporalmente. Intenta de nuevo en unos minutos.');
-    throw new Error('No se pudo encontrar el repositorio. Confirma que sea público.');
+}
+
+function relativePath(fromDirectory: string, to: string): string {
+  const from = fromDirectory.split('/');
+  const target = to.split('/');
+  while (from.length && target.length && from[0] === target[0]) {
+    from.shift();
+    target.shift();
   }
-  const repository = await repositoryResponse.json() as GithubRepository;
-  const branch = repository.default_branch || 'main';
-  const treeResponse = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${encodeURIComponent(branch)}?recursive=1`);
-  if (!treeResponse.ok) throw new Error('No se pudo leer la estructura del repositorio.');
-  const tree = await treeResponse.json() as { tree?: GithubTreeEntry[]; truncated?: boolean };
+  return [...from.map(() => '..'), ...target].join('/');
+}
+
+function resolveDataAssetPaths(code: string, tree: GithubTreeEntry[], p5Directory: string, entry: string): string {
+  const entryDirectory = entry.slice(0, entry.lastIndexOf('/'));
+  const dataFiles = tree.filter((item) => item.type === 'blob' && item.path.startsWith(`${p5Directory}/data/`));
+  return dataFiles.reduce((result, file) => {
+    const name = file.path.slice(`${p5Directory}/data/`.length);
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`((?:loadImage|loadSound|createVideo|loadFont|loadStrings|loadJSON)\\s*\\(\\s*)(["'])(?:data/)?${escaped}\\2`, 'g');
+    const path = relativePath(entryDirectory, file.path);
+    return result.replace(pattern, (_match, call, quote) => `${call}${quote}${path}${quote}`);
+  }, code);
+}
+
+async function loadGithubSketchSource(repositoryUrl: string, entry?: string): Promise<GithubSketchSource> {
+  const { owner, repo, location } = parseRepositoryUrl(repositoryUrl);
+  const requestedEntry = entry?.trim().replace(/^\/+/, '');
+  if (requestedEntry && (requestedEntry.includes('\\') || requestedEntry.split('/').some((part) => !part || part === '..' || part === '.'))) {
+    throw new Error('La ruta del archivo de entrada no es válida.');
+  }
+  const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  const repository = await githubRequest<{ default_branch: string }>(apiUrl, 'json', 'No se pudo encontrar el repositorio. Confirma que sea público.');
+  const defaultBranch = repository.default_branch || 'main';
+  // Prefer the default branch when it matches the URL. Otherwise try the longest
+  // ref first, so branches such as feature/ejemplos also work in folder URLs.
+  const refs = location.length
+    ? Array.from({ length: location.length }, (_, index) => ({ ref: location.slice(0, location.length - index).join('/'), length: location.length - index }))
+    : [{ ref: defaultBranch, length: 0 }];
+  const preferred = refs.findIndex(({ ref }) => ref === defaultBranch);
+  if (preferred > 0) refs.unshift(...refs.splice(preferred, 1));
+  let branch = '';
+  let directory = '';
+  let tree: GithubTree | null = null;
+  for (const candidate of refs) {
+    tree = await githubRequest<GithubTree>(`${apiUrl}/git/trees/${encodeURIComponent(candidate.ref)}?recursive=1`, 'json', 'No se pudo leer la estructura del repositorio.', true);
+    if (tree) {
+      branch = candidate.ref;
+      directory = location.slice(candidate.length).join('/');
+      break;
+    }
+  }
+  if (!tree) throw new Error('No se encontró la rama o referencia indicada en el enlace de GitHub.');
   if (tree.truncated) throw new Error('El repositorio es demasiado grande para detectar su estructura.');
-
-  const rootDirectories = (tree.tree || [])
-    .filter((item) => item.type === 'tree' && !item.path.includes('/'))
-    .map((item) => item.path);
-  const p5Directory = rootDirectories.find((directory) => directory.endsWith('_p5'));
-  const javaDirectories = rootDirectories.filter((directory) => !directory.endsWith('_p5'));
-  if (!p5Directory || javaDirectories.length !== 1) {
-    throw new Error('El repositorio debe tener una carpeta Java y una carpeta con sufijo _p5 en la raíz.');
+  if (directory && !tree.tree.some((item) => item.type === 'tree' && item.path === directory)) {
+    throw new Error(`No se encontró la carpeta ${directory} en la rama ${branch}.`);
   }
-
-  const jsFiles = (tree.tree || [])
-    .filter((item) => item.type === 'blob' && item.path.startsWith(`${p5Directory}/`) && item.path.toLowerCase().endsWith('.js'))
-    .map((item) => item.path);
-  if (!requestedEntry && jsFiles.length !== 1) {
-    throw new Error(`La carpeta ${p5Directory} debe contener un único archivo .js.`);
+  const prefix = directory ? `${directory}/` : '';
+  const directories = tree.tree.filter((item) => item.type === 'tree' && item.path.startsWith(prefix) && !item.path.slice(prefix.length).includes('/')).map((item) => item.path);
+  let p5Directories = directories.filter((path) => path.endsWith('_p5'));
+  // Entry overrides may be relative to the selected folder or to the repository
+  // root (the latter is how existing CMS documents store detected entries).
+  const entryCandidates = requestedEntry ? [requestedEntry, `${prefix}${requestedEntry}`] : [];
+  if (requestedEntry) p5Directories = p5Directories.filter((path) => entryCandidates.some((candidate) => candidate.startsWith(`${path}/`)));
+  if (p5Directories.length !== 1) {
+    throw new Error(`En ${directory || 'la raíz'} debe haber una carpeta con sufijo _p5. Si hay varias, indica su archivo .js de entrada o enlaza la carpeta del ejercicio.`);
   }
-  const cleanEntry = requestedEntry || jsFiles[0];
-  if (!cleanEntry) throw new Error('No se encontró el archivo .js de p5.js.');
-  const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${cleanEntry.split('/').map(encodeURIComponent).join('/')}`;
-  const response = await fetch(rawUrl);
-  if (!response.ok) {
-    throw new Error(`No se encontró ${cleanEntry} en la rama ${branch}.`);
-  }
+  const p5Directory = p5Directories[0];
+  const jsFiles = tree.tree.filter((item) => item.type === 'blob' && item.path.startsWith(`${p5Directory}/`) && item.path.toLowerCase().endsWith('.js')).map((item) => item.path);
+  const cleanEntry = requestedEntry ? entryCandidates.find((path) => jsFiles.includes(path)) : jsFiles.length === 1 ? jsFiles[0] : undefined;
+  if (!cleanEntry) throw new Error(requestedEntry
+    ? `El archivo de entrada debe ser un .js existente dentro de ${p5Directory}.`
+    : `La carpeta ${p5Directory} debe contener un único archivo .js o debes indicar el archivo de entrada.`);
 
+  const javaFilesIn = (folder: string) => tree.tree.filter((item) => item.type === 'blob' && item.path.startsWith(`${folder}/`) && !item.path.slice(folder.length + 1).includes('/') && item.path.toLowerCase().endsWith('.pde')).map((item) => item.path);
+  const matchingDirectory = p5Directory.slice(0, -3);
+  const javaDirectories = directories.filter((path) => !path.endsWith('_p5') && javaFilesIn(path).length);
+  const javaDirectory = javaDirectories.includes(matchingDirectory) ? matchingDirectory : javaDirectories.length === 1 ? javaDirectories[0] : undefined;
+  if (!javaDirectory) throw new Error(`No se encontró una carpeta Java con archivos .pde correspondiente a ${p5Directory}.`);
+  const mainJavaFile = `${javaDirectory}/${javaDirectory.split('/').at(-1)}.pde`;
+  const javaFiles = javaFilesIn(javaDirectory).sort((a, b) => a === mainJavaFile ? -1 : b === mainJavaFile ? 1 : a.localeCompare(b));
+  const rawBase = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/`;
+  const rawFileUrl = (path: string) => rawBase + path.split('/').map(encodeURIComponent).join('/');
+  const rawUrl = rawFileUrl(cleanEntry);
+  const [code, ...javaTabs] = await Promise.all([cleanEntry, ...javaFiles].map((path) => githubRequest<string>(rawFileUrl(path), 'text', `No se encontró ${path} en la rama ${branch}.`)));
   return {
-    code: resolveDataAssetPaths(await response.text(), tree.tree || [], p5Directory),
+    code: resolveDataAssetPaths(code, tree.tree, p5Directory, cleanEntry),
+    codeJava: javaTabs.map((tab, index) => javaTabs.length === 1 ? tab : `// ${javaFiles[index].split('/').at(-1)}\n${tab}`).join('\n\n'),
+    javaEntry: javaFiles[0],
     rawUrl,
     baseUrl: rawUrl.slice(0, rawUrl.lastIndexOf('/') + 1),
     entry: cleanEntry,
   };
+}
+
+// A code block and its thumbnail can request the same source together. Share only
+// pending downloads; later loads still receive current repository contents.
+const pending = new Map<string, Promise<GithubSketchSource>>();
+export function fetchGithubSketchSource(repositoryUrl: string, entry?: string): Promise<GithubSketchSource> {
+  const key = JSON.stringify([repositoryUrl.trim(), entry?.trim() || '']);
+  let request = pending.get(key);
+  if (!request) {
+    request = loadGithubSketchSource(repositoryUrl, entry).finally(() => pending.delete(key));
+    pending.set(key, request);
+  }
+  return request;
 }

@@ -140,6 +140,7 @@ export interface CmsBlock {
   categoryId?: string;
   type: BlockType;
   content: string;
+  contentFormat?: 'html';
   contentP5?: string;
   repositoryUrl?: string;
   repositoryEntry?: string;
@@ -408,10 +409,15 @@ export interface CurriculumExportData {
   version: string;
   exportedAt: string;
   exportedBy: string;
+  source?: { projectId: string; databaseId: string; environment: 'emulator' | 'production' };
   modules: CmsModule[];
   lessons: CmsLesson[];
   sections: CmsSection[];
   blocks: CmsBlock[];
   siteContent: CmsSiteContent[];
   media: CmsMediaResource[];
+  categories?: CmsCategory[];
+  nodes?: CmsNode[];
+  nodeRelations?: CmsNodeRelation[];
+  nodeBlocks?: CmsNodeBlock[];
 }

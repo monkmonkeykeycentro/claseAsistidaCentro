@@ -33,7 +33,9 @@ const P5LiveThumbnailInner: React.FC<P5LiveThumbnailProps> = ({
   const [frameState, setFrameState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [executionError, setExecutionError] = useState('');
   const [repositoryError, setRepositoryError] = useState('');
-  const [repositoryCode, setRepositoryCode] = useState<{ code: string; baseUrl: string } | null>(null);
+  const repositoryKey = JSON.stringify([repositoryUrl, repositoryEntry]);
+  const [repositoryResult, setRepositoryResult] = useState<{ code: string; baseUrl: string; key: string } | null>(null);
+  const repositoryCode = repositoryResult?.key === repositoryKey ? repositoryResult : null;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   // Clean code and determine whether valid p5 code is provided
@@ -45,20 +47,20 @@ const P5LiveThumbnailInner: React.FC<P5LiveThumbnailProps> = ({
 
   useEffect(() => {
     let active = true;
-    setRepositoryCode(null);
+    setRepositoryResult(null);
     setRepositoryError('');
     setFrameState('loading');
     setExecutionError('');
     if (!repositoryUrl?.trim()) return () => { active = false; };
     fetchGithubSketchSource(repositoryUrl, repositoryEntry || undefined)
-      .then(({ code, baseUrl }) => { if (active) setRepositoryCode({ code, baseUrl }); })
+      .then(({ code, baseUrl }) => { if (active) setRepositoryResult({ code, baseUrl, key: repositoryKey }); })
       .catch((error: unknown) => {
         if (!active) return;
         setRepositoryError(error instanceof Error ? error.message : 'Error desconocido al cargar GitHub.');
         setFrameState('error');
       });
     return () => { active = false; };
-  }, [repositoryUrl, repositoryEntry]);
+  }, [repositoryUrl, repositoryEntry, repositoryKey]);
 
   useEffect(() => {
     setFrameState('loading');

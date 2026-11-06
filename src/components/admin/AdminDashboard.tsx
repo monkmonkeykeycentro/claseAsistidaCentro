@@ -44,9 +44,14 @@ import {
 import { AdminLessonEditor } from './AdminLessonEditor';
 import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
 import { AdminComposableContentView } from './AdminComposableContentView';
+import { AdminClassDesignerContentView } from './AdminClassDesignerContentView';
+import { CmsBlockView } from '../CmsBlockView';
+import { MediaImage } from '../MediaImage';
+import { mediaResourceKind, mediaResourceUrl } from '../../utils/mediaUrls';
 import { AppUser, isUserAdmin, db } from '../../services/firebase';
+import { firebaseRuntime } from '../../config/firebaseRuntime';
 import { describeCmsError } from '../../utils/cmsErrors';
-import { connectGoogleDrive, getDriveThumbnailObjectUrl, isDriveConfigured, uploadDriveFile } from '../../services/googleDriveService';
+import { connectGoogleDrive, isDriveConfigured, uploadDriveFile } from '../../services/googleDriveService';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import {
   PilotEvidenceRecord,
@@ -110,7 +115,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   onPreviewAsStudent,
   onOpenExerciseInRunner,
 }) => {
-  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'composable' | 'navigation' | 'content' | 'categories' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
+  const [activeTab, setActiveTab] = useState<'curriculum_units' | 'class_designer' | 'composable' | 'navigation' | 'content' | 'categories' | 'evidences' | 'overview' | 'site_texts' | 'media' | 'history'>('curriculum_units');
   const [navItems, setNavItems] = useState<HeaderNavigationItem[]>(DEFAULT_HEADER_NAVIGATION);
   const [isSavingNav, setIsSavingNav] = useState<boolean>(false);
   const [navSuccessMessage, setNavSuccessMessage] = useState<string>('');
@@ -147,6 +152,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Media creation modal state
   const [isMediaModalOpen, setIsMediaModalOpen] = useState<boolean>(false);
+  const [previewMedia, setPreviewMedia] = useState<CmsMediaResource | null>(null);
   const [mediaForm, setMediaForm] = useState<Partial<CmsMediaResource>>({
     title: '',
     url: '',
@@ -154,7 +160,6 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     category: 'diagramas',
   });
   const [isDriveConnected, setIsDriveConnected] = useState(false);
-  const [drivePreviewUrls, setDrivePreviewUrls] = useState<Record<string, string>>({});
 
   // Notification Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -329,33 +334,6 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     loadAll();
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    const objectUrls: string[] = [];
-    const loadPreviews = async () => {
-      if (!isDriveConnected) return;
-      const entries = await Promise.all(
-        mediaList
-          .filter((media) => media.provider === 'google-drive' && media.driveFileId)
-          .map(async (media) => [media.id, await getDriveThumbnailObjectUrl(media.driveFileId!)] as const),
-      );
-      if (cancelled) return;
-      const previews: Record<string, string> = {};
-      entries.forEach(([id, url]) => {
-        if (url) {
-          previews[id] = url;
-          objectUrls.push(url);
-        }
-      });
-      setDrivePreviewUrls(previews);
-    };
-    loadPreviews().catch(() => undefined);
-    return () => {
-      cancelled = true;
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [isDriveConnected, mediaList]);
 
   // Navigation & Apartados actions
   const handleMoveNav = (index: number, direction: 'up' | 'down') => {
@@ -777,18 +755,15 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (
-      !confirm(
-        '¿Deseas restaurar el curriculum desde este archivo? Se creará una copia de seguridad automática de tu contenido actual antes de proceder.'
-      )
-    ) {
-      return;
-    }
-
     try {
-      setIsLoading(true);
       const text = await file.text();
       const data: CurriculumExportData = JSON.parse(text);
+      const destination = `${firebaseRuntime.config.projectId} / ${firebaseRuntime.config.firestoreDatabaseId || '(default)'}`;
+      const origin = data.source ? `${data.source.projectId} / ${data.source.databaseId}` : 'no especificado (respaldo anterior)';
+      const total = ['modules', 'lessons', 'sections', 'blocks', 'siteContent', 'media', 'categories', 'nodes', 'nodeRelations', 'nodeBlocks']
+        .reduce((count, key) => count + (Array.isArray(data[key]) ? data[key].length : 0), 0);
+      if (!confirm(`Importar ${total} documentos del CMS.\n\nOrigen: ${origin}\nDestino: ${destination}${firebaseRuntime.useEmulators ? ' (LOCAL)' : ' (PRODUCCIÓN)'}\n\nSe actualizarán documentos con el mismo ID y se añadirán los nuevos. No se borrarán documentos adicionales. Antes se creará un respaldo del destino.\n\n¿Continuar?`)) return;
+      setIsLoading(true);
       await importCurriculumBackup(data);
       await loadAll();
       showToast('Curriculum restaurado exitosamente.');
@@ -929,6 +904,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
             {[
               { id: 'curriculum_units', label: 'Propuesta Unidades 1–3', icon: BookOpen, count: 14 },
               { id: 'composable', label: 'Contenido Composable', icon: Sparkles },
+              { id: 'class_designer', label: 'Diseñador POO', icon: Sliders },
               { id: 'navigation', label: 'Apartados y Header', icon: Menu, count: navItems.length },
               { id: 'content', label: 'Módulos y Lecciones (CMS)', icon: Layers, count: modules.length },
               { id: 'categories', label: 'Categorías', icon: Tags, count: categories.length },
@@ -1001,6 +977,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           )}
 
           {activeTab === 'composable' && <AdminComposableContentView />}
+          {activeTab === 'class_designer' && <AdminClassDesignerContentView />}
 
           {/* ========================================================================= */}
           {/* TAB: APARTADOS Y NAVEGACIÓN DEL HEADER                                    */}
@@ -2088,12 +2065,12 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span>Subir a Drive</span>
                   <input type="file" className="hidden" onChange={handleUploadToDrive} accept="image/*,audio/*,video/*,.pdf,.pde,.zip" />
                 </label>
-                {!isDriveConnected && (
+                {(
                   <button
                     onClick={handleConnectDrive}
                     className="min-h-[38px] px-4 py-2 rounded-xl border border-[#407B5D] text-[#407B5D] text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                   >
-                    Conectar Drive
+                    {isDriveConnected ? 'Renovar conexión Drive' : 'Conectar Drive'}
                   </button>
                 )}
                 {isDriveConnected && <span className="min-h-[38px] px-4 py-2 rounded-xl bg-[#E8EEE8] text-[#28543D] border border-[#A4C4B5] text-xs font-semibold flex items-center">Drive conectado</span>}
@@ -2111,12 +2088,11 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                       className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-2xl space-y-2 text-xs shadow-xs"
                     >
                       <div className="aspect-video bg-white rounded-xl border border-[#E1E7E1] overflow-hidden flex items-center justify-center">
-                        {drivePreviewUrls[m.id] || m.driveThumbnailLink || (m.mimeType || '').startsWith('image/') ? (
-                          <img
-                            src={drivePreviewUrls[m.id] || m.driveThumbnailLink || m.url}
+                        {mediaResourceKind(m) === 'image' ? (
+                          <MediaImage
+                            src={mediaResourceUrl(m)}
                             alt={m.altText || m.title}
                             className="w-full h-full object-cover"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
                         ) : (
                           <div className="text-center text-[#59645C] p-3">
@@ -2136,16 +2112,17 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="flex items-center justify-between pt-1 border-t border-[#E1E7E1]">
                         <button
                           onClick={() => {
-                            navigator.clipboard.writeText(m.url);
+                            navigator.clipboard.writeText(mediaResourceUrl(m));
                             showToast('Enlace copiado al portapapeles');
                           }}
                           className="text-[11px] font-semibold text-[#407B5D] hover:underline cursor-pointer"
                         >
                           Copiar URL
                         </button>
-                        {m.driveShortUrl && (
+                        <button type="button" onClick={() => setPreviewMedia(m)} className="text-[11px] font-semibold text-[#407B5D] hover:underline">Consultar</button>
+                        {mediaResourceUrl(m) && (
                           <a
-                            href={m.driveShortUrl}
+                            href={mediaResourceUrl(m)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[11px] font-semibold text-[#407B5D] hover:underline"
@@ -2503,6 +2480,12 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* Media Registration Modal */}
+      {previewMedia && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <section role="dialog" aria-modal="true" aria-label="Consultar recurso multimedia" className="max-h-[90vh] w-full max-w-4xl space-y-4 overflow-auto rounded-2xl bg-white p-5">
+          <div className="flex items-center justify-between gap-3"><h3 className="text-base font-bold">{previewMedia.title}</h3><button type="button" autoFocus onClick={() => setPreviewMedia(null)} className="rounded-lg border px-3 py-2 text-xs">Cerrar consulta</button></div>
+          {mediaResourceKind(previewMedia) === 'image' ? <MediaImage src={mediaResourceUrl(previewMedia)} alt={previewMedia.altText || previewMedia.title} className="mx-auto max-h-[65vh] max-w-full rounded-xl" /> : <CmsBlockView block={{ id: previewMedia.id, sectionId: 'media-preview', type: mediaResourceKind(previewMedia) === 'video' ? 'video' : previewMedia.provider === 'google-drive' ? 'iframe' : 'resources', content: mediaResourceUrl(previewMedia), caption: previewMedia.title, position: 0, createdAt: previewMedia.createdAt, updatedAt: previewMedia.createdAt }} />}
+        </section>
+      </div>}
       {isMediaModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white border border-[#E1E7E1] rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
