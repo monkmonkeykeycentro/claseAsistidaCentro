@@ -57,7 +57,7 @@ export function AdminHomePresentationEditor({ value, lessons, modules, onChange 
       </ol>
       <label className="block space-y-1 text-xs text-[#59645C]">
         <span>Añadir contenido a la selección</span>
-        <select value="" onChange={(event) => {
+        <select aria-label="Añadir contenido a la selección" value="" onChange={(event) => {
           const target = event.target.value;
           if (!target) return;
           const item: CmsHomePresentationItem = target === 'class-designer' ? { type: 'class-designer', id: target } : { type: 'lesson', id: target.slice('lesson:'.length) };

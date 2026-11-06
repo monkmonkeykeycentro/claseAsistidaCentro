@@ -1,5 +1,22 @@
 # Administración de contenidos
 
+## Selección de contenidos para el inicio
+
+En **CMS → Textos Generales → Configuración visible de la portada**, el apartado
+**Selección para presentar** permite activar un recorrido de lecciones y del
+Diseñador POO. Añade contenidos desde el selector, cambia su orden con las flechas
+y quita elementos cuando quieras preparar otra presentación. Puedes editar el
+título y la descripción. Usa **Guardar portada** para publicar la configuración.
+
+La opción **Mostrar barra de filtros del laboratorio** controla la fila de
+pestañas y sus contadores. La selección aparece antes de las demás secciones que
+estén activadas. Las lecciones se resuelven desde el catálogo disponible: una
+lección ausente no se sustituye por contenidos ajenos a la selección.
+
+Estos ajustes se guardan en `cms_site_content/home_config` y se incluyen en los
+respaldos del CMS. `content/home/presentacion.json` documenta la selección inicial
+de coordenadas, random, noise y Diseñador POO; no se importa automáticamente.
+
 ## Editar el contenido del Diseñador POO
 
 Entra en **CMS → Diseñador POO**. Este apartado permite editar el título y la

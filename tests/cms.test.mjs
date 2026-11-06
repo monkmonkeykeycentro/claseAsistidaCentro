@@ -474,7 +474,7 @@ test('an explicitly empty public catalogue never restores the static curriculum'
 
 test('the home presentation preserves editorial order, resolves legacy IDs once and hides the filter bar', () => {
   const makeTopic = (id, title) => ({ id, title, number: 1, category: 'Fundamentos', summary: 'Descripción', sections: [], estimatedTime: '30 min' });
-  const topics = [makeTopic('noise', 'Noise seleccionado'), makeTopic('other', 'Contenido ajeno'), makeTopic('coordinates', 'Coordenadas seleccionadas'), makeTopic('les_coordinates', 'Coordenadas duplicadas'), makeTopic('random', 'Random seleccionado')];
+  const topics = [makeTopic('noise', 'Noise seleccionado'), makeTopic('other', 'Contenido ajeno'), makeTopic('coordinates', 'Alias de coordenadas'), makeTopic('les_coordinates', 'Coordenadas seleccionadas'), makeTopic('random', 'Random seleccionado')];
   const presentation = { enabled: true, title: 'Selección docente', description: '', items: [
     { type: 'lesson', id: 'les_coordinates' }, { type: 'lesson', id: 'coordinates' },
     { type: 'lesson', id: 'random' }, { type: 'lesson', id: 'noise' }, { type: 'class-designer', id: 'class-designer' },
@@ -482,7 +482,7 @@ test('the home presentation preserves editorial order, resolves legacy IDs once 
   const config = { ...DEFAULT_HOME_CONFIG, sections: Object.fromEntries(Object.keys(DEFAULT_HOME_CONFIG.sections).map((key) => [key, false])), showSectionNavigator: false, presentation };
   const html = renderToStaticMarkup(React.createElement(HomeView, { homeConfig: config, topics, onSelectTopic() {}, onOpenWorkshop() {}, currentUser: null }));
   const headings = [...html.matchAll(/<h3\b[^>]*>(.*?)<\/h3>/g)].map((match) => match[1]);
-  assert.deepEqual(headings, ['Coordenadas duplicadas', 'Random seleccionado', 'Noise seleccionado', 'Diseñador POO']);
+  assert.deepEqual(headings, ['Coordenadas seleccionadas', 'Random seleccionado', 'Noise seleccionado', 'Diseñador POO']);
   assert.doesNotMatch(html, /Filtros del laboratorio|Todo el Laboratorio|Contenido ajeno/);
   assert.match(html, /href="#\/lecciones\/les_coordinates"/);
   assert.match(html, /href="#\/herramientas"/);
