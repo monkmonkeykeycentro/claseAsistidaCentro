@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import localConfig from '../../firebase.local.json';
 
 type RuntimeEnvironment = { DEV?: boolean; MODE?: string } & Partial<Record<
@@ -22,33 +21,6 @@ export function resolveFirebaseRuntime(environment: RuntimeEnvironment = {}) {
       appId: '1:1234567890:web:local', authDomain: 'demo-clase-asistida.firebaseapp.com',
       firestoreDatabaseId: '(default)', storageBucket: 'demo-clase-asistida.appspot.com',
     } : productionConfig,
-=======
-import productionConfig from '../../firebase-applet-config.json';
-import localConfig from '../../firebase.local.json';
-
-interface FirebaseEnvironment {
-  DEV?: boolean;
-  MODE?: string;
-}
-
-export function resolveFirebaseRuntime(environment: FirebaseEnvironment = {}) {
-  // A production build always uses the published project's configuration.
-  const useEmulators = environment.DEV === true && environment.MODE === 'emulator';
-  const config = useEmulators ? {
-    ...productionConfig,
-    projectId: 'demo-clase-asistida',
-    apiKey: 'demo-local-api-key',
-    appId: '1:1234567890:web:local',
-    authDomain: 'demo-clase-asistida.firebaseapp.com',
-    storageBucket: 'demo-clase-asistida.appspot.com',
-    firestoreDatabaseId: '(default)',
-    oAuthClientId: '',
-  } : productionConfig;
-
-  return {
-    useEmulators,
-    config,
->>>>>>> Stashed changes
     authEmulatorUrl: `http://${localConfig.emulators.auth.host}:${localConfig.emulators.auth.port}`,
     firestoreEmulator: localConfig.emulators.firestore,
   };

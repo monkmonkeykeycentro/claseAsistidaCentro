@@ -1,6 +1,5 @@
 # Administración de contenidos
 
-<<<<<<< Updated upstream
 ## Selección de contenidos para el inicio
 
 En **CMS → Textos Generales → Configuración visible de la portada**, el apartado
@@ -51,11 +50,10 @@ producción, publica primero esta versión de la aplicación y después importa 
 respaldo del CMS que contiene la configuración de la herramienta.
 
 ## Acceso al panel
-=======
+
 Para trabajar con una base y usuarios de prueba en este equipo, consulta
 [Firebase local y producción](FIREBASE_LOCAL.md). `npm run dev:local` inicia
 Authentication, Firestore, su panel y la aplicación con datos separados de producción.
->>>>>>> Stashed changes
 
 El botón **CMS** aparece después de iniciar sesión con una cuenta administradora. Las rutas `#admin`, `#cms`, `/admin`, `/cms` y el atajo Ctrl/Cmd + Shift + A también requieren ese permiso. Al cerrar sesión o revocar el permiso, el panel deja de estar disponible.
 

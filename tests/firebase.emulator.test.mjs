@@ -35,7 +35,7 @@ test('local Firebase: initialize CMS, read history, migrate content, and enforce
     const category = { id: 'cat_local', name: 'Local', slug: 'local', position: 0, visible: true, createdAt: '', updatedAt: '' };
     await cms.saveCmsCategory(category);
     const backup = await cms.exportCurriculumBackup();
-    assert.equal(backup.version, '1.1.0');
+    assert.equal(backup.version, '2.0.0');
     assert.ok(backup.categories.some((item) => item.id === category.id));
     await cms.importCurriculumBackup(backup);
     assert.ok((await cms.getCmsRevisions()).length >= 2);

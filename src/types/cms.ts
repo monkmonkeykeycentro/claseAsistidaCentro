@@ -441,10 +441,6 @@ export interface CurriculumExportData {
   blocks: CmsBlock[];
   siteContent: CmsSiteContent[];
   media: CmsMediaResource[];
-<<<<<<< Updated upstream
-=======
-  // Optional for compatibility with backups created before version 1.1.0.
->>>>>>> Stashed changes
   categories?: CmsCategory[];
   nodes?: CmsNode[];
   nodeRelations?: CmsNodeRelation[];

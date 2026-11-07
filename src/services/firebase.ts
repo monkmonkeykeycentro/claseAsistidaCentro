@@ -12,29 +12,16 @@ import {
 import {
   getFirestore,
   connectFirestoreEmulator,
-<<<<<<< Updated upstream
 } from 'firebase/firestore';
 import { doc, getDoc, setDoc, getDocFromServer, onSnapshot, setDatabaseTokenProvider } from './database';
 import { useMongoDB } from '../config/dataBackend';
-=======
-  doc,
-  getDoc,
-  setDoc,
-  getDocFromServer,
-  onSnapshot,
-} from 'firebase/firestore';
->>>>>>> Stashed changes
 import { firebaseRuntime } from '../config/firebaseRuntime';
 import { UserProgress, BuilderState } from '../types/classStructure';
 
 // Initialize Firebase app once
 const firebaseConfig = firebaseRuntime.config;
-<<<<<<< Updated upstream
 const appName = firebaseRuntime.useEmulators ? 'firebase-local' : '[DEFAULT]';
 export const app = getApps().find((existing) => existing.name === appName) ?? initializeApp(firebaseConfig, appName);
-=======
-export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
->>>>>>> Stashed changes
 
 export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 export { firebaseConfig };
@@ -51,14 +38,6 @@ if (firebaseRuntime.useEmulators && !auth.emulatorConfig) {
   connectAuthEmulator(auth, firebaseRuntime.authEmulatorUrl, { disableWarnings: true });
   const { host, port } = firebaseRuntime.firestoreEmulator;
   if (!useMongoDB) connectFirestoreEmulator(db, host, port);
-}
-
-// Connect both services before subscriptions or reads. The public auth setting
-// also prevents duplicate connections when this module is reloaded in development.
-if (firebaseRuntime.useEmulators && !auth.emulatorConfig) {
-  connectAuthEmulator(auth, firebaseRuntime.authEmulatorUrl);
-  const { host, port } = firebaseRuntime.firestoreEmulator;
-  connectFirestoreEmulator(db, host, port);
 }
 
 // Google Auth Provider

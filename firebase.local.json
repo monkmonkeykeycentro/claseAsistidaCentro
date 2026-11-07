@@ -1,12 +1,5 @@
 {
-<<<<<<< Updated upstream
   "firestore": { "database": "(default)", "rules": "firestore.rules" },
-=======
-  "firestore": {
-    "database": "(default)",
-    "rules": "firestore.rules"
-  },
->>>>>>> Stashed changes
   "emulators": {
     "auth": { "host": "127.0.0.1", "port": 9099 },
     "firestore": { "host": "127.0.0.1", "port": 8080 },
