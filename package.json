@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/firebase-local.mjs",
+    "dev": "vite --port 3000 --host",
     "dev:local": "node scripts/firebase-local.mjs",
     "dev:app": "vite --mode emulator --port=3000 --host=127.0.0.1 --strictPort",
     "dev:production": "vite --port=3001 --host=127.0.0.1 --strictPort",
