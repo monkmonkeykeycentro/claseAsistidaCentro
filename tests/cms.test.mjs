@@ -357,6 +357,37 @@ test('published composable lessons are preferred over legacy curriculum', async 
   assert.equal(topic.concepts[0].blocks[0].content, 'Contenido composable real');
 });
 
+test('migrated lessons use current CMS preview settings without replacing their composable content', async () => {
+  curriculum();
+  const composableLesson = { ...node, id: 'node_lesson_les_custom', type: 'lesson', metadata: { legacyId: lesson.id } };
+  const composableSection = { ...node, id: 'node_section_sec_custom', type: 'section', metadata: {} };
+  state.documents.set(`cms_nodes/${composableLesson.id}`, composableLesson);
+  state.documents.set(`cms_nodes/${composableSection.id}`, composableSection);
+  state.documents.set('cms_node_relations/rel_lesson_section', { ...nodeRelation, parentId: composableLesson.id, childId: composableSection.id });
+  state.documents.set('cms_node_blocks/old_demo', {
+    ...nodeBlock, nodeId: composableSection.id, type: 'code',
+    data: { contentP5: 'function setup() { createCanvas(100, 100); }', repositoryUrl: 'https://github.com/usuario/otro', repositoryEntry: 'Otro_p5/sketch.js' },
+  });
+  const current = {
+    ...lesson, thumbnailP5: 'function setup() { createCanvas(900, 504); }',
+    repositoryUrl: 'https://github.com/usuario/ejemplos/tree/main/d1', repositoryEntry: 'd1/noise_p5/noise_p5.js',
+  };
+  state.documents.set(`cms_lessons/${lesson.id}`, current);
+  let topic = (await cms.getAllTopicsFromCmsOrFallback()).find((item) => item.id === 'custom');
+  assert.equal(topic.thumbnailP5, current.thumbnailP5);
+  assert.equal(topic.repositoryUrl, current.repositoryUrl);
+  assert.equal(topic.repositoryEntry, current.repositoryEntry);
+  assert.equal(topic.concepts[0].codeSnippetP5, 'function setup() { createCanvas(100, 100); }');
+  state.documents.set(`cms_lessons/${lesson.id}`, { ...current, repositoryEntry: undefined });
+  topic = (await cms.getAllTopicsFromCmsOrFallback()).find((item) => item.id === 'custom');
+  assert.equal(topic.repositoryEntry, undefined, 'A lesson repository must not inherit a different section entry');
+  state.documents.set(`cms_lessons/${lesson.id}`, { ...lesson });
+  topic = (await cms.getAllTopicsFromCmsOrFallback()).find((item) => item.id === 'custom');
+  assert.equal(topic.thumbnailP5, topic.concepts[0].codeSnippetP5);
+  assert.equal(topic.repositoryUrl, 'https://github.com/usuario/otro');
+  assert.equal(topic.repositoryEntry, 'Otro_p5/sketch.js');
+});
+
 test('published legacy lessons remain visible alongside composable lessons', async () => {
   curriculum();
   const composableModule = { ...node, id: 'node_module_other', type: 'container', title: 'Otro módulo', metadata: { category: 'Fundamentos' } };

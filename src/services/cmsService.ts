@@ -742,7 +742,11 @@ function composableBlockToCmsBlock(block: CmsNodeBlock, sectionId: string): CmsB
 }
 
 async function getTopicsFromComposable(includeUnpublished = false): Promise<TopicItem[]> {
-  const nodes = await getCmsNodes(includeUnpublished);
+  const [nodes, lessons] = await Promise.all([
+    getCmsNodes(includeUnpublished),
+    getCmsLessons(undefined, includeUnpublished),
+  ]);
+  const lessonsById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
   const nodeIds = nodes.map((node) => node.id);
   const relationGroups = await Promise.all(nodeIds.map((parentId) => readCollection<CmsNodeRelation>(
     composableNodeCollections.relations,
@@ -802,6 +806,10 @@ async function getTopicsFromComposable(includeUnpublished = false): Promise<Topi
       ? parentNode.metadata.category
       : 'Fundamentos';
     const metadata = lessonNode.metadata || {};
+    // Lesson previews are still edited in cms_lessons after migration. Keep
+    // those settings instead of replacing them with an older section demo.
+    const lesson = lessonsById.get(typeof metadata.legacyId === 'string' ? metadata.legacyId : lessonNode.id);
+    const repositorySection = sections.find((section) => section.repositoryUrl);
     const unitId = metadata.unitId === 'u1' || metadata.unitId === 'u2' || metadata.unitId === 'u3'
       ? metadata.unitId
       : category === 'Fundamentos' ? 'u1' : undefined;
@@ -819,9 +827,9 @@ async function getTopicsFromComposable(includeUnpublished = false): Promise<Topi
       concepts: sections,
       hasInteractiveWorkshop: original?.hasInteractiveWorkshop || metadata.workshopType === 'classes',
       quickChallenge: original?.quickChallenge,
-      thumbnailP5: sections.find((section) => section.codeSnippetP5)?.codeSnippetP5,
-      repositoryUrl: sections.find((section) => section.repositoryUrl)?.repositoryUrl,
-      repositoryEntry: sections.find((section) => section.repositoryEntry)?.repositoryEntry,
+      thumbnailP5: lesson?.thumbnailP5 || sections.find((section) => section.codeSnippetP5)?.codeSnippetP5,
+      repositoryUrl: lesson?.repositoryUrl || repositorySection?.repositoryUrl,
+      repositoryEntry: lesson?.repositoryUrl ? lesson.repositoryEntry : repositorySection?.repositoryEntry,
       showCodeJava: true,
       showCodeP5: false,
       showInteractiveExecution: sections.some((section) => section.showInteractiveExecution),

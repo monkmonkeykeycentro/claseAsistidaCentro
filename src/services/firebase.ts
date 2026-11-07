@@ -33,7 +33,7 @@ export const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app)
 export const auth = getAuth(app);
 
 if (firebaseRuntime.useEmulators && !auth.emulatorConfig) {
-  connectAuthEmulator(auth, firebaseRuntime.authEmulatorUrl);
+  connectAuthEmulator(auth, firebaseRuntime.authEmulatorUrl, { disableWarnings: true });
   const { host, port } = firebaseRuntime.firestoreEmulator;
   connectFirestoreEmulator(db, host, port);
 }

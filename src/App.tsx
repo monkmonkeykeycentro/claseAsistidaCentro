@@ -76,7 +76,12 @@ export default function App() {
     markLessonSectionVisited,
     saveActivityResult,
   } = learning;
-  const curriculum = useCurriculumContent(canAdmin, isStudentPreviewMode, activeView);
+  const homeContentRevision = JSON.stringify([
+    homeConfig.updatedAt,
+    homeConfig.presentation?.items,
+    homeConfig.featuredTopicIds,
+  ]);
+  const curriculum = useCurriculumContent(canAdmin, isStudentPreviewMode, activeView, homeContentRevision);
   const { topics: allCurriculumTopics, includesDrafts: curriculumIncludesDrafts, isLoading: isCurriculumLoading } = curriculum;
   const displayedTopics = curriculumIncludesDrafts && !canAdmin ? [] : allCurriculumTopics;
   const dynamicTopic = displayedTopics.find((topic) => topic.id === currentTopicId) || null;

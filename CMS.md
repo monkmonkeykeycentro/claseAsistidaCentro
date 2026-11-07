@@ -15,7 +15,8 @@ lección ausente no se sustituye por contenidos ajenos a la selección.
 
 Estos ajustes se guardan en `cms_site_content/home_config` y se incluyen en los
 respaldos del CMS. `content/home/presentacion.json` documenta la selección inicial
-de coordenadas, random, noise y Diseñador POO; no se importa automáticamente.
+de coordenadas, caminata aleatoria, puntillismo con random, noise y Diseñador POO;
+no se importa automáticamente.
 
 ## Editar el contenido del Diseñador POO
 

@@ -6,6 +6,7 @@
     "description": "De la posición en el lienzo al azar, el movimiento y el diseño de objetos. Explora esta selección de lo más básico a lo más complejo.",
     "items": [
       { "type": "lesson", "id": "les_1793995514092" },
+      { "type": "lesson", "id": "caminata_aleatoria" },
       { "type": "lesson", "id": "random_puntillismo" },
       { "type": "lesson", "id": "noise_movimiento" },
       { "type": "class-designer", "id": "class-designer" }
