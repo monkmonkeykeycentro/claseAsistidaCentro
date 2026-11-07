@@ -6,10 +6,10 @@ import { logSafeError } from './utils/safeError';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { BuilderState, ZoneId } from './types/classStructure';
-import { TOPICS_DATA } from './data/topicsData';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ContentStatus } from './components/ContentStatus';
 import { FocusedWorkshopView } from './components/FocusedWorkshopView';
 import { TopicsCatalogueModal } from './components/TopicsCatalogueModal';
 import { TopicViewer } from './components/TopicViewer';
@@ -34,13 +34,15 @@ import { navigateToRoute } from './app/routeState';
 import { useAppNavigation } from './app/useAppNavigation';
 import { useCurriculumContent } from './app/useCurriculumContent';
 import { useLearningProgress } from './app/useLearningProgress';
-import { LearningLesson, normalizeTopic } from './types/learning';
 
 export default function App() {
   const [siteContent, setSiteContent] = useState<CmsSiteContentCombined | null>(null);
   const [homeConfig, setHomeConfig] = useState<CmsHomeConfig>(DEFAULT_HOME_CONFIG);
   const [homeModules, setHomeModules] = useState<CmsModule[]>([]);
   const [homeCategories, setHomeCategories] = useState<CmsCategory[]>([]);
+  const [contentReady, setContentReady] = useState({ texts: false, config: false, catalogue: false });
+  const [contentErrors, setContentErrors] = useState<Record<string, string | null>>({});
+  const [contentAttempt, setContentAttempt] = useState(0);
   const [isStudentPreviewMode, setIsStudentPreviewMode] = useState<boolean>(false);
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -77,12 +79,7 @@ export default function App() {
     markLessonSectionVisited,
     saveActivityResult,
   } = learning;
-  const homeContentRevision = JSON.stringify([
-    homeConfig.updatedAt,
-    homeConfig.presentation?.items,
-    homeConfig.featuredTopicIds,
-  ]);
-  const curriculum = useCurriculumContent(canAdmin, isStudentPreviewMode, activeView, homeContentRevision);
+  const curriculum = useCurriculumContent(canAdmin, isStudentPreviewMode, activeView);
   const { topics: allCurriculumTopics, includesDrafts: curriculumIncludesDrafts, isLoading: isCurriculumLoading } = curriculum;
   const displayedTopics = curriculumIncludesDrafts && !canAdmin ? [] : allCurriculumTopics;
   const dynamicTopic = displayedTopics.find((topic) => topic.id === currentTopicId) || null;
@@ -107,25 +104,49 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
     const unsubscribeSite = subscribeToSiteContent((content) => {
-      if (isMounted) setSiteContent(content);
-    });
+      if (isMounted) {
+        setSiteContent(content);
+        setContentReady((ready) => ({ ...ready, texts: true }));
+        setContentErrors((errors) => ({ ...errors, texts: null }));
+      }
+    }, () => { if (isMounted) setContentErrors((errors) => ({ ...errors, texts: 'No se pudieron cargar los textos del sitio.' })); });
 
     return () => {
       isMounted = false;
       unsubscribeSite();
     };
-  }, []);
+  }, [contentAttempt]);
 
-  useEffect(() => subscribeToHomeConfig(setHomeConfig), []);
+  useEffect(() => subscribeToHomeConfig((config) => {
+    setHomeConfig(config);
+    setContentReady((ready) => ({ ...ready, config: true }));
+    setContentErrors((errors) => ({ ...errors, config: null }));
+  }, () => setContentErrors((errors) => ({ ...errors, config: 'No se pudo cargar la configuración de la portada.' }))), [contentAttempt]);
 
   useEffect(() => {
+    let mounted = true;
     Promise.all([getCmsModules(), getCmsCategories()])
       .then(([modules, categories]) => {
+        if (!mounted) return;
         setHomeModules(modules);
         setHomeCategories(categories);
+        setContentReady((ready) => ({ ...ready, catalogue: true }));
+        setContentErrors((errors) => ({ ...errors, catalogue: null }));
       })
-      .catch((error) => logSafeError('No se pudieron cargar los datos configurables del Home:', error));
-  }, []);
+      .catch((error) => {
+        logSafeError('No se pudieron cargar los datos configurables del Home:', error);
+        if (mounted) setContentErrors((errors) => ({ ...errors, catalogue: 'No se pudieron cargar los módulos y categorías.' }));
+      });
+    return () => { mounted = false; };
+  }, [contentAttempt]);
+
+  const retryContent = () => {
+    setContentErrors({});
+    setContentAttempt((attempt) => attempt + 1);
+    curriculum.reload();
+  };
+  const contentError = Object.values(contentErrors).find(Boolean) || curriculum.error;
+  const homeReady = contentReady.texts && contentReady.config && contentReady.catalogue;
 
 
   // Keep one identity subscription; changing lessons must not reset admin access.
@@ -141,9 +162,6 @@ export default function App() {
     navigateToRoute({ view: topicId === 'classes' ? 'workshop' : 'topic', topicId });
   };
 
-  const currentTopic: LearningLesson = normalizeTopic(
-    TOPICS_DATA.find((t) => t.id === currentTopicId) || TOPICS_DATA[5],
-  );
   const handleSectionVisited = useCallback((sectionId: string, totalSections: number) => {
     markLessonSectionVisited(currentTopicId, sectionId, totalSections);
   }, [currentTopicId, markLessonSectionVisited]);
@@ -205,7 +223,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         isSyncing={isSyncing}
         topicCount={displayedTopics.length}
-        navigationItems={siteContent?.headerNavigation}
+        navigationItems={siteContent?.headerNavigation ?? []}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -233,7 +251,9 @@ export default function App() {
         )}
 
         {/* VIEW 1: Home View */}
-        {(activeView === 'home' || (activeView === 'admin' && !canAdmin)) && (
+        {(activeView !== 'admin' || !canAdmin) && contentError && <ContentStatus error={contentError} onRetry={retryContent} />}
+        {(activeView === 'home' || (activeView === 'admin' && !canAdmin)) && !homeReady && !contentError && <ContentStatus onRetry={retryContent} />}
+        {(activeView === 'home' || (activeView === 'admin' && !canAdmin)) && homeReady && (
           <HomeView
             onOpenWorkshop={(stage) => {
               if (stage) setCurrentStage(stage);
@@ -325,7 +345,7 @@ export default function App() {
         )}
 
         {activeView === 'topic' && (isCurriculumLoading || !dynamicTopic) && (
-          <p role="status" className="text-sm text-[#59645C]">{isCurriculumLoading ? 'Cargando contenido…' : 'Esta lección no está disponible. Elige otra desde el temario.'}</p>
+          curriculum.error ? null : <p role="status" className="text-sm text-[#59645C]">{isCurriculumLoading ? 'Cargando contenido…' : 'Esta lección no está disponible. Elige otra desde el temario.'}</p>
         )}
 
         {/* VIEW 4: Laboratorio de Objetos (Pelota & Burbuja) */}
@@ -337,7 +357,8 @@ export default function App() {
         )}
 
         {/* VIEW 5: Exploraciones con Processing (Secuencia Piloto de 3 Ejercicios) */}
-        {activeView === 'pilot' && (
+        {activeView === 'pilot' && !siteContent && !contentError && <ContentStatus onRetry={retryContent} />}
+        {activeView === 'pilot' && siteContent && (
           <PilotExercisesView
             onBackToHome={() => setActiveView('home')}
             currentUser={currentUser}

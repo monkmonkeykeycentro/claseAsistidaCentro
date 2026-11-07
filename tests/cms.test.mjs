@@ -10,7 +10,7 @@ import { HomePresentation } from '../src/components/HomePresentation.tsx';
 
 // Exercise the real auth/service code against an in-memory Firebase SDK boundary.
 // These tests do not replace running firestore.rules in the Firebase emulator.
-const state = { documents: new Map(), writes: [], writeError: null, readError: null, authCallback: null, listeners: [] };
+const state = { documents: new Map(), writes: [], reads: [], writeError: null, readError: null, authCallback: null, listeners: [] };
 const auth = { currentUser: null, authStateReady: async () => {} };
 const snapshot = (path) => ({ id: path.split('/').at(-1), exists: () => state.documents.has(path), data: () => state.documents.get(path), metadata: { fromCache: false } });
 const read = async ({ path }) => { if (state.readError) throw state.readError; return snapshot(path); };
@@ -19,6 +19,7 @@ function store({ path }, data, options) {
   state.documents.set(path, options?.merge ? { ...state.documents.get(path), ...data } : data);
 }
 function list(ref) {
+  state.reads.push(ref.path);
   const docs = [...state.documents.entries()]
     .filter(([path, data]) => path.startsWith(ref.path + '/') && path.split('/').length === 2 && (ref.constraints || []).every(({ field, value }) => data[field] === value))
     .map(([path]) => snapshot(path));
@@ -92,7 +93,7 @@ function curriculum() {
 }
 beforeEach(() => {
   auth.currentUser = null;
-  state.documents.clear(); state.writes = []; state.writeError = null; state.readError = null; state.listeners = [];
+  state.documents.clear(); state.writes = []; state.reads = []; state.writeError = null; state.readError = null; state.listeners = [];
 });
 
 test('only administrators can save the tool content, and saved changes are included in CMS backups', async () => {
@@ -912,4 +913,54 @@ test('malformed backups cannot partially write data or create revisions', async 
   auth.currentUser = null;
   await assert.rejects(cms.importCurriculumBackup(base));
   assert.equal(state.writes.length, 0);
+});
+
+test('bulk curriculum reads seven collections once instead of querying each lesson and section', async () => {
+  administrator();
+  curriculum();
+  for (let index = 0; index < 100; index++) {
+    const id = `extra_${index}`;
+    state.documents.set(`cms_lessons/${id}`, { ...lesson, id });
+    state.documents.set(`cms_sections/section_${id}`, { ...section, id: `section_${id}`, lessonId: id });
+    state.documents.set(`cms_blocks/block_${id}`, { ...block, id: `block_${id}`, sectionId: `section_${id}` });
+  }
+  const topics = await cms.getAllTopicsFromCmsOrFallback(true);
+  assert.equal(topics.length, 101);
+  assert.equal(state.reads.length, 7);
+  assert.equal(new Set(state.reads).size, 7);
+  assert.equal(topics.find((topic) => topic.id === 'extra_99').concepts[0].blocks[0].id, 'block_extra_99');
+});
+
+test('failed curriculum reads reject instead of returning the bundled curriculum', async () => {
+  state.readError = Object.assign(new Error('offline'), { code: 'unavailable' });
+  await assert.rejects(cms.getAllTopicsFromCmsOrFallback(), { code: 'unavailable' });
+});
+
+test('site subscriptions emit confirmed content only and preserve it after a failed refresh', () => {
+  state.documents.set('cms_site_content/hero_headline', { key: 'hero_headline', content: 'Título publicado' });
+  state.documents.set('cms_site_content/home_config', { content: JSON.stringify({ ...DEFAULT_HOME_CONFIG, footer: { ...DEFAULT_HOME_CONFIG.footer, text: 'Pie publicado' } }) });
+  const texts = [];
+  const configs = [];
+  const errors = [];
+  const stopTexts = cms.subscribeToSiteContent((value) => texts.push(value), (error) => errors.push(error));
+  const stopConfig = cms.subscribeToHomeConfig((value) => configs.push(value), (error) => errors.push(error));
+  assert.equal(texts.length, 1);
+  assert.equal(texts[0].heroHeadline, 'Título publicado');
+  assert.equal(configs.length, 1);
+  for (const listener of state.listeners) listener.error(new Error('offline'));
+  assert.equal(errors.length, 2);
+  assert.equal(texts.length, 1);
+  assert.equal(configs.length, 1);
+  stopTexts(); stopConfig();
+});
+
+test('publication status never uses local defaults after a failed read or reports failed writes as saved', async () => {
+  const units = await import('../src/services/unitsCurriculumService.ts');
+  state.readError = Object.assign(new Error('offline'), { code: 'unavailable' });
+  await assert.rejects(units.loadCurriculumStatusMap(), { code: 'unavailable' });
+  state.readError = null;
+  state.writeError = Object.assign(new Error('denied'), { code: 'permission-denied' });
+  await assert.rejects(units.saveExercisePublicationStatus('u1-e1', 'published'), { code: 'permission-denied' });
+  await assert.rejects(units.setUnitPublicationStatus('u1', 'published'), { code: 'permission-denied' });
+  assert.equal(state.documents.has('cms_site_content/units_curriculum_status'), false);
 });

@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { ContentStatus } from '../ContentStatus';
 import {
   CURRICULUM_UNITS,
   ExerciseDefinition,
@@ -54,13 +55,17 @@ export const AdminCurriculumUnitsView: React.FC<AdminCurriculumUnitsViewProps> =
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
   const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Load publication status on mount
   const refreshStatus = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const map = await loadCurriculumStatusMap();
       setStatusMap(map);
+    } catch {
+      setLoadError('No se pudo cargar el estado guardado de las actividades.');
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +110,8 @@ export const AdminCurriculumUnitsView: React.FC<AdminCurriculumUnitsViewProps> =
       setStatusMap(updated);
       setNotification(`Unidad ${unitId.toUpperCase()} actualizada a estado ${next}.`);
       setTimeout(() => setNotification(null), 4000);
+    } catch {
+      setLoadError('No se pudieron guardar los cambios de la unidad.');
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +121,8 @@ export const AdminCurriculumUnitsView: React.FC<AdminCurriculumUnitsViewProps> =
     if (selectedUnitFilter === 'all') return true;
     return u.id === selectedUnitFilter;
   });
+
+  if (!Object.keys(statusMap).length || loadError) return <ContentStatus error={loadError} onRetry={refreshStatus} />;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">

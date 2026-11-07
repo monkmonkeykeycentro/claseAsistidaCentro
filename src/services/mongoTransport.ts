@@ -5,16 +5,30 @@ type Operation = { type: 'set' | 'update' | 'delete'; path: string; data?: unkno
 type Row = { path: string; data: Record<string, any> };
 
 export function createMongoTransport(getToken: () => Promise<string | undefined>, request = globalThis.fetch) {
-  const listeners = new Set<() => void>();
-  async function call(body: unknown): Promise<any> {
+  const listeners = new Map<() => void, Reference>();
+  const pendingReads = new Map<string, Promise<any>>();
+  let generation = 0;
+  async function call(body: { action: string; [key: string]: unknown }): Promise<any> {
     const token = await getToken();
-    const response = await request('/api/data', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(body), cache: 'no-store',
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw Object.assign(new Error(result.error || 'No se pudo acceder a los datos.'), { code: result.code || 'unavailable' });
-    return result;
+    const serialized = JSON.stringify(body);
+    // Share concurrent reads only for the same verified session. Do not retain
+    // responses across requests, sign-outs, permission changes or failed reads.
+    const key = `${generation}:${token || ''}:${serialized}`;
+    const read = body.action === 'get' || body.action === 'list';
+    if (read && pendingReads.has(key)) return pendingReads.get(key);
+    const perform = async () => {
+      const response = await request('/api/data', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: serialized, cache: 'no-store', signal: AbortSignal.timeout(20000),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw Object.assign(new Error(result.error || 'No se pudo acceder a los datos.'), { code: result.code || 'unavailable' });
+      return result;
+    };
+    const result = perform();
+    if (read) pendingReads.set(key, result);
+    try { return await result; }
+    finally { if (read) pendingReads.delete(key); }
   }
   function snapshot(path: string, data?: Record<string, any>) {
     return { id: path.split('/').at(-1)!, exists: () => data !== undefined, data: () => data,
@@ -45,7 +59,10 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
   async function commit(operations: Operation[]) {
     if (!operations.length) return;
     await call({ action: 'commit', operations });
-    listeners.forEach((refresh) => refresh());
+    generation++;
+    listeners.forEach((ref, refresh) => {
+      if (operations.some((op) => ref.kind === 'document' ? ref.path === op.path : op.path.slice(0, op.path.lastIndexOf('/')) === ref.path)) refresh();
+    });
   }
   function writeBatch() {
     const operations: Operation[] = [];
@@ -66,32 +83,37 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
     let queued = false;
     let previous: string | undefined;
     let emitted = false;
+    let retryDelay = 2000;
     let timer: ReturnType<typeof setTimeout>;
     async function refresh() {
       if (stopped) return;
       if (running) { queued = true; return; }
       clearTimeout(timer);
       running = true;
+      let failed = false;
       try {
         const result = ref.kind === 'document' ? await getDoc(ref) : await getDocs(ref);
         const current = JSON.stringify('docs' in result ? result.docs.map((doc) => ({ id: doc.id, data: doc.data() })) : result.data());
         if (!stopped && (!emitted || current !== previous)) { next(result); previous = current; emitted = true; }
+        retryDelay = 2000;
       } catch (reason) {
         // Consumers may clear content or permissions after an error. Re-emit the
         // next successful server response even when its data has not changed.
         emitted = false;
+        failed = true;
         if (!stopped) error?.(reason);
       }
       finally {
         running = false;
         if (!stopped) {
-          const delay = queued ? 0 : 15000;
+          const delay = queued ? 0 : failed ? retryDelay : 15000;
+          if (failed) retryDelay = Math.min(retryDelay * 2, 15000);
           queued = false;
           timer = setTimeout(refresh, delay);
         }
       }
     }
-    listeners.add(refresh);
+    listeners.set(refresh, ref);
     void refresh();
     return () => { stopped = true; clearTimeout(timer); listeners.delete(refresh); };
   }

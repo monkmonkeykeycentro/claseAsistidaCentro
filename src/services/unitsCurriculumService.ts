@@ -1,4 +1,3 @@
-import { logSafeError } from '../utils/safeError';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,9 +6,6 @@ import { logSafeError } from '../utils/safeError';
 import { CURRICULUM_UNITS, ExerciseDefinition, UnitDefinition, UnitPublicationStatus } from '../data/unitsData';
 import { db } from './firebase';
 import { doc, getDoc, setDoc } from './database';
-
-const STORAGE_KEY_STATUS = 'curriculum_units_status_overrides';
-const STORAGE_KEY_ORDER = 'curriculum_units_order_overrides';
 
 export interface CurriculumInventorySummary {
   yaExistia: ExerciseDefinition[];
@@ -34,30 +30,12 @@ export function getDefaultStatusMap(): Record<string, UnitPublicationStatus> {
 }
 
 /**
- * Loads current publication status map from localStorage and Firestore if available.
+ * Loads the saved publication status. Connection failures must reach the caller.
  */
 export async function loadCurriculumStatusMap(): Promise<Record<string, UnitPublicationStatus>> {
   const defaults = getDefaultStatusMap();
-  let localOverrides: Record<string, UnitPublicationStatus> = {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_STATUS);
-    if (raw) {
-      localOverrides = JSON.parse(raw);
-    }
-  } catch {
-    // Ignore JSON error
-  }
-
-  try {
-    const snap = await getDoc(doc(db, 'cms_site_content', 'units_curriculum_status'));
-    if (snap.exists() && snap.data().statusMap) {
-      return { ...defaults, ...localOverrides, ...snap.data().statusMap };
-    }
-  } catch {
-    // Firestore may fail for unauthenticated visitors; return local + defaults
-  }
-
-  return { ...defaults, ...localOverrides };
+  const snap = await getDoc(doc(db, 'cms_site_content', 'units_curriculum_status'));
+  return snap.exists() && snap.data().statusMap ? { ...defaults, ...snap.data().statusMap } : defaults;
 }
 
 /**
@@ -76,26 +54,16 @@ export async function saveExercisePublicationStatus(
   const current = await loadCurriculumStatusMap();
   const updated = { ...current, [exerciseId]: newStatus };
 
-  try {
-    localStorage.setItem(STORAGE_KEY_STATUS, JSON.stringify(updated));
-  } catch {
-    // Ignore
-  }
-
-  try {
-    await setDoc(
-      doc(db, 'cms_site_content', 'units_curriculum_status'),
-      {
-        key: 'units_curriculum_status',
-        statusMap: updated,
-        updatedAt: new Date().toISOString(),
-        updatedBy: adminEmail || 'admin',
-      },
-      { merge: true }
-    );
-  } catch (err) {
-    logSafeError('Could not persist status to Firestore, saved locally:', err);
-  }
+  await setDoc(
+    doc(db, 'cms_site_content', 'units_curriculum_status'),
+    {
+      key: 'units_curriculum_status',
+      statusMap: updated,
+      updatedAt: new Date().toISOString(),
+      updatedBy: adminEmail || 'admin',
+    },
+    { merge: true }
+  );
 
   return updated;
 }
@@ -123,26 +91,16 @@ export async function setUnitPublicationStatus(
     }
   }
 
-  try {
-    localStorage.setItem(STORAGE_KEY_STATUS, JSON.stringify(updated));
-  } catch {
-    // Ignore
-  }
-
-  try {
-    await setDoc(
-      doc(db, 'cms_site_content', 'units_curriculum_status'),
-      {
-        key: 'units_curriculum_status',
-        statusMap: updated,
-        updatedAt: new Date().toISOString(),
-        updatedBy: adminEmail || 'admin',
-      },
-      { merge: true }
-    );
-  } catch (err) {
-    logSafeError('Could not persist status to Firestore, saved locally:', err);
-  }
+  await setDoc(
+    doc(db, 'cms_site_content', 'units_curriculum_status'),
+    {
+      key: 'units_curriculum_status',
+      statusMap: updated,
+      updatedAt: new Date().toISOString(),
+      updatedBy: adminEmail || 'admin',
+    },
+    { merge: true }
+  );
 
   return updated;
 }

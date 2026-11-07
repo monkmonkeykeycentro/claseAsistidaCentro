@@ -16,6 +16,43 @@ export function createDataService(db, client) {
     if (isConfiguredAdmin(user)) return true;
     return (await read(`admins/${user.uid}`, session)) !== undefined;
   }
+  async function preload(paths) {
+    const groups = new Map();
+    for (const path of new Set(paths)) {
+      if (readCache.has(path)) continue;
+      const { collection } = parsePath(path);
+      if (!groups.has(collection)) groups.set(collection, []);
+      groups.get(collection).push(path);
+    }
+    await Promise.all([...groups].map(async ([collection, ids]) => {
+      const rows = await db.collection(collection).find({ _id: { $in: ids } }).toArray();
+      ids.forEach((path) => readCache.set(path, undefined));
+      rows.forEach((row) => readCache.set(row._id, row.data));
+    }));
+  }
+  async function preloadVisibility(root, rows) {
+    // Resolve the ancestors for a whole page in a few queries. This cache lives
+    // only for this request, so visibility changes are checked on the next read.
+    const paths = (items, field, collection) => items.flatMap((item) => typeof item?.[field] === 'string' ? [`${collection}/${item[field]}`] : []);
+    let data = rows.map((row) => row.data);
+    if (root === 'cms_node_blocks' || root === 'cms_node_relations') {
+      await preload(paths(root === 'cms_node_relations' ? data.filter((item) => item?.relationType === 'contains') : data, root === 'cms_node_blocks' ? 'nodeId' : 'parentId', 'cms_nodes'));
+      return;
+    }
+    if (root === 'cms_blocks') {
+      const sections = paths(data, 'sectionId', 'cms_sections');
+      await preload(sections);
+      data = sections.map((path) => readCache.get(path));
+    }
+    if (root === 'cms_blocks' || root === 'cms_sections') {
+      const lessons = paths(data.filter((item) => item?.visible === true), 'lessonId', 'cms_lessons');
+      await preload(lessons);
+      data = lessons.map((path) => readCache.get(path));
+    }
+    if (['cms_blocks', 'cms_sections', 'cms_lessons'].includes(root)) {
+      await preload(paths(data.filter(published), 'moduleId', 'cms_modules'));
+    }
+  }
   async function canRead(path, data, user, administrator, session) {
     const { parts } = parsePath(path);
     const [root, id] = parts;
@@ -100,6 +137,7 @@ export function createDataService(db, client) {
         filters.push({ _id: { $gt: body.cursor } });
       }
       const rows = await db.collection(target.collection).find({ $and: filters }).sort({ _id: 1 }).limit(200).toArray();
+      if (!administrator) await preloadVisibility(root, rows);
       const documents = [];
       for (const row of rows) {
         if (await canRead(row._id, row.data, user, administrator)) documents.push({ path: row._id, data: !administrator && cmsCollections.includes(root) ? publicDocument(row.data, root) : row.data });

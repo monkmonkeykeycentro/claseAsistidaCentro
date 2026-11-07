@@ -99,8 +99,8 @@ test('Mongo subscriptions restore verified admin membership after a failed read 
   await new Promise((resolve) => setImmediate(resolve));
   assert.deepEqual(roles, ['admin']);
 
-  // Successful writes also refresh subscriptions without waiting for the polling timer.
-  const profile = transport.doc(null, 'users', 'test-admin');
+  // Writes affecting the subscribed document refresh it without waiting for polling.
+  const profile = transport.doc(null, 'admins', 'test-admin');
   failRead = true;
   await transport.setDoc(profile, { displayName: 'Test' });
   await new Promise((resolve) => setImmediate(resolve));
@@ -111,4 +111,67 @@ test('Mongo subscriptions restore verified admin membership after a failed read 
   await transport.setDoc(profile, { displayName: 'Test' });
   await new Promise((resolve) => setImmediate(resolve));
   assert.deepEqual(roles, ['admin', 'student', 'admin']);
+});
+
+test('concurrent reads share a request only within the same session and never retain responses', async () => {
+  let token = 'first-session';
+  const requests = [];
+  let release;
+  const barrier = new Promise((resolve) => { release = resolve; });
+  const transport = createMongoTransport(async () => token, async (_url, init) => {
+    requests.push(init.headers.Authorization);
+    await barrier;
+    return Response.json({ data: { title: 'Confirmed' } });
+  });
+  const ref = transport.doc(null, 'cms_site_content', 'home_config');
+  const first = transport.getDoc(ref);
+  const duplicate = transport.getDoc(ref);
+  token = 'second-session';
+  const second = transport.getDoc(ref);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(requests, ['Bearer first-session', 'Bearer second-session']);
+  release();
+  await Promise.all([first, duplicate, second]);
+  await transport.getDoc(ref);
+  assert.equal(requests.length, 3);
+});
+
+test('saving progress does not refresh unrelated CMS or administrator subscriptions', async (t) => {
+  const reads = [];
+  const transport = createMongoTransport(async () => 'session', async (_url, init) => {
+    const body = JSON.parse(init.body);
+    if (body.action === 'get') { reads.push(body.path); return Response.json({ data: {} }); }
+    return Response.json({ ok: true });
+  });
+  t.after(transport.onSnapshot(transport.doc(null, 'admins', 'editor'), () => {}));
+  t.after(transport.onSnapshot(transport.doc(null, 'cms_site_content', 'home_config'), () => {}));
+  await new Promise((resolve) => setImmediate(resolve));
+  const count = reads.length;
+  await transport.setDoc(transport.doc(null, 'users', 'editor', 'progress', 'lesson'), { userId: 'editor' });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(reads.length, count);
+  await transport.setDoc(transport.doc(null, 'cms_site_content', 'home_config'), { title: 'Changed' });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(reads.length, count + 1);
+  assert.equal(reads.at(-1), 'cms_site_content/home_config');
+});
+
+test('a read following a committed write does not join a pending read from before the write', async () => {
+  const waiting = [];
+  const transport = createMongoTransport(async () => undefined, async (_url, init) => {
+    const body = JSON.parse(init.body);
+    if (body.action === 'commit') return Response.json({ ok: true });
+    return new Promise((resolve) => waiting.push(resolve));
+  });
+  const ref = transport.doc(null, 'cms_site_content', 'home_config');
+  const before = transport.getDoc(ref);
+  await new Promise((resolve) => setImmediate(resolve));
+  await transport.setDoc(ref, { title: 'Changed' });
+  const after = transport.getDoc(ref);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(waiting.length, 2);
+  waiting[0](Response.json({ data: { title: 'Before' } }));
+  waiting[1](Response.json({ data: { title: 'After' } }));
+  assert.equal((await before).data().title, 'Before');
+  assert.equal((await after).data().title, 'After');
 });

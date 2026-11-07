@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { ContentStatus } from '../ContentStatus';
 import { CURRICULUM_UNITS, UnitDefinition, ExerciseDefinition } from '../../data/unitsData';
 import { CoordinateSystemExercise } from '../pilot/CoordinateSystemExercise';
 import { AppUser, db, isUserAdmin } from '../../services/firebase';
@@ -54,10 +55,16 @@ export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
   onActivityResult,
 }) => {
   const [statusMap, setStatusMap] = useState<Record<string, 'draft' | 'published'>>({});
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusAttempt, setStatusAttempt] = useState(0);
 
   useEffect(() => {
-    loadCurriculumStatusMap().then(setStatusMap);
-  }, []);
+    let mounted = true;
+    setStatusError(null);
+    loadCurriculumStatusMap().then((map) => { if (mounted) setStatusMap(map); })
+      .catch(() => { if (mounted) setStatusError('No se pudo cargar la publicación de las actividades.'); });
+    return () => { mounted = false; };
+  }, [statusAttempt]);
 
   const isAdminOrPreview = isUserAdmin(currentUser) || isStudentPreviewMode;
   const [activeUnitId, setActiveUnitId] = useState<'u1' | 'u2' | 'u3'>(() => {
@@ -483,6 +490,7 @@ export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
       ctx.fillText(`x = ${Math.round(u3e5X)}px | velocidad = ${u3e5Speed} px/frame`, 30, 240);
     }
   }, [
+    statusMap, statusError,
     activeExercise.id,
     u1e1Order,
     u1e2Step,
@@ -547,6 +555,8 @@ export const UnitActivitiesView: React.FC<UnitActivitiesViewProps> = ({
   const prevExercise = currentExIdx > 0 ? activeUnit.exercises[currentExIdx - 1] : null;
   const nextExercise =
     currentExIdx < activeUnit.exercises.length - 1 ? activeUnit.exercises[currentExIdx + 1] : null;
+
+  if (!Object.keys(statusMap).length || statusError) return <ContentStatus error={statusError} onRetry={() => setStatusAttempt((attempt) => attempt + 1)} />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">

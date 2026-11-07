@@ -42,6 +42,7 @@ import {
   saveHomeConfig,
 } from '../../services/cmsService';
 import { AdminLessonEditor } from './AdminLessonEditor';
+import { ContentStatus } from '../ContentStatus';
 import { AdminHomePresentationEditor } from './AdminHomePresentationEditor';
 import { AdminCurriculumUnitsView } from './AdminCurriculumUnitsView';
 import { AdminComposableContentView } from './AdminComposableContentView';
@@ -184,71 +185,58 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     finally { setIsWorking(false); }
   };
 
-  // Load all data
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadRevision, setLoadRevision] = useState(0);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [evidenceReady, setEvidenceReady] = useState(false);
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyReady, setHistoryReady] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryReady, setCategoryReady] = useState(false);
+
   const loadAll = async () => {
     setIsLoading(true);
     setActionError(null);
-    let operation = 'inicializar el temario';
     try {
-      // 1. Seed if empty
       await seedCmsFromExistingContentIfEmpty();
-
-      // 2. Load modules & lessons
-      operation = 'cargar los módulos y las lecciones';
-      const modList = await getCmsModules(true);
-      await syncCmsCategoryReferences();
-      const categoryList = await getCmsCategories(true);
-      const lesList = await getCmsLessons(undefined, true);
+      const [modList, categoryList, lesList, texts, loadedHomeConfig, nav, media] = await Promise.all([
+        getCmsModules(true), getCmsCategories(true), getCmsLessons(undefined, true),
+        getAllSiteContent(), getHomeConfig(), getHeaderNavigation(), getCmsMediaResources(),
+      ]);
       setModules(modList);
       setCategories(categoryList);
       setLessons(lesList);
-
-      // Auto-expand first 4 modules
-      const initialExp: Record<string, boolean> = {};
-      modList.slice(0, 4).forEach((m) => {
-        initialExp[m.id] = true;
-      });
-      setExpandedModules(initialExp);
-
-      // 3. Load site content
-      operation = 'cargar los textos del sitio';
-      const texts = await getAllSiteContent();
-      const loadedHomeConfig = await getHomeConfig();
+      setExpandedModules(Object.fromEntries(modList.slice(0, 4).map((module) => [module.id, true])));
       setSiteContent(texts);
       setHomeConfig(loadedHomeConfig);
-      const drafts: Record<string, string> = {};
-      Object.entries(texts).forEach(([k, item]) => {
-        drafts[k] = item.content;
-      });
-      setSiteTextDrafts(drafts);
-
-      // 3b. Load Header Navigation
-      try {
-        const nav = await getHeaderNavigation();
-        setNavItems(nav);
-      } catch (navErr) {
-        console.warn('Could not load header navigation:', navErr);
-      }
-
-      // 4. Load media & revisions
-      operation = 'cargar los recursos multimedia';
-      const media = await getCmsMediaResources();
+      setSiteTextDrafts(Object.fromEntries(Object.entries(texts).map(([key, item]) => [key, item.content])));
+      setNavItems(nav);
       setMediaList(media);
-      operation = 'cargar el historial administrativo';
-      const revs = await getCmsRevisions();
-      setRevisions(revs);
+      setHasLoaded(true);
+      setLoadRevision((revision) => revision + 1);
+    } catch (error) {
+      setActionError(describeCmsError(error, 'cargar el CMS'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // 6. Load Student Evidences
-      try {
+  const loadEvidences = async () => {
+    setEvidenceLoading(true);
+    setEvidenceError(null);
+    try {
         const loadedEvidences: PilotEvidenceRecord[] = [];
-        try {
+        {
           const usersSnap = await getDocs(collection(db, 'users'));
-          for (const uDoc of usersSnap.docs) {
-            const uData = uDoc.data();
-            try {
-              const coordSnap = await getDoc(
-                doc(db, 'users', uDoc.id, 'pilot_evidences', 'coordinates')
-              );
+          for (let start = 0; start < usersSnap.docs.length; start += 6) {
+            await Promise.all(usersSnap.docs.slice(start, start + 6).map(async (uDoc) => {
+              const uData = uDoc.data();
+              const [coordSnap, condSnap] = await Promise.all([
+                getDoc(doc(db, 'users', uDoc.id, 'pilot_evidences', 'coordinates')),
+                getDoc(doc(db, 'users', uDoc.id, 'pilot_evidences', 'conditionals')),
+              ]);
               if (coordSnap.exists()) {
                 const cData = coordSnap.data();
                 loadedEvidences.push({
@@ -261,9 +249,6 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                   submittedAt: cData.submittedAt || cData.updatedAt || new Date().toISOString(),
                 });
               }
-              const condSnap = await getDoc(
-                doc(db, 'users', uDoc.id, 'pilot_evidences', 'conditionals')
-              );
               if (condSnap.exists()) {
                 const cnData = condSnap.data();
                 loadedEvidences.push({
@@ -276,12 +261,8 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
                   submittedAt: cnData.submittedAt || cnData.updatedAt || new Date().toISOString(),
                 });
               }
-            } catch {
-              // ignore subcollection error
-            }
+            }));
           }
-        } catch {
-          // ignore users listing error
         }
 
         // Also merge local storage evidence for instant preview
@@ -321,20 +302,38 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
         }
 
         setEvidenceList(loadedEvidences);
-      } catch (evErr) {
-        console.warn('Could not load student evidences:', evErr);
-      }
-    } catch (e) {
-      console.error('Error loading CMS data:', e);
-      setActionError(describeCmsError(e, operation));
+        setEvidenceReady(true);
+    } catch {
+      setEvidenceError('No se pudieron cargar las evidencias. Vuelve a intentarlo.');
     } finally {
-      setIsLoading(false);
+      setEvidenceLoading(false);
     }
   };
 
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try { setRevisions(await getCmsRevisions()); setHistoryReady(true); }
+    catch { setHistoryError('No se pudo cargar el historial. Vuelve a intentarlo.'); }
+    finally { setHistoryLoading(false); }
+  };
+
+  useEffect(() => { void loadAll(); }, []);
+
+  // Personal evidence and revision history are loaded only when requested.
   useEffect(() => {
-    loadAll();
-  }, []);
+    if (!hasLoaded) return;
+    if (activeTab === 'evidences' || activeTab === 'overview') void loadEvidences();
+    if (activeTab === 'history' || activeTab === 'overview') void loadHistory();
+    if (activeTab === 'categories') {
+      setCategoryLoading(true);
+      setCategoryReady(false);
+      syncCmsCategoryReferences()
+        .then(() => getCmsCategories(true)).then((list) => { setCategories(list); setCategoryReady(true); })
+        .catch((error) => setActionError(describeCmsError(error, 'sincronizar las categorías')))
+        .finally(() => setCategoryLoading(false));
+    }
+  }, [activeTab, hasLoaded, loadRevision]);
 
   // Navigation & Apartados actions
   const handleMoveNav = (index: number, direction: 'up' | 'down') => {
@@ -965,16 +964,21 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="p-4 bg-white border border-[#E1E7E1] rounded-2xl space-y-2 text-xs text-[#59645C] shadow-xs">
             <span className="font-bold text-[#232A24] block flex items-center gap-1.5">
               <CheckCircle className="w-3.5 h-3.5 text-[#407B5D]" />
-              <span>Base de Datos Firestore Conectada</span>
+              <span>{actionError ? 'Revisa el aviso de carga' : hasLoaded ? 'Contenido guardado cargado' : 'Cargando contenido guardado…'}</span>
             </span>
             <p className="text-[11px] leading-relaxed">
-              Las modificaciones realizadas en este panel se guardan en la nube de Firebase y se reflejan al instante en la vista de los estudiantes.
+              Los cambios se guardan en la plataforma. Revisa cualquier aviso de error antes de continuar.
             </p>
           </div>
         </div>
 
         {/* Right Main Content Area (9 cols) */}
         <div className="lg:col-span-9 space-y-6">
+          {(!hasLoaded || isLoading) && <ContentStatus error={!isLoading ? actionError : null} onRetry={loadAll} />}
+          {hasLoaded && !isLoading && <>
+          {(activeTab === 'evidences' || activeTab === 'overview') && (!evidenceReady || evidenceLoading || evidenceError) && <ContentStatus error={evidenceError} onRetry={loadEvidences} loadingText="Cargando evidencias…" />}
+          {(activeTab === 'history' || activeTab === 'overview') && (!historyReady || historyLoading || historyError) && <ContentStatus error={historyError} onRetry={loadHistory} loadingText="Cargando historial…" />}
+          {activeTab === 'categories' && (!categoryReady || categoryLoading) && <ContentStatus error={!categoryLoading ? actionError : null} onRetry={() => setLoadRevision((revision) => revision + 1)} loadingText="Cargando categorías…" />}
           {/* ========================================================================= */}
           {/* TAB 0: PROPUESTA CURRICULAR U1–U3 (REVISIÓN DOCENTE)                     */}
           {/* ========================================================================= */}
@@ -1225,7 +1229,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* ========================================================================= */}
           {/* TAB 1: MÓDULOS Y LECCIONES                                                */}
           {/* ========================================================================= */}
-          {activeTab === 'categories' && (
+          {activeTab === 'categories' && categoryReady && !categoryLoading && (
             <div className="space-y-4">
               <div className="p-5 bg-white border border-[#E1E7E1] rounded-2xl shadow-xs">
                 <div className="flex items-center justify-between gap-3 mb-4">
@@ -1567,7 +1571,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* ========================================================================= */}
           {/* TAB 2: RESUMEN Y ESTADÍSTICAS                                             */}
           {/* ========================================================================= */}
-          {activeTab === 'overview' && (
+          {activeTab === 'overview' && evidenceReady && historyReady && !evidenceLoading && !historyLoading && !evidenceError && !historyError && (
             <div className="space-y-6">
               {/* Metrics cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -2177,7 +2181,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* ========================================================================= */}
           {/* TAB 5: HISTORIAL Y RESPALDOS                                             */}
           {/* ========================================================================= */}
-          {activeTab === 'history' && (
+          {activeTab === 'history' && historyReady && !historyLoading && !historyError && (
             <div className="p-6 bg-white border border-[#E1E7E1] rounded-2xl space-y-5 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E1E7E1] pb-3">
                 <div>
@@ -2233,7 +2237,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* ========================================================================= */}
           {/* TAB 6: EVIDENCIAS DE ESTUDIANTES (PILOTO)                                 */}
           {/* ========================================================================= */}
-          {activeTab === 'evidences' && (
+          {activeTab === 'evidences' && evidenceReady && !evidenceLoading && !evidenceError && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E1E7E1] pb-4">
                 <div>
@@ -2408,6 +2412,7 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
               )}
             </div>
           )}
+          </>}
         </div>
       </div>
 

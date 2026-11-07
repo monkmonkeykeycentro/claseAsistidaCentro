@@ -12,7 +12,7 @@ import {
   onSnapshot,
 } from './database';
 import { db, requireCmsAdmin } from './firebase';
-import { databaseSource } from '../config/dataBackend';
+import { databaseSource, useMongoDB } from '../config/dataBackend';
 import {
   CmsModule,
   CmsCategory,
@@ -197,8 +197,9 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
   await requireCmsAdmin();
   const path = 'cms_modules';
   try {
-    const snap = await getDocs(collection(db, path));
-    const initialized = await getDoc(doc(db, 'cms_site_content', 'curriculum_initialized'));
+    const [snap, initialized] = await Promise.all([
+      getDocs(collection(db, path)), getDoc(doc(db, 'cms_site_content', 'curriculum_initialized')),
+    ]);
     if (initialized.exists()) return { seeded: false, moduleCount: snap.size };
     // Repair legacy partial initialization without overwriting authored documents.
     const existing = new Set(snap.docs.map((document) => `cms_modules/${document.id}`));
@@ -742,24 +743,8 @@ function composableBlockToCmsBlock(block: CmsNodeBlock, sectionId: string): CmsB
   };
 }
 
-async function getTopicsFromComposable(includeUnpublished = false): Promise<TopicItem[]> {
-  const [nodes, lessons] = await Promise.all([
-    getCmsNodes(includeUnpublished),
-    getCmsLessons(undefined, includeUnpublished),
-  ]);
+async function getTopicsFromComposable(nodes: CmsNode[], lessons: CmsLesson[], relations: CmsNodeRelation[], blocks: CmsNodeBlock[]): Promise<TopicItem[]> {
   const lessonsById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
-  const nodeIds = nodes.map((node) => node.id);
-  const relationGroups = await Promise.all(nodeIds.map((parentId) => readCollection<CmsNodeRelation>(
-    composableNodeCollections.relations,
-    [where('parentId', '==', parentId), where('relationType', '==', 'contains')],
-  )));
-  const relations = relationGroups.flat();
-  const sectionIds = nodes.filter((node) => node.type === 'section').map((node) => node.id);
-  const blockGroups = await Promise.all(sectionIds.map((nodeId) => readCollection<CmsNodeBlock>(
-    composableNodeCollections.blocks,
-    [where('nodeId', '==', nodeId)],
-  )));
-  const blocks = blockGroups.flat();
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const childrenByParent = new Map<string, CmsNodeRelation[]>();
   relations.forEach((relation) => {
@@ -884,10 +869,6 @@ export async function getCmsCategories(includeUnpublished = false): Promise<CmsC
     );
     return byPosition(categories.length ? categories : DEFAULT_CMS_CATEGORIES);
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'permission-denied') {
-      console.warn('No se pudo leer cms_categories; se usarán las categorías predeterminadas hasta publicar firestore.rules.');
-      return DEFAULT_CMS_CATEGORIES;
-    }
     throw error;
   }
 }
@@ -995,9 +976,7 @@ export async function syncCmsCategoryReferences(): Promise<{ categories: number;
     }
   });
 
-  for (const write of writes) {
-    await persist(write.collection, write.id, write.data);
-  }
+  await commitInChunks(writes.map((write) => (batch) => batch.set(doc(db, write.collection, write.id), cleanDocument(write.data), { merge: true })));
   return { categories: categories.length, references: writes.length };
 }
 
@@ -1191,7 +1170,7 @@ export async function getHomeConfig(): Promise<CmsHomeConfig> {
   const raw = snapshot.data();
   let data: Partial<CmsHomeConfig> = raw as Partial<CmsHomeConfig>;
   if (typeof raw.content === 'string') {
-    try { data = JSON.parse(raw.content) as Partial<CmsHomeConfig>; } catch { return DEFAULT_HOME_CONFIG; }
+    data = JSON.parse(raw.content) as Partial<CmsHomeConfig>;
   }
   const pillars = Object.fromEntries(Object.entries(DEFAULT_HOME_CONFIG.pillars).map(([id, defaults]) => [
     id,
@@ -1215,7 +1194,7 @@ export async function getHomeConfig(): Promise<CmsHomeConfig> {
   };
 }
 
-export function subscribeToHomeConfig(callback: (config: CmsHomeConfig) => void): () => void {
+export function subscribeToHomeConfig(callback: (config: CmsHomeConfig) => void, onError?: (error: unknown) => void): () => void {
   return onSnapshot(
     collection(db, 'cms_site_content'),
     (snapshot) => {
@@ -1228,7 +1207,7 @@ export function subscribeToHomeConfig(callback: (config: CmsHomeConfig) => void)
         const raw = homeDocument.data();
         let data: Partial<CmsHomeConfig> = raw as Partial<CmsHomeConfig>;
         if (typeof raw.content === 'string') {
-          try { data = JSON.parse(raw.content) as Partial<CmsHomeConfig>; } catch { callback(DEFAULT_HOME_CONFIG); return; }
+          try { data = JSON.parse(raw.content) as Partial<CmsHomeConfig>; } catch (error) { onError?.(error); return; }
         }
         const pillars = Object.fromEntries(Object.entries(DEFAULT_HOME_CONFIG.pillars).map(([id, defaults]) => [
           id,
@@ -1253,8 +1232,8 @@ export function subscribeToHomeConfig(callback: (config: CmsHomeConfig) => void)
       }
     },
     (error) => {
-      logSafeError('No se pudo cargar la configuración del Home; se usará la configuración predeterminada.', error);
-      callback(DEFAULT_HOME_CONFIG);
+      logSafeError('No se pudo cargar la configuración del Home.', error);
+      onError?.(error);
     },
   );
 }
@@ -1274,7 +1253,7 @@ export async function saveSiteContent(item: CmsSiteContent, _userEmail?: string)
   await persist('cms_site_content', item.key, { ...item, updatedAt: new Date().toISOString(), updatedBy: user.email });
 }
 
-export function subscribeToSiteContent(callback: (content: CmsSiteContentCombined) => void): () => void {
+export function subscribeToSiteContent(callback: (content: CmsSiteContentCombined) => void, onError?: (error: unknown) => void): () => void {
   const emit = (source: Record<string, CmsSiteContent>) => {
     try {
       const content = (key: string): string => {
@@ -1342,11 +1321,10 @@ export function subscribeToSiteContent(callback: (content: CmsSiteContentCombine
         headerNavigation: navItems,
       });
     } catch (err) {
-      logSafeError('Error al procesar textos de cms_site_content, usando valores por defecto:', err);
+      logSafeError('Error al procesar textos de cms_site_content:', err);
+      onError?.(err);
     }
   };
-
-  emit(DEFAULT_SITE_CONTENT);
 
   return onSnapshot(
     collection(db, 'cms_site_content'),
@@ -1362,9 +1340,13 @@ export function subscribeToSiteContent(callback: (content: CmsSiteContentCombine
         emit(source);
       } catch (err) {
         logSafeError('Error en listener de cms_site_content:', err);
+        onError?.(err);
       }
     },
-    (error) => logSafeError('No se pudieron cargar los textos del sitio:', error)
+    (error) => {
+      logSafeError('No se pudieron cargar los textos del sitio:', error);
+      onError?.(error);
+    }
   );
 }
 
@@ -1382,6 +1364,7 @@ export async function getHeaderNavigation(): Promise<HeaderNavigationItem[]> {
     }
   } catch (err) {
     logSafeError('Error al cargar navegación de cabecera:', err);
+    throw err;
   }
   return DEFAULT_HEADER_NAVIGATION;
 }
@@ -1472,12 +1455,11 @@ export async function importCurriculumBackup(backup: CurriculumExportData): Prom
   await commitInChunks(writes);
 }
 
-async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: boolean): Promise<TopicItem> {
+async function lessonToTopic(lesson: CmsLesson, module: CmsModule, sections: CmsSection[], allBlocks: CmsBlock[]): Promise<TopicItem> {
   const original = TOPICS_DATA.find((topic) => `les_${topic.id}` === lesson.id);
-  const sections = await getCmsSections(lesson.id, preview);
   let quickChallenge = original?.quickChallenge;
   const concepts: TopicConcept[] = await Promise.all(sections.map(async (section) => {
-    const blocks = await getCmsBlocks(section.id);
+    const blocks = byPosition(allBlocks.filter((block) => block.sectionId === section.id));
     const activity = blocks.find((block) => block.type === 'activity' && block.activityConfig);
     if (activity) {
       try { quickChallenge = JSON.parse(activity.activityConfig!); } catch { /* Plain text activity. */ }
@@ -1547,35 +1529,47 @@ async function lessonToTopic(lesson: CmsLesson, module: CmsModule, preview: bool
   };
 }
 
-export async function getAllTopicsFromCmsOrFallback(includeUnpublished = false): Promise<TopicItem[]> {
-  try {
-    let composableTopics: TopicItem[] = [];
-    try {
-      composableTopics = await getTopicsFromComposable(includeUnpublished);
-    } catch (error) {
-      if (includeUnpublished) throw error;
-      logSafeError('No se pudo cargar el contenido composable público; se continuará con el CMS legacy:', error);
-    }
-    const modules = await getCmsModules(includeUnpublished);
-    if (modules.length === 0) {
-      // Empty published results may mean everything was deliberately hidden.
-      const initialized = await getDoc(doc(db, 'cms_site_content', 'curriculum_initialized'));
-      if (composableTopics.length > 0) return composableTopics;
-      return initialized.exists() ? [] : TOPICS_DATA;
-    }
-    const groups = await Promise.all(modules.map(async (module) => {
-      const lessons = await getCmsLessons(module.id, includeUnpublished);
-      return Promise.all(lessons.map((lesson) => lessonToTopic(lesson, module, includeUnpublished)));
-    }));
-    const legacyTopics = groups.flat();
-    const merged = new Map(legacyTopics.map((topic) => [topic.id, topic]));
-    composableTopics.forEach((topic) => merged.set(topic.id, topic));
-    return [...merged.values()].sort((a, b) => a.number - b.number || a.title.localeCompare(b.title));
-  } catch (error) {
-    if (includeUnpublished) throw error;
-    logSafeError('No se pudo cargar el temario del CMS:', error);
-    return TOPICS_DATA;
+type CurriculumSnapshot = [CmsModule[], CmsLesson[], CmsSection[], CmsBlock[], CmsNode[], CmsNodeRelation[], CmsNodeBlock[]];
+
+async function readCurriculumSnapshot(includeUnpublished: boolean): Promise<CurriculumSnapshot> {
+  if (!useMongoDB && !includeUnpublished) {
+    // Firestore rules require parent-constrained public queries; they do not
+    // filter a whole collection the way the MongoDB API does.
+    const [modules, nodes] = await Promise.all([getCmsModules(), getCmsNodes()]);
+    const lessons = (await Promise.all(modules.map((module) => getCmsLessons(module.id)))).flat();
+    const [sections, relations, nodeBlocks] = await Promise.all([
+      Promise.all(lessons.map((lesson) => getCmsSections(lesson.id))).then((groups) => groups.flat()),
+      Promise.all(nodes.map((node) => getCmsNodeRelations(node.id))).then((groups) => groups.flat()),
+      Promise.all(nodes.filter((node) => node.type === 'section').map((node) => getCmsNodeBlocks(node.id))).then((groups) => groups.flat()),
+    ]);
+    const blocks = (await Promise.all(sections.map((section) => getCmsBlocks(section.id)))).flat();
+    return [modules, lessons, sections, blocks, nodes, relations, nodeBlocks];
   }
+  // Fetch each collection once, in parallel. The API filters each user's access.
+  const visibility = includeUnpublished ? [] : published();
+  return Promise.all([
+    readCollection<CmsModule>('cms_modules', visibility),
+    readCollection<CmsLesson>('cms_lessons', visibility),
+    readCollection<CmsSection>('cms_sections', includeUnpublished ? [] : [where('visible', '==', true)]),
+    readCollection<CmsBlock>('cms_blocks'),
+    readCollection<CmsNode>('cms_nodes', visibility),
+    readCollection<CmsNodeRelation>('cms_node_relations', [where('relationType', '==', 'contains')]),
+    readCollection<CmsNodeBlock>('cms_node_blocks'),
+  ]);
+}
+
+export async function getAllTopicsFromCmsOrFallback(includeUnpublished = false): Promise<TopicItem[]> {
+  if (includeUnpublished) await requireCmsAdmin();
+  const [modules, lessons, sections, blocks, nodes, relations, nodeBlocks] = await readCurriculumSnapshot(includeUnpublished);
+  const composableTopics = await getTopicsFromComposable(byPosition(nodes.filter((node) => node.status !== 'archived')), lessons, relations, nodeBlocks);
+  const groups = await Promise.all(byPosition(modules.filter((module) => module.status !== 'archived')).map((module) =>
+    Promise.all(byPosition(lessons.filter((lesson) => lesson.moduleId === module.id && lesson.status !== 'archived')).map((lesson) =>
+      lessonToTopic(lesson, module, byPosition(sections.filter((section) => section.lessonId === lesson.id)), blocks)))));
+  const merged = new Map(groups.flat().map((topic) => [topic.id, topic]));
+  composableTopics.forEach((topic) => merged.set(topic.id, topic));
+  // An empty catalogue stays empty. Failed reads reject so the UI can offer a
+  // retry, rather than presenting bundled lessons as if they came from the CMS.
+  return [...merged.values()].sort((a, b) => a.number - b.number || a.title.localeCompare(b.title));
 }
 
 export async function getTopicFromCmsOrFallback(topicId: string, includeUnpublished = false): Promise<TopicItem | null> {
