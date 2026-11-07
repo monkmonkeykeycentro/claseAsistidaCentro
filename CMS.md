@@ -57,7 +57,7 @@ Los administradores se configuran en `CMS_ADMIN_UIDS`, una variable privada del 
 
 ## Aplicar las reglas en Firebase
 
-Los cambios del repositorio necesitan las reglas actualizadas en la base de producción. `firebase.json` apunta a la base con nombre que usa `firebase-applet-config.json`:
+Los cambios del repositorio necesitan las reglas actualizadas en la base de producción. `firebase.json` apunta a la base heredada con nombre. Si trabajas con Firestore, comprueba que coincida con `VITE_FIREBASE_FIRESTORE_DATABASE_ID` en tu entorno:
 
 ```text
 ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f

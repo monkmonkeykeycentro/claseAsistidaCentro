@@ -26,10 +26,11 @@ Los contenidos y enlaces que un administrador publica en el CMS siguen siendo p�
 
 ## Resultados y límites
 
-- El escaneo Gitleaks del código publicable actual y la comprobación de secretos configurados se documentan en los informes locales.
+- Gitleaks no detectó secretos en los 157 archivos publicables revisados. La comprobación de los valores privados configurados tampoco encontró coincidencias en el código, los seis archivos compilados ni el historial de diferencias de Git. Los recuentos corresponden al estado revisado.
 - El historial alcanzable revisado contiene dos detecciones de claves web públicas de Firebase en versiones antiguas del archivo de configuración. No se encontraron credenciales privadas mediante Gitleaks. El historial conserva versiones anteriores de textos personales; borrar el archivo actual no reescribe Git.
 - `npm audit --omit=dev` terminó sin vulnerabilidades conocidas. La auditoría completa conserva tres avisos moderados en la cadena de desarrollo de Firebase CLI (`firebase-tools → @google-cloud/pubsub → @opentelemetry/core`). Esa cadena no forma parte de la API desplegada. No se forzó una migración incompatible de OpenTelemetry ni una degradación de Firebase CLI.
-- Las pruebas de la API cubren privacidad de respuestas públicas, filtros sobre metadatos, separación entre propietarios, sesiones falsas, privilegios administrativos y transacciones.
+- Pasaron 108 pruebas unitarias y de servicios, la prueba de integración con MongoDB y las verificaciones de tipos y compilación. La API real se comprobó con las diez colecciones públicas y 484 documentos accesibles: no expuso los valores privados configurados ni los campos de identidad filtrados, y rechazó sesiones falsas y las colecciones privadas.
+- La compilación de producción cargó correctamente en Chrome sin errores de inicialización. Las solicitudes de archivos privados devolvieron únicamente la página pública de la SPA. El servidor Vite también bloquea por configuración las carpetas privadas y los respaldos.
 - El archivo MP4 no mostró etiquetas de autor, propietario, ubicación o comentario en la inspección de metadatos.
 
 Esta revisión no garantiza ausencia absoluta de vulnerabilidades. No valida las restricciones de claves en Google Cloud, las reglas ya desplegadas en el proyecto Firebase antiguo, la lista de IP de Atlas, las políticas de la cuenta Vercel ni cambios posteriores a la revisión. Se revisó y probó el código local; no se publicó un despliegue automáticamente.

@@ -26,6 +26,15 @@ export default defineConfig(({ mode, command }) => {
     },
     server: {
       proxy: { '/api': { target: `http://127.0.0.1:${environment.API_PORT || '3002'}`, changeOrigin: true } },
+      fs: {
+        deny: [
+          '.env', '.env.*', '*.{crt,pem,key,p12,pfx}', '**/.git/**',
+          '**/.firebase/**', '**/backups/**', '**/exports/**', '**/secrets/**',
+          '**/.aws/**', '**/.codex/**', '**/.agents/**', '**/.aistudio/**',
+          '**/.private/**', '**/.vercel/**', '**/docs/internal/**',
+          '**/*.ejson', '**/*.firestore.json', '**/*.cms.json', '.npmrc', '.netrc',
+        ],
+      },
       port: 3000,
       host: '0.0.0.0',
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
