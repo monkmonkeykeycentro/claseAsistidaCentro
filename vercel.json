@@ -5,6 +5,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/*.mjs": {
+      "includeFiles": "server/**",
       "excludeFiles": "{.env*,.firebase/**,.aws/**,.agents/**,.codex/**,.aistudio/**,.private/**,backups/**,exports/**,secrets/**,tests/**,docs/**}"
     }
   },

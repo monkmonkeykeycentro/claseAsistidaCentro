@@ -1,5 +1,3 @@
-import { getApps, initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 import { fail } from './dataModel.mjs';
 
 export async function authenticate(header) {
@@ -10,6 +8,10 @@ export async function authenticate(header) {
   if (typeof header !== 'string' || !header.startsWith('Bearer ')) fail('Sesión no válida.', 401, 'unauthenticated');
   const projectId = process.env.FIREBASE_PROJECT_ID;
   if (!projectId) fail('Configura FIREBASE_PROJECT_ID en el servidor.', 503, 'unavailable');
+  // Public data and health checks do not need to load the authentication SDK.
+  const [{ getApps, initializeApp }, { getAuth }] = await Promise.all([
+    import('firebase-admin/app'), import('firebase-admin/auth'),
+  ]);
   const app = getApps().find((app) => app.name === 'mongodb-api') || initializeApp({ projectId }, 'mongodb-api');
   try {
     // verifyIdToken validates signature, issuer, audience and expiry. The browser's

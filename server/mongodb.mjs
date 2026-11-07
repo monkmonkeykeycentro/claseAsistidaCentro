@@ -1,15 +1,24 @@
-import { MongoClient } from 'mongodb';
+import { fail } from './dataModel.mjs';
 
 let connection;
 export async function connectDatabase() {
   if (!process.env.MONGODB_URI || !process.env.MONGODB_DB) {
-    throw Object.assign(new Error('Configura MONGODB_URI y MONGODB_DB en el servidor.'), { status: 503, code: 'unavailable' });
+    fail('Configura MONGODB_URI y MONGODB_DB en el servidor.', 503, 'unavailable');
   }
   if (!connection) {
-    const client = new MongoClient(process.env.MONGODB_URI, { maxPoolSize: 10, serverSelectionTimeoutMS: 10000 });
-    connection = client.connect().then(() => ({ client, db: client.db(process.env.MONGODB_DB) })).catch(async (error) => {
+    // Cache before awaiting imports/connect, so concurrent requests share a pool.
+    connection = (async () => {
+      const { MongoClient } = await import('mongodb');
+      const client = new MongoClient(process.env.MONGODB_URI, { maxPoolSize: 10, serverSelectionTimeoutMS: 10000 });
+      try {
+        await client.connect();
+        return { client, db: client.db(process.env.MONGODB_DB) };
+      } catch (error) {
+        await client.close().catch(() => {});
+        throw error;
+      }
+    })().catch((error) => {
       connection = undefined;
-      await client.close().catch(() => {});
       throw error;
     });
   }

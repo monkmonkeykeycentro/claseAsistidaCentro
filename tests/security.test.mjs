@@ -16,6 +16,13 @@ test('only explicitly allowed environment variables can reach the browser', () =
   validateProductionEnvironment(environment);
   assert.throws(() => validateProductionEnvironment({ ...environment, VITE_DATA_BACKEND: 'firestore' }), /protección/);
   assert.throws(() => validateProductionEnvironment({ ...environment, FIREBASE_PROJECT_ID: 'other-project' }), /mismo proyecto/);
+  assert.throws(() => validateProductionEnvironment({ ...environment, MONGODB_URI: undefined, VERCEL: '1' }), /MONGODB_URI.*MONGODB_DB.*FIREBASE_PROJECT_ID/);
+  const serverEnvironment = { ...environment, VERCEL: '1', MONGODB_URI: 'mongodb://localhost:27017', MONGODB_DB: 'test_database', FIREBASE_PROJECT_ID: 'test-project' };
+  validateProductionEnvironment(serverEnvironment);
+  assert.throws(() => validateProductionEnvironment({ ...serverEnvironment, MONGODB_URI: '"mongodb://private-canary"' }), (error) => {
+    assert.doesNotMatch(error.message, /private-canary/);
+    return true;
+  });
 });
 
 test('public documents omit audit identities and secrets, including serialized templates', () => {

@@ -104,6 +104,8 @@ Configura también las variables públicas `VITE_FIREBASE_*` y `VITE_GOOGLE_CLIE
 
 Despliega primero en preview y valida los flujos anteriores. No se ha publicado ni cambiado el destino de producción automáticamente.
 
+Si el sitio inicia sesión pero no carga datos o el CMS, consulta [el diagnóstico de producción](production-troubleshooting.md). Después de desplegar, `/api/health` permite distinguir configuración, conexión con Atlas y dependencias sin compartir credenciales.
+
 ## Volver a Firestore
 
 Para trabajar con Firestore local, usa `npm run dev:local`. El build de producción exige MongoDB para aplicar los filtros de privacidad de la API. Un regreso a Firestore en producción requiere revisar primero permisos y metadatos, además de conciliar los datos. La migración no borra ni modifica el origen Firestore.

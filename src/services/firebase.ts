@@ -125,7 +125,7 @@ export async function signInWithGoogle(): Promise<AppUser> {
       );
 
     } catch (saveError) {
-      logSafeError('Could not update user profile in Firestore (non-fatal):', saveError);
+      logSafeError('No se pudo actualizar el perfil en la base de datos:', saveError);
     }
 
     return appUser;
@@ -197,7 +197,7 @@ export async function saveUserTopicProgress(
       { merge: true }
     );
   } catch (error) {
-    logSafeError('Error saving progress to Firestore:', error);
+    logSafeError('No se pudo guardar el avance en la base de datos:', error);
     throw error;
   }
 }
@@ -258,7 +258,7 @@ export async function loadUserTopicProgress(
 
     return { progress: loadedProgress, builderState: loadedBuilder };
   } catch (error) {
-    logSafeError('Error loading progress from Firestore:', error);
+    logSafeError('No se pudo cargar el avance de la base de datos:', error);
     return null;
   }
 }

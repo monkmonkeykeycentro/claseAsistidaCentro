@@ -5,7 +5,7 @@ export const cmsCollections = [
 export const userCollections = ['progress', 'pilot_evidences', 'curriculum_evidences', 'class_designs'];
 const validId = /^[a-zA-Z0-9_-]{1,128}$/;
 export function fail(message, status = 400, code = 'invalid-argument') {
-  throw Object.assign(new Error(message), { status, code });
+  throw Object.assign(new Error(message), { status, code, isApplicationError: true });
 }
 export function parsePath(path, document = true) {
   if (typeof path !== 'string') fail('Ruta no válida.');
