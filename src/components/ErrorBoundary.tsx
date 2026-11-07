@@ -1,3 +1,4 @@
+import { logSafeError } from '../utils/safeError';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
 
@@ -23,7 +24,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an unhandled error:', error, errorInfo);
+    logSafeError('ErrorBoundary caught an unhandled error:', error);
   }
 
   handleReload = () => {
@@ -66,7 +67,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </p>
             </div>
 
-            {this.state.error?.message && (
+            {import.meta.env?.DEV && this.state.error?.message && (
               <pre className="p-3 bg-[#F7F8F4] border border-[#E1E7E1] rounded-xl text-[11px] font-mono text-[#8A6318] text-left overflow-x-auto max-h-32">
                 {this.state.error.message}
               </pre>

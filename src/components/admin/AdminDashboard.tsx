@@ -50,10 +50,10 @@ import { CmsBlockView } from '../CmsBlockView';
 import { MediaImage } from '../MediaImage';
 import { mediaResourceKind, mediaResourceUrl } from '../../utils/mediaUrls';
 import { AppUser, isUserAdmin, db } from '../../services/firebase';
-import { firebaseRuntime } from '../../config/firebaseRuntime';
+import { databaseLabel } from '../../config/dataBackend';
 import { describeCmsError } from '../../utils/cmsErrors';
 import { connectGoogleDrive, isDriveConfigured, makeDriveImagePublicReadOnly, uploadDriveFile } from '../../services/googleDriveService';
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs } from '../../services/database';
 import {
   PilotEvidenceRecord,
   CoordinateEvidence,
@@ -774,11 +774,11 @@ const AuthorizedAdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const text = await file.text();
       const data: CurriculumExportData = JSON.parse(text);
-      const destination = `${firebaseRuntime.config.projectId} / ${firebaseRuntime.config.firestoreDatabaseId || '(default)'}`;
+      const destination = databaseLabel;
       const origin = data.source ? `${data.source.projectId} / ${data.source.databaseId}` : 'no especificado (respaldo anterior)';
       const total = (['modules', 'lessons', 'sections', 'blocks', 'siteContent', 'media', 'categories', 'nodes', 'nodeRelations', 'nodeBlocks'] as const)
         .reduce((count, key) => count + (Array.isArray(data[key]) ? data[key].length : 0), 0);
-      if (!confirm(`Importar ${total} documentos del CMS.\n\nOrigen: ${origin}\nDestino: ${destination}${firebaseRuntime.useEmulators ? ' (LOCAL)' : ' (PRODUCCIÓN)'}\n\nSe actualizarán documentos con el mismo ID y se añadirán los nuevos. No se borrarán documentos adicionales. Antes se creará un respaldo del destino.\n\n¿Continuar?`)) return;
+      if (!confirm(`Importar ${total} documentos del CMS.\n\nOrigen: ${origin}\nDestino: ${destination}\n\nSe actualizarán documentos con el mismo ID y se añadirán los nuevos. No se borrarán documentos adicionales. Antes se creará un respaldo del destino.\n\n¿Continuar?`)) return;
       setIsLoading(true);
       await importCurriculumBackup(data);
       await loadAll();

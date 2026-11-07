@@ -106,14 +106,13 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
           <section className="space-y-3 border-b border-[#E1E7E1] pb-5">
             <h3 className="font-bold text-[#232A24]">¿Puedo consultar, corregir o eliminar mis datos?</h3>
             <p>Sí. Puedes solicitar el acceso, rectificación, cancelación u oposición al tratamiento de tus datos personales, así como consultar las opciones para limitar su uso o revocar tu consentimiento cuando corresponda.</p>
-            <p>Para realizar una solicitud, escribe a{' '}
-              <a href="mailto:jmartineza@centro.edu.mx" className="font-bold text-[#407B5D] underline underline-offset-2">jmartineza@centro.edu.mx</a>, indicando tu nombre, cuenta institucional y el motivo de la solicitud. Recibirás una respuesta conforme a los plazos establecidos por la legislación aplicable.
+            <p>Para realizar una solicitud, contacta a la administración de la plataforma por los canales institucionales, indicando tu nombre, cuenta institucional y el motivo de la solicitud. Recibirás una respuesta conforme a los plazos establecidos por la legislación aplicable.
             </p>
           </section>
 
           <section className="space-y-3">
             <h3 className="font-bold text-[#232A24]">Responsable y actualizaciones</h3>
-            <p><strong className="text-[#232A24]">Responsable:</strong> Josué Javier Martínez Alcántara, docente de Código Creativo | Estudios Integrales.</p>
+            <p><strong className="text-[#232A24]">Responsable de atención:</strong> Administración académica de Código Creativo | Estudios Integrales.</p>
             <p>Cualquier modificación a este aviso se comunicará mediante su publicación en esta sección.</p>
             <p><strong className="text-[#232A24]">Última actualización:</strong> 5 de noviembre de 2026.</p>
           </section>

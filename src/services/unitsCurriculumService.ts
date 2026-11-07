@@ -1,3 +1,4 @@
+import { logSafeError } from '../utils/safeError';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -5,7 +6,7 @@
 
 import { CURRICULUM_UNITS, ExerciseDefinition, UnitDefinition, UnitPublicationStatus } from '../data/unitsData';
 import { db } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from './database';
 
 const STORAGE_KEY_STATUS = 'curriculum_units_status_overrides';
 const STORAGE_KEY_ORDER = 'curriculum_units_order_overrides';
@@ -93,7 +94,7 @@ export async function saveExercisePublicationStatus(
       { merge: true }
     );
   } catch (err) {
-    console.warn('Could not persist status to Firestore, saved locally:', err);
+    logSafeError('Could not persist status to Firestore, saved locally:', err);
   }
 
   return updated;
@@ -140,7 +141,7 @@ export async function setUnitPublicationStatus(
       { merge: true }
     );
   } catch (err) {
-    console.warn('Could not persist status to Firestore, saved locally:', err);
+    logSafeError('Could not persist status to Firestore, saved locally:', err);
   }
 
   return updated;

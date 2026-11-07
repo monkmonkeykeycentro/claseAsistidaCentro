@@ -3,9 +3,24 @@
   "installCommand": "npm install --legacy-peer-deps",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [
+  "functions": {
+    "api/*.mjs": {
+      "excludeFiles": "{.env*,.firebase/**,.aws/**,.agents/**,.codex/**,.aistudio/**,.private/**,backups/**,exports/**,secrets/**,tests/**,docs/**}"
+    }
+  },
+  "headers": [
     {
       "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }
   ]

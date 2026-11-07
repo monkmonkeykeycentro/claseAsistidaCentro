@@ -19,7 +19,7 @@ import {
   importClassDesignFromJson,
 } from '../../services/classDesignerService';
 import { AppUser } from '../../services/firebase';
-import { firebaseRuntime } from '../../config/firebaseRuntime';
+import { databaseLabel } from '../../config/dataBackend';
 import { DEFAULT_CLASS_DESIGNER_CONTENT, CLASS_DESIGNER_STEPS } from '../../data/classDesignerContent';
 import { subscribeToClassDesignerContent, instantiateClassDesignerTemplate } from '../../services/classDesignerContentService';
 import { ClassDesignerContentContext } from './ClassDesignerContentContext';
@@ -99,7 +99,7 @@ export const ClassDesignerRoot: React.FC<ClassDesignerRootProps> = ({
   const loadRequest = useRef(0);
   const currentContext = useRef({ project, userId: currentUser?.uid });
   currentContext.current = { project, userId: currentUser?.uid };
-  const databaseName = firebaseRuntime.useEmulators ? 'Firebase local' : 'Firebase';
+  const databaseName = databaseLabel;
   const currentSync = sync?.project === project && sync.userId === currentUser?.uid ? sync : null;
   const isDatabaseSaving = currentSync?.status === 'saving';
   const selectedExample = toolContent.examples.find((example) => example.id === selectedExampleId) ?? toolContent.examples[0];

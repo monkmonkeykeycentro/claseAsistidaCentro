@@ -1,3 +1,4 @@
+import { logSafeError } from '../utils/safeError';
 import React, { useState } from 'react';
 import { AppUser, signInWithGoogle, signOutApp, FIREBASE_PROJECT_ID } from '../services/firebase';
 import {
@@ -30,7 +31,6 @@ interface AuthErrorInfo {
   isDomainError: boolean;
   hostname: string;
   firebaseConsoleUrl: string;
-  rawError?: string;
 }
 
 function parseAuthError(err: unknown): AuthErrorInfo {
@@ -56,7 +56,7 @@ function parseAuthError(err: unknown): AuthErrorInfo {
       isDomainError: true,
       hostname,
       firebaseConsoleUrl,
-      rawError: rawMsg,
+
     };
   }
 
@@ -69,7 +69,7 @@ function parseAuthError(err: unknown): AuthErrorInfo {
       isDomainError: false,
       hostname,
       firebaseConsoleUrl,
-      rawError: rawMsg,
+
     };
   }
 
@@ -81,7 +81,7 @@ function parseAuthError(err: unknown): AuthErrorInfo {
       isDomainError: false,
       hostname,
       firebaseConsoleUrl,
-      rawError: rawMsg,
+
     };
   }
 
@@ -94,7 +94,7 @@ function parseAuthError(err: unknown): AuthErrorInfo {
       isDomainError: false,
       hostname,
       firebaseConsoleUrl,
-      rawError: rawMsg,
+
     };
   }
 
@@ -107,21 +107,18 @@ function parseAuthError(err: unknown): AuthErrorInfo {
       isDomainError: false,
       hostname,
       firebaseConsoleUrl,
-      rawError: rawMsg,
+
     };
   }
 
   return {
     code: code || 'auth/unknown-error',
     title: 'No fue posible completar el inicio de sesión',
-    message:
-      rawMsg && rawMsg.length < 120
-        ? rawMsg
-        : 'Ocurrió un error inesperado al contactar con Google Sign-In. Intenta nuevamente o consulta los detalles técnicos.',
+    message: 'No se pudo completar la autenticación. Intenta de nuevo o contacta a la administración.',
     isDomainError: false,
     hostname,
     firebaseConsoleUrl,
-    rawError: rawMsg,
+
   };
 }
 
@@ -144,7 +141,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       await signInWithGoogle();
       onClose();
     } catch (err: unknown) {
-      console.error('Firebase Auth Error:', err);
+      logSafeError('Firebase Auth Error:', err);
       setErrorInfo(parseAuthError(err));
     } finally {
       setLoading(false);
@@ -157,7 +154,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       await signOutApp();
       onClose();
     } catch (err) {
-      console.error('Firebase Sign-Out Error:', err);
+      logSafeError('Firebase Sign-Out Error:', err);
     } finally {
       setLoading(false);
     }

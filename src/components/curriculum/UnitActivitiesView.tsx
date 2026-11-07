@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CURRICULUM_UNITS, UnitDefinition, ExerciseDefinition } from '../../data/unitsData';
 import { CoordinateSystemExercise } from '../pilot/CoordinateSystemExercise';
 import { AppUser, db, isUserAdmin } from '../../services/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from '../../services/database';
 import { loadCurriculumStatusMap } from '../../services/unitsCurriculumService';
 import type { ActivityProgress } from '../../types/classStructure';
 import {

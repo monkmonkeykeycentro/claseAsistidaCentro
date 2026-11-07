@@ -1,4 +1,4 @@
-import firebaseConfig from '../../firebase-applet-config.json';
+import { useMongoDB } from '../config/dataBackend';
 
 export function describeCmsError(error: unknown, operation = 'cargar el CMS'): string {
   let detail = error;
@@ -10,8 +10,13 @@ export function describeCmsError(error: unknown, operation = 'cargar el CMS'): s
   const code = detail && typeof detail === 'object' && 'code' in detail
     ? String(detail.code).replace(/^firestore\//, '') : '';
   const prefix = `No se pudo ${operation}.`;
+  if (useMongoDB) {
+    if (code === 'permission-denied') return `${prefix} Esta cuenta no tiene permisos para acceder a este contenido.`;
+    if (code === 'unauthenticated') return `${prefix} Inicia sesión de nuevo con tu cuenta administradora.`;
+    return `${prefix} No se pudo completar la operación en MongoDB. Comprueba la conexión y vuelve a intentarlo.`;
+  }
   if (code === 'permission-denied') {
-    return `${prefix} Firebase rechazó los permisos (permission-denied). Comprueba que usas una cuenta administradora y publica firestore.rules en la base ${firebaseConfig.firestoreDatabaseId} del proyecto ${firebaseConfig.projectId}.`;
+    return `${prefix} Firebase rechazó los permisos (permission-denied). Comprueba que usas una cuenta administradora y revisa las reglas de la base configurada.`;
   }
   if (code === 'unauthenticated') {
     return `${prefix} La sesión no es válida (unauthenticated). Cierra sesión e inicia sesión de nuevo con la cuenta administradora.`;

@@ -21,7 +21,7 @@ const args = [startOnly ? 'emulators:start' : 'emulators:exec', '--project', 'de
   '--config', 'firebase.local.json', '--only', 'auth,firestore', '--non-interactive', '--export-on-exit', directory];
 if (existsSync(path.join(directory, 'firebase-export-metadata.json'))) args.push('--import', directory);
 if (!startOnly) args.push('--ui', 'npm run dev:app');
-const environment = { ...process.env, DEBUG: '', CI: 'true', NO_UPDATE_NOTIFIER: '1',
+const environment = { ...process.env, VITE_DATA_BACKEND: 'firestore', DEBUG: '', CI: 'true', NO_UPDATE_NOTIFIER: '1',
   XDG_CONFIG_HOME: path.join(root, '.firebase/config'), FIREBASE_DEBUG_PATH: path.join(root, '.firebase/firebase-debug.log'),
   FIREBASE_EMULATORS_PATH: path.join(root, '.firebase/cache') };
 if (javaHome) {

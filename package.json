@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/firebase-local.mjs",
+    "dev": "node scripts/dev.mjs",
     "dev:local": "node scripts/firebase-local.mjs",
     "dev:app": "vite --mode emulator --port=3000 --host=127.0.0.1 --strictPort",
     "dev:production": "vite --port=3001 --host=127.0.0.1 --strictPort",
@@ -13,7 +13,15 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "dev:mongo": "node scripts/mongodb-dev.mjs",
+    "dev:api": "node server/dev.mjs",
+    "mongo:check": "node scripts/mongodb-migrate.mjs check",
+    "mongo:plan": "node scripts/mongodb-migrate.mjs plan",
+    "mongo:import": "node scripts/mongodb-migrate.mjs import",
+    "mongo:verify": "node scripts/mongodb-migrate.mjs verify",
+    "firebase:export-local": "node scripts/export-firestore-local.mjs",
+    "mongo:transfer-user": "node scripts/mongodb-transfer-user.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -27,7 +35,9 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^13.0.0",
+    "firebase-admin": "^14.5.0",
     "lucide-react": "^0.546.0",
+    "mongodb": "^7.8.0",
     "motion": "^12.23.24",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",

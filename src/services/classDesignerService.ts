@@ -1,3 +1,4 @@
+import { logSafeError } from '../utils/safeError';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -23,7 +24,7 @@ import {
   deleteDoc,
   query,
   orderBy,
-} from 'firebase/firestore';
+} from './database';
 
 const LOCAL_STORAGE_ACTIVE_KEY = 'processing_class_designer_active';
 const LOCAL_STORAGE_SAVED_LIST_KEY = 'processing_class_designer_saved_list';
@@ -658,7 +659,7 @@ export function saveClassDesignToLocal(project: ClassDesignProject): void {
     }
     localStorage.setItem(LOCAL_STORAGE_SAVED_LIST_KEY, JSON.stringify(savedList));
   } catch (err) {
-    console.warn('No se pudo guardar localmente el diseño de clase:', err);
+    logSafeError('No se pudo guardar localmente el diseño de clase:', err);
   }
 }
 

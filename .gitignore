@@ -33,3 +33,16 @@ serviceAccount*.json
 *.pfx
 id_rsa
 id_ed25519
+
+# Deployment tooling, private configuration and database snapshots.
+.vercel/
+.private/
+firebase-applet-config.json
+*.ejson
+*.firestore.json
+*.cms.json
+*.tfstate
+*.tfstate.*
+*.kubeconfig
+.netrc
+.npmrc.local

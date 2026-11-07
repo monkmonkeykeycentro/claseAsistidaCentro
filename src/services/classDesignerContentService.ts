@@ -1,4 +1,4 @@
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc } from './database';
 import { db, requireCmsAdmin } from './firebase';
 import { importClassDesignFromJson } from './classDesignerService';
 import { CLASS_DESIGNER_STEPS, DEFAULT_CLASS_DESIGNER_CONTENT } from '../data/classDesignerContent';

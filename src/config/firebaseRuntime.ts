@@ -1,8 +1,18 @@
-import productionConfig from '../../firebase-applet-config.json';
 import localConfig from '../../firebase.local.json';
 
-export function resolveFirebaseRuntime(environment: { DEV?: boolean; MODE?: string } = {}) {
-  const useEmulators = environment.DEV === true && environment.MODE === 'emulator';
+type RuntimeEnvironment = { DEV?: boolean; MODE?: string } & Partial<Record<
+  'VITE_DATA_BACKEND' | 'VITE_FIREBASE_PROJECT_ID' | 'VITE_FIREBASE_API_KEY' | 'VITE_FIREBASE_APP_ID' |
+  'VITE_FIREBASE_AUTH_DOMAIN' | 'VITE_FIREBASE_FIRESTORE_DATABASE_ID' | 'VITE_FIREBASE_STORAGE_BUCKET' |
+  'VITE_FIREBASE_MESSAGING_SENDER_ID' | 'VITE_FIREBASE_MEASUREMENT_ID', string>>;
+export function resolveFirebaseRuntime(environment: RuntimeEnvironment = {}) {
+  const productionConfig = {
+    projectId: environment.VITE_FIREBASE_PROJECT_ID || '', apiKey: environment.VITE_FIREBASE_API_KEY || '',
+    appId: environment.VITE_FIREBASE_APP_ID || '', authDomain: environment.VITE_FIREBASE_AUTH_DOMAIN || '',
+    firestoreDatabaseId: environment.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '(default)',
+    storageBucket: environment.VITE_FIREBASE_STORAGE_BUCKET || '', messagingSenderId: environment.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+    measurementId: environment.VITE_FIREBASE_MEASUREMENT_ID || '',
+  };
+  const useEmulators = environment.DEV === true && environment.MODE === 'emulator' && environment.VITE_DATA_BACKEND !== 'mongodb';
   return {
     useEmulators,
     config: useEmulators ? {

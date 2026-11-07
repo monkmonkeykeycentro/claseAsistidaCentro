@@ -23,7 +23,7 @@ emuladores ya activos, utiliza `npm run dev:app`.
 ## Guardar y recuperar diseños
 
 1. Inicia sesión en el acceso simulado del emulador. La cuenta local existente
-   `jmartineza@centro.edu.mx` tiene UID `local-admin`.
+   el usuario ficticio del emulador usa un UID de prueba. Los administradores locales se autorizan mediante la colección `admins`.
 2. Abre el Diseñador de Clases POO y edita o importa tu estructura JSON.
 3. Pulsa **Guardar en Firebase local**. También se guarda automáticamente
    1,5 segundos después de la última edición.

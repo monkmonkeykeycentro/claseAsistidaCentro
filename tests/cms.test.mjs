@@ -24,6 +24,9 @@ function list(ref) {
     .map(([path]) => snapshot(path));
   return { docs, empty: docs.length === 0, size: docs.length };
 }
+mock.module('../src/config/firebaseRuntime.ts', { namedExports: {
+  firebaseRuntime: { useEmulators: false, config: { projectId: 'test-project', firestoreDatabaseId: 'test-database' } },
+} });
 mock.module('firebase/app', { namedExports: { initializeApp: () => ({}), getApps: () => [], getApp: () => ({}) } });
 mock.module('firebase/auth', { namedExports: {
   connectAuthEmulator: () => {},
@@ -74,7 +77,7 @@ const { ClassDesignerContentBlocks } = await import('../src/components/classDesi
 const { normalizeClassDesignerBlocks } = await import('../src/utils/classDesignerBlocks.ts');
 
 const account = (email, uid = 'user-1', emailVerified = true) => ({ uid, email, emailVerified, displayName: 'Test', photoURL: null });
-const administrator = () => { auth.currentUser = account('jmartineza@centro.edu.mx'); };
+const administrator = () => { auth.currentUser = account('admin@example.test'); state.documents.set('admins/user-1', {}); };
 const moduleData = { id: 'mod_custom', title: 'Arte', description: 'Sistemas creativos', category: 'Fundamentos', position: 0, status: 'published', visible: true, createdAt: '', updatedAt: '' };
 const lesson = { id: 'les_custom', moduleId: moduleData.id, title: 'Nueva lección publicada', summary: 'Resumen', position: 0, status: 'published', visible: true, createdAt: '', updatedAt: '' };
 const section = { id: 'sec_custom', lessonId: lesson.id, title: 'Sección nueva', position: 0, visible: true, createdAt: '', updatedAt: '' };
@@ -210,7 +213,7 @@ test('tool block normalization repairs repeated IDs and rejects unknown block ty
 });
 
 test('visitors, students and admin-prefixed emails cannot perform CMS mutations', async () => {
-  for (const user of [null, account('student@centro.edu.mx'), account('admin@example.com'), account('jmartineza@centro.edu.mx', 'unverified', false)]) {
+  for (const user of [null, account('student@centro.edu.mx'), account('admin@example.com'), account('admin@example.test', 'unverified', false)]) {
     auth.currentUser = user;
     for (const operation of [
       () => cms.saveCmsModule(moduleData), () => cms.saveCmsLesson(lesson), () => cms.saveCmsSection(section),
@@ -296,7 +299,7 @@ test('failed Firebase writes reject without creating local success data', async 
   administrator();
   state.writeError = new Error('permission-denied');
   for (const operation of [() => cms.saveCmsModule(moduleData), () => cms.saveCmsLesson(lesson), () => cms.saveCmsSection(section), () => cms.saveCmsBlock(block), () => cms.saveSiteContent(cms.DEFAULT_SITE_CONTENT.hero_headline)]) await assert.rejects(operation, /permission-denied/);
-  assert.equal(state.documents.size, 0);
+  assert.equal([...state.documents.keys()].filter((key) => !key.startsWith('admins/')).length, 0);
 });
 
 test('saving a lesson commits metadata, sections and all blocks together and removes undefined fields', async () => {
@@ -325,7 +328,7 @@ test('failed initialization leaves no partial curriculum', async () => {
   const originalError = console.error; console.error = () => {};
   try { await assert.rejects(cms.seedCmsFromExistingContentIfEmpty, /inicializar/); }
   finally { console.error = originalError; }
-  assert.equal(state.documents.size, 0);
+  assert.equal([...state.documents.keys()].filter((key) => !key.startsWith('admins/')).length, 0);
 });
 
 test('published custom lessons retain their identity, sections and every ordered block', async () => {
@@ -491,7 +494,7 @@ test('CMS controls are absent for visitors and students and visible for verified
     assert.doesNotMatch(header, /Administrar contenidos/);
     assert.equal(renderToStaticMarkup(React.createElement(AdminDashboard, { currentUser: user })), '');
   }
-  const header = renderToStaticMarkup(React.createElement(Header, { currentView: 'home', currentUser: identity.mapFirebaseUser(account('jmartineza@centro.edu.mx'), true), onNavigateAdmin() {} }));
+  const header = renderToStaticMarkup(React.createElement(Header, { currentView: 'home', currentUser: identity.mapFirebaseUser(account('admin@example.test'), true), onNavigateAdmin() {} }));
   assert.match(header, /Administrar contenidos/);
 });
 
@@ -594,8 +597,7 @@ test('initialization retains the Firebase error code for diagnosis', async () =>
       assert.equal(error.cause, denied);
       const message = describeCmsError(error, 'inicializar el temario');
       assert.match(message, /permission-denied/);
-      assert.match(message, /ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f/);
-      assert.match(message, /rugged-precept-406017/);
+      assert.doesNotMatch(message, /test-project|test-database/);
       return true;
     });
   } finally { console.error = originalError; }
@@ -857,8 +859,8 @@ test('CMS v2 backups include categories, the composable graph and raw configurat
   state.documents.set('users/student-1/class_designs/design-1', { id: 'design-1', owner: 'NO_EXPORTAR' });
   const backup = await cms.exportCurriculumBackup();
   assert.equal(backup.version, '2.0.0');
-  assert.equal(backup.source.projectId, 'rugged-precept-406017');
-  assert.equal(backup.source.databaseId, 'ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f');
+  assert.equal(backup.source.projectId, 'test-project');
+  assert.equal(backup.source.databaseId, 'test-database');
   assert.equal(backup.categories[0].id, category.id);
   assert.equal(backup.nodes[0].id, node.id);
   assert.equal(backup.nodeRelations[0].id, nodeRelation.id);

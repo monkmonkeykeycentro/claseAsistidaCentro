@@ -13,7 +13,7 @@ import {
   PilotExerciseConfig,
 } from '../../types/pilotExercises';
 import { AppUser, db } from '../../services/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from '../../services/database';
 import {
   Compass,
   SplitSquareVertical,

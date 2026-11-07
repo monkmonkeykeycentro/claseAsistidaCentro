@@ -1,3 +1,4 @@
+import { logSafeError } from '../utils/safeError';
 import { initializeApp, getApps } from 'firebase/app';
 import {
   getAuth,
@@ -11,12 +12,9 @@ import {
 import {
   getFirestore,
   connectFirestoreEmulator,
-  doc,
-  getDoc,
-  setDoc,
-  getDocFromServer,
-  onSnapshot,
 } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocFromServer, onSnapshot, setDatabaseTokenProvider } from './database';
+import { useMongoDB } from '../config/dataBackend';
 import { firebaseRuntime } from '../config/firebaseRuntime';
 import { UserProgress, BuilderState } from '../types/classStructure';
 
@@ -31,11 +29,15 @@ export { firebaseConfig };
 const databaseId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
 export const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 export const auth = getAuth(app);
+setDatabaseTokenProvider(async () => {
+  await auth.authStateReady();
+  return auth.currentUser?.getIdToken();
+});
 
 if (firebaseRuntime.useEmulators && !auth.emulatorConfig) {
   connectAuthEmulator(auth, firebaseRuntime.authEmulatorUrl, { disableWarnings: true });
   const { host, port } = firebaseRuntime.firestoreEmulator;
-  connectFirestoreEmulator(db, host, port);
+  if (!useMongoDB) connectFirestoreEmulator(db, host, port);
 }
 
 // Google Auth Provider
@@ -61,13 +63,9 @@ export function isCentroEmail(email?: string | null): boolean {
   return email.toLowerCase().endsWith('@centro.edu.mx');
 }
 
-// This predicate is for UI only. Firestore rules remain the authority for writes.
+// This predicate is for UI only. The server or Firestore rules authorize writes.
 export function isUserAdmin(user: AppUser | null): boolean {
   return user?.role === 'admin';
-}
-
-function isBootstrapAdmin(user: FirebaseUser): boolean {
-  return user.emailVerified && user.email?.toLowerCase() === 'jmartineza@centro.edu.mx';
 }
 
 export function mapFirebaseUser(user: FirebaseUser | null, administrator = false): AppUser | null {
@@ -87,8 +85,7 @@ export async function requireCmsAdmin(): Promise<AppUser> {
   await auth.authStateReady();
   const user = auth.currentUser;
   if (!user) throw new Error('Inicia sesión con una cuenta administradora para modificar el contenido.');
-  const administrator = isBootstrapAdmin(user) ||
-    (await getDocFromServer(doc(db, 'admins', user.uid))).exists();
+  const administrator = (await getDocFromServer(doc(db, 'admins', user.uid))).exists();
   if (auth.currentUser?.uid !== user.uid || !administrator) {
     throw new Error('Esta cuenta no tiene permisos de administrador.');
   }
@@ -102,13 +99,11 @@ export async function signInWithGoogle(): Promise<AppUser> {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
-    let administrator = isBootstrapAdmin(user);
-    if (!administrator) {
-      try {
-        administrator = (await getDocFromServer(doc(db, 'admins', user.uid))).exists();
-      } catch {
-        // Fail closed when the directory cannot be checked.
-      }
+    let administrator = false;
+    try {
+      administrator = (await getDocFromServer(doc(db, 'admins', user.uid))).exists();
+    } catch {
+      // Fail closed when the directory cannot be checked.
     }
     const appUser = mapFirebaseUser(user, administrator)!;
 
@@ -130,12 +125,12 @@ export async function signInWithGoogle(): Promise<AppUser> {
       );
 
     } catch (saveError) {
-      console.warn('Could not update user profile in Firestore (non-fatal):', saveError);
+      logSafeError('Could not update user profile in Firestore (non-fatal):', saveError);
     }
 
     return appUser;
   } catch (error) {
-    console.error('Error during Google sign-in:', error);
+    logSafeError('Error during Google sign-in:', error);
     throw error;
   }
 }
@@ -154,8 +149,8 @@ export function subscribeToAuth(callback: (user: AppUser | null) => void): () =>
   let unsubscribeAdmin: (() => void) | undefined;
   const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
     unsubscribeAdmin?.();
-    if (!firebaseUser || isBootstrapAdmin(firebaseUser)) {
-      callback(mapFirebaseUser(firebaseUser, !!firebaseUser));
+    if (!firebaseUser) {
+      callback(null);
       return;
     }
     callback(mapFirebaseUser(firebaseUser));
@@ -202,7 +197,7 @@ export async function saveUserTopicProgress(
       { merge: true }
     );
   } catch (error) {
-    console.warn('Error saving progress to Firestore:', error);
+    logSafeError('Error saving progress to Firestore:', error);
     throw error;
   }
 }
@@ -263,7 +258,7 @@ export async function loadUserTopicProgress(
 
     return { progress: loadedProgress, builderState: loadedBuilder };
   } catch (error) {
-    console.warn('Error loading progress from Firestore:', error);
+    logSafeError('Error loading progress from Firestore:', error);
     return null;
   }
 }
@@ -273,6 +268,7 @@ export async function loadUserTopicProgress(
  */
 export async function testConnection(): Promise<void> {
   try {
+    if (useMongoDB) return;
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch {
     // Expected to fail if doc doesn't exist or offline, handled gracefully

@@ -1,3 +1,4 @@
+import { logSafeError } from './utils/safeError';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -123,7 +124,7 @@ export default function App() {
         setHomeModules(modules);
         setHomeCategories(categories);
       })
-      .catch((error) => console.warn('No se pudieron cargar los datos configurables del Home:', error));
+      .catch((error) => logSafeError('No se pudieron cargar los datos configurables del Home:', error));
   }, []);
 
 

@@ -5,7 +5,7 @@ import type { ClassDesignerContent, ClassDesignerStepNumber } from '../../types/
 import type { ClassDesignProject } from '../../types/classDesigner';
 import { getClassDesignerContent, saveClassDesignerContent, instantiateClassDesignerTemplate } from '../../services/classDesignerContentService';
 import { generateProcessingClassCode, importClassDesignFromJson } from '../../services/classDesignerService';
-import { firebaseRuntime } from '../../config/firebaseRuntime';
+import { databaseLabel } from '../../config/dataBackend';
 import { ClassDesignerContentContext } from '../classDesigner/ClassDesignerContentContext';
 import { Step1ObjectDefinition } from '../classDesigner/Step1ObjectDefinition';
 import { Step2FieldsEditor } from '../classDesigner/Step2FieldsEditor';
@@ -102,7 +102,7 @@ export function AdminClassDesignerContentView() {
       <div className="space-y-2">
         <h2 className="text-lg font-bold">Contenido del Diseñador POO</h2>
         <p className="max-w-xl text-xs text-[#59645C]">Edita las instrucciones que ven los estudiantes y las estructuras que pueden usar como punto de partida.</p>
-        <p className="text-xs text-[#59645C]">Destino: {firebaseRuntime.useEmulators ? 'Firebase local' : 'Firebase de producción'}.</p>
+        <p className="text-xs text-[#59645C]">Destino: {databaseLabel}.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <a href="#/herramientas" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs">

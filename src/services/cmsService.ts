@@ -1,3 +1,4 @@
+import { logSafeError } from '../utils/safeError';
 import {
   collection,
   doc,
@@ -9,9 +10,9 @@ import {
   where,
   writeBatch,
   onSnapshot,
-} from 'firebase/firestore';
+} from './database';
 import { db, requireCmsAdmin } from './firebase';
-import { firebaseRuntime } from '../config/firebaseRuntime';
+import { databaseSource } from '../config/dataBackend';
 import {
   CmsModule,
   CmsCategory,
@@ -478,7 +479,7 @@ export async function seedCmsFromExistingContentIfEmpty(): Promise<{
     console.info('✅ CMS database successfully seeded!');
     return { seeded: true, moduleCount: TOPICS_DATA.length };
   } catch (err) {
-    console.error('No se pudo inicializar el CMS:', err);
+    logSafeError('No se pudo inicializar el CMS:', err);
     throw new Error('No se pudo inicializar el CMS en Firebase.', { cause: err });
   }
 }
@@ -1252,7 +1253,7 @@ export function subscribeToHomeConfig(callback: (config: CmsHomeConfig) => void)
       }
     },
     (error) => {
-      console.warn('No se pudo cargar la configuración del Home; se usará la configuración predeterminada.', error);
+      logSafeError('No se pudo cargar la configuración del Home; se usará la configuración predeterminada.', error);
       callback(DEFAULT_HOME_CONFIG);
     },
   );
@@ -1341,7 +1342,7 @@ export function subscribeToSiteContent(callback: (content: CmsSiteContentCombine
         headerNavigation: navItems,
       });
     } catch (err) {
-      console.warn('Error al procesar textos de cms_site_content, usando valores por defecto:', err);
+      logSafeError('Error al procesar textos de cms_site_content, usando valores por defecto:', err);
     }
   };
 
@@ -1360,10 +1361,10 @@ export function subscribeToSiteContent(callback: (content: CmsSiteContentCombine
         });
         emit(source);
       } catch (err) {
-        console.warn('Error en listener de cms_site_content:', err);
+        logSafeError('Error en listener de cms_site_content:', err);
       }
     },
-    (error) => console.warn('No se pudieron cargar los textos del sitio:', error)
+    (error) => logSafeError('No se pudieron cargar los textos del sitio:', error)
   );
 }
 
@@ -1380,7 +1381,7 @@ export async function getHeaderNavigation(): Promise<HeaderNavigationItem[]> {
       }
     }
   } catch (err) {
-    console.warn('Error al cargar navegación de cabecera:', err);
+    logSafeError('Error al cargar navegación de cabecera:', err);
   }
   return DEFAULT_HEADER_NAVIGATION;
 }
@@ -1433,7 +1434,7 @@ export async function exportCurriculumBackup(): Promise<CurriculumExportData> {
   ]);
   const siteContent = siteDocuments.map(({ id, ...item }) => ({ ...item, key: id }));
   const backup: CurriculumExportData = { version: '2.0.0', exportedAt: new Date().toISOString(), exportedBy: user.email || user.uid,
-    source: { projectId: firebaseRuntime.config.projectId, databaseId: firebaseRuntime.config.firestoreDatabaseId || '(default)', environment: firebaseRuntime.useEmulators ? 'emulator' : 'production' },
+    source: databaseSource,
     modules, lessons, sections, blocks, siteContent, media, categories, nodes, nodeRelations, nodeBlocks };
   await createCmsRevision('full_backup', 'curriculum', backup, 'Exportación de respaldo general');
   return backup;
@@ -1553,7 +1554,7 @@ export async function getAllTopicsFromCmsOrFallback(includeUnpublished = false):
       composableTopics = await getTopicsFromComposable(includeUnpublished);
     } catch (error) {
       if (includeUnpublished) throw error;
-      console.warn('No se pudo cargar el contenido composable público; se continuará con el CMS legacy:', error);
+      logSafeError('No se pudo cargar el contenido composable público; se continuará con el CMS legacy:', error);
     }
     const modules = await getCmsModules(includeUnpublished);
     if (modules.length === 0) {
@@ -1572,7 +1573,7 @@ export async function getAllTopicsFromCmsOrFallback(includeUnpublished = false):
     return [...merged.values()].sort((a, b) => a.number - b.number || a.title.localeCompare(b.title));
   } catch (error) {
     if (includeUnpublished) throw error;
-    console.warn('No se pudo cargar el temario del CMS:', error);
+    logSafeError('No se pudo cargar el temario del CMS:', error);
     return TOPICS_DATA;
   }
 }
