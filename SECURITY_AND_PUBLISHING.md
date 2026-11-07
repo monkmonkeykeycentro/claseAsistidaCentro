@@ -1,116 +1,45 @@
-# Revisión de Git y publicación del CMS
+# Revisión de privacidad y preparación de producción
 
-Revisión realizada el 6 de noviembre de 2026.
+Revisión del 6 de noviembre de 2026 sobre el código y la compilación locales. Los informes redactados se guardan en `.firebase/security-audit/`, excluido de Git y del despliegue.
 
-## Qué puede ir al repositorio
+## Correcciones aplicadas
 
-Se revisaron los archivos que Git incluiría y el historial alcanzable, incluidas las diferencias de fusiones, mediante
-Gitleaks 8.30.1, además de comprobar nombres de credenciales, tokens, claves
-privadas y archivos de entorno. No se encontraron contraseñas, tokens de acceso,
-claves privadas ni cuentas de servicio en esos archivos. Gitleaks detectó claves
-de API de Google únicamente en `firebase-applet-config.json`: corresponden a la
-configuración web pública de Firebase, también presente en el historial.
+- La URI y contraseña de MongoDB, el proyecto de autenticación del servidor y la lista `CMS_ADMIN_UIDS` se configuran mediante `.env.local`. En Vercel se deben configurar como variables del servidor. No se copiaron valores reales a `.env.example`.
+- Se eliminó el archivo con la configuración Firebase del proyecto y las cuentas personales incrustadas en código, pruebas y documentación operativa. Los permisos administrativos se resuelven en el servidor por UID configurado o por la colección protegida `admins`; el navegador no tiene una lista de administradores.
+- La API filtra identidades y credenciales de los documentos públicos, incluidos los metadatos anidados y las plantillas almacenadas como JSON. También rechaza filtros públicos que intenten consultar esos campos. Los administradores conservan acceso al historial privado para trabajar.
+- Los perfiles, avances, evidencias, diseños, directorio de administradores y revisiones requieren la identidad verificada y los permisos correspondientes. Un `role`, correo o UID enviado por el cliente no autentica una petición.
+- Las miniaturas p5.js se ejecutan con `sandbox="allow-scripts"`, sin el permiso de mismo origen. La prueba en Chrome verificó que el sketch dibuja su canvas y no puede leer el documento ni localStorage de la aplicación principal.
+- Los mensajes de autenticación y los registros de errores dejan de mostrar objetos completos del SDK que puedan incluir respuestas OAuth. El error boundary no imprime mensajes internos en producción.
+- Vite publica únicamente una lista explícita de variables públicas. Una prueba con una variable VITE desconocida confirmó que no se publica. El build exige MongoDB y configuración Firebase coherente, y no genera sourcemaps.
+- `.gitignore`, `.vercelignore` y las exclusiones de las funciones protegen archivos de entorno, respaldos, cuentas locales, claves y credenciales. El documento curricular interno se movió fuera de `public/`.
+- Se retiró el SDK de Gemini que no utilizaba la aplicación y se actualizaron dependencias vulnerables. Las actualizaciones incluyen versiones corregidas de gRPC, glob y UUID; se probaron los consumidores de glob y el archivado ZIP.
 
-La configuración web identifica el proyecto y se incluye en el navegador;
-no concede acceso administrativo. Las reglas de Firestore y Firebase Auth son
-las que autorizan las operaciones. Conviene comprobar en Google Cloud que esta
-clave solo tenga habilitadas las APIs que utiliza Firebase. No se inspeccionaron
-ni modificaron las restricciones del proyecto de producción.
+## Qué es público y qué es privado
 
-Fuentes: [claves de API de Firebase](https://firebase.google.com/docs/projects/api-keys)
-y [Gitleaks](https://github.com/gitleaks/gitleaks).
+`MONGODB_URI` y `CMS_ADMIN_UIDS` son privados. No deben llevar prefijo `VITE_`. Los UID reales siguen existiendo en la base de datos y en la sesión de su propietario: son necesarios para asociar sus trabajos. No son contraseñas, y conocer uno no permite acceder a otro usuario sin un token válido.
 
-El correo de administración, los identificadores del proyecto y la propuesta
-pedagógica en `public/assets/aistudio` siguen visibles: son parte del contenido y
-la configuración existentes, no contraseñas. No se reescribió el historial.
-Los informes de la revisión están redactados y viven en
-`.firebase/security-audit`, que está excluido de Git.
+La configuración web `VITE_FIREBASE_*` y el identificador OAuth `VITE_GOOGLE_CLIENT_ID` son públicos por diseño y estarán en el navegador. Moverlos a un archivo de entorno evita incrustar la configuración de una persona en el repositorio, pero no los convierte en secretos. La clave web de Firebase debe limitarse a las APIs de Firebase que se utilizan; no debe reutilizarse como clave de Gemini u otros servicios de pago.
 
-`.gitignore` excluye los datos y cuentas del emulador, `.env.local`, logs,
-respaldos descargados del CMS, exportaciones y formatos habituales de credenciales
-OAuth, cuentas de servicio y claves privadas. Conserva `.env.example` con valores
-de ejemplo. Guarda cualquier respaldo en `backups/`, nunca en `public/`.
+Referencias: [Firebase y sus claves web](https://firebase.google.com/docs/projects/api-keys), [variables públicas de Vite](https://vite.dev/guide/env-and-mode), [aislamiento de iframes](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe#sandbox).
 
-Antes de hacer commit, revisa los nombres con `git status --short` y confirma
-que ningún respaldo, `.env.local` o cuenta de servicio aparece entre los archivos
-por agregar. GitHub y Vercel necesitan el código; los documentos de Firestore
-se transfieren por separado.
+Los contenidos y enlaces que un administrador publica en el CMS siguen siendo públicos. El filtro elimina campos de identidad y credenciales; no pretende censurar textos, código o imágenes que un administrador publique deliberadamente.
 
-## Qué contiene el respaldo CMS v2
+## Resultados y límites
 
-Incluye las diez colecciones editoriales: `cms_modules`, `cms_lessons`,
-`cms_sections`, `cms_blocks`, `cms_categories`, `cms_site_content`, `cms_media`,
-`cms_nodes`, `cms_node_relations` y `cms_node_blocks`. Conserva los textos con
-formato, el contenido y las plantillas del diseñador de POO, la portada, el menú,
-los estados curriculares, los borradores y los marcadores de inicialización.
-El JSON identifica el proyecto y la base de origen.
+- El escaneo Gitleaks del código publicable actual y la comprobación de secretos configurados se documentan en los informes locales.
+- El historial alcanzable revisado contiene dos detecciones de claves web públicas de Firebase en versiones antiguas del archivo de configuración. No se encontraron credenciales privadas mediante Gitleaks. El historial conserva versiones anteriores de textos personales; borrar el archivo actual no reescribe Git.
+- `npm audit --omit=dev` terminó sin vulnerabilidades conocidas. La auditoría completa conserva tres avisos moderados en la cadena de desarrollo de Firebase CLI (`firebase-tools → @google-cloud/pubsub → @opentelemetry/core`). Esa cadena no forma parte de la API desplegada. No se forzó una migración incompatible de OpenTelemetry ni una degradación de Firebase CLI.
+- Las pruebas de la API cubren privacidad de respuestas públicas, filtros sobre metadatos, separación entre propietarios, sesiones falsas, privilegios administrativos y transacciones.
+- El archivo MP4 no mostró etiquetas de autor, propietario, ubicación o comentario en la inspección de metadatos.
 
-No incluye cuentas de Authentication, `admins`, progresos o diseños personales
-bajo `users`, ni el historial de revisiones. Los archivos de Drive permanecen en
-Drive; se transfieren sus referencias y metadatos. Los permisos de esos archivos
-se gestionan por separado.
+Esta revisión no garantiza ausencia absoluta de vulnerabilidades. No valida las restricciones de claves en Google Cloud, las reglas ya desplegadas en el proyecto Firebase antiguo, la lista de IP de Atlas, las políticas de la cuenta Vercel ni cambios posteriores a la revisión. Se revisó y probó el código local; no se publicó un despliegue automáticamente.
 
-## Pasar del entorno local a producción
+## Publicar
 
-1. Guarda los cambios de cada editor local. Si una lección debe ser pública,
-   usa **Publicar Lección**, no **Guardar Borrador**.
-2. En `http://127.0.0.1:3000/#/admin`, pulsa **Exportar Respaldo**. Conserva el
-   JSON en `backups/`. Debe tener `version: "2.0.0"` y origen
-   `demo-clase-asistida / (default)`.
-3. Sube el código revisado a Git y despliega esta versión de la aplicación.
-   En Vercel utiliza `npm run build` y el directorio `dist`. Si se usará Drive
-   para subir imágenes, configura `VITE_GOOGLE_CLIENT_ID` en el entorno del
-   despliegue y autoriza el dominio de la aplicación en el cliente OAuth de Google.
-4. Comprueba la configuración de Firebase Auth: Google habilitado y el dominio
-   publicado autorizado. Para abrir producción desde tu computadora, autoriza
-   también el dominio local correspondiente en Firebase Authentication.
-5. Publica las reglas de Firestore en el proyecto real. Este comando modifica
-   las reglas de producción, usando la base con nombre de `firebase.json`:
+1. Usa Node 24.12 o posterior dentro de la rama 24.x, requerido por las dependencias instaladas.
+2. Configura en Vercel las variables de `.env.example` con los valores correctos. `MONGODB_URI`, `MONGODB_DB`, `FIREBASE_PROJECT_ID` y `CMS_ADMIN_UIDS` son del servidor. Las variables `VITE_*` de la lista permitida son públicas. El proyecto de autenticación debe coincidir en ambos lados.
+3. Configura el dominio de producción en Firebase Auth y en el cliente OAuth de Google. Confirma las restricciones de la clave web y el acceso de red a Atlas para el servidor.
+4. Ejecuta `npm run lint`, `npm test`, `npm run build` y `npm run security:check`. Revisa `npm audit --omit=dev` antes de publicar, porque los avisos pueden cambiar.
+5. Despliega un preview y comprueba como visitante el catálogo, como alumno sus propios trabajos y como administrador el CMS. Comprueba que las rutas privadas rechacen visitantes.
 
-   ```sh
-   npx firebase login
-   npx firebase deploy --only firestore:rules --project rugged-precept-406017
-   ```
-
-   El destino esperado es
-   `ai-studio-estructuradeunac-271cf9fa-0600-48d9-85d5-b75dad4b646f`, no `(default)`.
-6. Abre el CMS desplegado e inicia sesión con una cuenta administradora real.
-   También puedes utilizar el código local actualizado contra producción:
-
-   ```sh
-   npm run dev:production
-   ```
-
-   Esa instancia usa el puerto 3001 y escribe en Firebase real. No es el emulador.
-7. Descarga primero un **Exportar Respaldo** del destino y guárdalo aparte,
-   por ejemplo `backups/produccion-antes-de-importar.json`. Después usa
-   **Restaurar Respaldo** y selecciona el JSON exportado desde el entorno local.
-   El diálogo muestra origen, destino, cantidad de documentos y si el destino es
-   LOCAL o PRODUCCIÓN. Confirma solo el proyecto y la base esperados.
-8. Verifica las lecciones publicadas, sus secciones, el diseñador de POO, la
-   portada y las imágenes desde una ventana sin sesión.
-
-La importación valida el archivo completo antes de escribir, crea un respaldo
-automático del destino y escribe en lotes de hasta 400 documentos. Añade registros
-nuevos y actualiza los que tienen el mismo ID. No elimina registros adicionales:
-si borraste contenidos en local y quieres quitarlos de producción, revisa esa
-lista de eliminaciones por separado antes de aplicarla. Conserva la copia del
-destino para recuperar los valores anteriores si fuera necesario.
-
-`firebase deploy` no sube los documentos del CMS. Tampoco hay que importar las
-cuentas simuladas ni publicar `.firebase/local-data`. El respaldo CMS es el
-mecanismo preparado para transferir el contenido editorial.
-
-## Imágenes públicas de solo lectura
-
-Las imágenes nuevas subidas mediante el CMS reciben acceso `anyone / reader`
-con `allowFileDiscovery: false`: cualquiera con el enlace puede verlas, sin
-conceder edición pública ni convertir toda la carpeta en pública. La aplicación
-mantiene el alcance OAuth `drive.file`, necesario para subir y administrar los
-archivos que crea; ese alcance no se solicita a los alumnos para ver las imágenes.
-
-Para imágenes anteriores: **Recursos Multimedia → Conectar Drive → Hacer pública
-(lector)**. La acción afecta únicamente a la imagen elegida. **Comprobar lectura
-pública** permite verificar de nuevo el permiso y actualizar su enlace. El CMS
-comprueba el permiso resultante; si Google lo rechaza, mantiene el recurso en la
-biblioteca y muestra el error en lugar de afirmar que la imagen es pública.
+No subas `.env.local`, `.firebase/`, `backups/`, `exports/` ni cuentas de servicio. Las instrucciones de datos y recuperación están en [mongodb-migration.md](docs/mongodb-migration.md).

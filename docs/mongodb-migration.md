@@ -2,7 +2,7 @@
 
 El proyecto puede usar MongoDB Atlas para los datos del CMS, el directorio de administradores, perfiles, avances, evidencias y diseños. Firebase Auth conserva el inicio de sesión con Google y sus UID. La API valida los tokens y decide los permisos en el servidor; el campo `role` enviado por el navegador no concede acceso.
 
-La conexión es `React → /api/data → MongoDB Atlas`. `MONGODB_URI` nunca llega al navegador. La opción predeterminada sigue siendo Firestore hasta activar `VITE_DATA_BACKEND=mongodb`.
+La conexión es `React → /api/data → MongoDB Atlas`. `MONGODB_URI` nunca llega al navegador. El despliegue de producción requiere `VITE_DATA_BACKEND=mongodb`; Firestore queda disponible para desarrollo local con emuladores.
 
 ## 1. Preparar Atlas
 
@@ -96,14 +96,16 @@ El repositorio incluye funciones `api/data.mjs` y `api/health.mjs`; la regla SPA
 MONGODB_URI=...
 MONGODB_DB=clase_asistida
 VITE_DATA_BACKEND=mongodb
+FIREBASE_PROJECT_ID=tu-proyecto-firebase
+CMS_ADMIN_UIDS=UID_ADMIN_PRIVADO
 ```
 
-Si necesitas otro proyecto de autenticación, configura `FIREBASE_PROJECT_ID` y asegúrate de que coincida con el proyecto usado por el cliente. No configures `FIREBASE_AUTH_EMULATOR_HOST` en producción: la API lo rechaza. Usa una versión de Node compatible con las dependencias del proyecto y permite en Atlas la salida de red del despliegue. `VITE_DATA_BACKEND` se lee durante la compilación, por lo que cambiarlo exige reconstruir el frontend.
+Configura también las variables públicas `VITE_FIREBASE_*` y `VITE_GOOGLE_CLIENT_ID` de `.env.example`. `FIREBASE_PROJECT_ID` debe coincidir con `VITE_FIREBASE_PROJECT_ID`. `CMS_ADMIN_UIDS` es una lista privada de UID administradores separados por comas y solo se lee en el servidor; nunca uses `VITE_` para esa lista. No configures `FIREBASE_AUTH_EMULATOR_HOST` en producción: la API lo rechaza. Usa una versión de Node compatible con las dependencias del proyecto y permite en Atlas la salida de red del despliegue. `VITE_DATA_BACKEND` se lee durante la compilación, por lo que cambiarlo exige reconstruir el frontend.
 
 Despliega primero en preview y valida los flujos anteriores. No se ha publicado ni cambiado el destino de producción automáticamente.
 
 ## Volver a Firestore
 
-Quita `VITE_DATA_BACKEND=mongodb`, reconstruye el sitio y vuelve a desplegar. En local, `npm run dev` vuelve al flujo de emuladores habitual. La migración no borra ni modifica el origen Firestore.
+Para trabajar con Firestore local, usa `npm run dev:local`. El build de producción exige MongoDB para aplicar los filtros de privacidad de la API. Un regreso a Firestore en producción requiere revisar primero permisos y metadatos, además de conciliar los datos. La migración no borra ni modifica el origen Firestore.
 
 Esta vuelta cambia la conexión: **las escrituras nuevas hechas en MongoDB no aparecen automáticamente en Firestore**. Si ya hubo actividad en Atlas, detén escrituras y concilia los cambios antes de volver. El archivo `mongodb-before-*.ejson` contiene el estado anterior del destino para una restauración administrativa; no existe una restauración destructiva automática.

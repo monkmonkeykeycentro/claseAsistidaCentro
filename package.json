@@ -21,7 +21,8 @@
     "mongo:import": "node scripts/mongodb-migrate.mjs import",
     "mongo:verify": "node scripts/mongodb-migrate.mjs verify",
     "firebase:export-local": "node scripts/export-firestore-local.mjs",
-    "mongo:transfer-user": "node scripts/mongodb-transfer-user.mjs"
+    "mongo:transfer-user": "node scripts/mongodb-transfer-user.mjs",
+    "security:check": "node scripts/security-check.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -61,5 +62,8 @@
       "uuid": "^11.1.1"
     },
     "glob": "^14.0.4"
+  },
+  "engines": {
+    "node": ">=24.12.0 <25"
   }
 }
