@@ -51,6 +51,17 @@ test('real MongoDB: public visibility, ownership, admin authorization, atomic wr
     await commit([set('cms_nodes/published', { status: 'published', visible: true, settings: { a: 1, b: 2 } })], admin);
     await commit([set('cms_nodes/published', { settings: { a: 3 } }, true)], admin);
     assert.deepEqual((await execute(get('cms_nodes/published'))).data.settings, { a: 3, b: 2 });
+    await commit([set('cms_nodes/published', { updatedBy: 'private-canary', metadata: { ownerUid: 'private-canary' } }, true)], admin);
+    assert.doesNotMatch(JSON.stringify(await execute(get('cms_nodes/published'))), /private-canary/);
+    assert.match(JSON.stringify(await execute(get('cms_nodes/published'), admin)), /private-canary/);
+    await assert.rejects(execute(list('cms_nodes', [{ kind: 'where', field: 'updatedBy', op: '==', value: 'private-canary' }])), { code: 'permission-denied' });
+    const previousAdmins = process.env.CMS_ADMIN_UIDS;
+    process.env.CMS_ADMIN_UIDS = 'configured-editor';
+    try {
+      assert.equal((await execute(get('admins/configured-editor'), { uid: 'configured-editor' })).data.configured, true);
+      assert.equal((await execute(get('cms_nodes/published'), { uid: 'configured-editor' })).data.updatedBy, 'private-canary');
+      await assert.rejects(execute(get('admins/configured-editor'), user), { code: 'permission-denied' });
+    } finally { if (previousAdmins === undefined) delete process.env.CMS_ADMIN_UIDS; else process.env.CMS_ADMIN_UIDS = previousAdmins; }
     await assert.rejects(commit([
       set('users/alice/progress/atomic', { userId: 'alice' }), set('cms_nodes/forbidden', { title: 'No' }),
     ], user), { code: 'permission-denied' });
@@ -113,6 +124,7 @@ test('real MongoDB: public visibility, ownership, admin authorization, atomic wr
       assert.equal(publicResponse.headers.get('cache-control'), 'no-store');
       assert.equal((await request(get('users/alice'))).status, 403);
       assert.equal((await request(get('users/alice'), 'forged-token')).status, 401);
+      assert.doesNotMatch(JSON.stringify(await (await request(get('cms_nodes/published'))).json()), /private-canary/);
       const malformed = await fetch(`${base}/api/data`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' });
       assert.equal(malformed.status, 400);
       assert.equal((await malformed.json()).error, 'JSON no válido.');

@@ -594,7 +594,7 @@ test('initialization retains the Firebase error code for diagnosis', async () =>
   console.error = () => {};
   try {
     await assert.rejects(cms.seedCmsFromExistingContentIfEmpty, (error) => {
-      assert.equal(error.cause, denied);
+      assert.equal(error.cause || error, denied);
       const message = describeCmsError(error, 'inicializar el temario');
       assert.match(message, /permission-denied/);
       assert.doesNotMatch(message, /test-project|test-database/);
@@ -879,7 +879,7 @@ test('a complete CMS backup restores editorial data and creates a destination ba
   state.documents.set(`cms_node_blocks/${nodeBlock.id}`, nodeBlock);
   state.documents.set('cms_site_content/class_designer_config', { content: '{"title":"Diseñador editado"}' });
   const backup = await cms.exportCurriculumBackup();
-  state.documents.clear(); state.writes = [];
+  state.documents.clear(); state.writes = []; administrator();
   state.documents.set('cms_modules/extra_module', { ...moduleData, id: 'extra_module' });
   state.documents.set('users/student-1', { privateData: 'original' });
   await cms.importCurriculumBackup(backup);

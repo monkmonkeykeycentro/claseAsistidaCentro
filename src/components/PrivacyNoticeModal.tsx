@@ -94,7 +94,7 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
           <section className="space-y-3 border-b border-[#E1E7E1] pb-5">
             <h3 className="font-bold text-[#232A24]">¿Cómo se protege y quién puede consultar la información?</h3>
             <p>El acceso a la plataforma se realiza mediante una cuenta institucional de Google con el dominio <strong className="text-[#232A24]">@centro.edu.mx</strong>. No se permite el ingreso mediante cuentas personales o externas a este dominio.</p>
-            <p>La plataforma utiliza servicios de <strong className="text-[#232A24]">Google Workspace y Firebase</strong> para la autenticación y gestión de la información.</p>
+            <p>La plataforma utiliza servicios de <strong className="text-[#232A24]">Google Workspace y mongoDB</strong> para la autenticación y gestión de la información.</p>
             <p>Los registros académicos podrán ser consultados únicamente por el docente responsable y las personas autorizadas para la administración de la plataforma.</p>
           </section>
 

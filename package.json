@@ -24,7 +24,6 @@
     "mongo:transfer-user": "node scripts/mongodb-transfer-user.mjs"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tiptap/extension-text-align": "^3.33.0",
     "@tiptap/extension-text-style": "^3.33.0",
@@ -56,6 +55,11 @@
     "typescript": "^7.0.2"
   },
   "overrides": {
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "@grpc/grpc-js": "^1.14.7",
+    "gaxios@^6.0.0": {
+      "uuid": "^11.1.1"
+    },
+    "glob": "^14.0.4"
   }
 }

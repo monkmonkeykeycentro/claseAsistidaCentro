@@ -382,11 +382,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <p>
                         <strong>Código:</strong> {errorInfo.code}
                       </p>
-                      {errorInfo.rawError && (
-                        <p>
-                          <strong>Mensaje:</strong> {errorInfo.rawError}
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>

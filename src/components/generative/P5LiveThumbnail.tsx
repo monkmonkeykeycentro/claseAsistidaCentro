@@ -135,7 +135,7 @@ const P5LiveThumbnailInner: React.FC<P5LiveThumbnailProps> = ({
 
   // Construct iframe srcdoc with sandboxed p5.js execution
   // Safe stringification prevents template literal interpolation bugs with ${} or quotes
-  const safeJsonCode = JSON.stringify(cleanedCode);
+  const safeJsonCode = JSON.stringify(cleanedCode).replace(/</g, '\\u003c');
   const baseUrl = repositoryCode?.baseUrl || '';
   const fitMode = JSON.stringify(fit);
 
@@ -258,7 +258,8 @@ const P5LiveThumbnailInner: React.FC<P5LiveThumbnailProps> = ({
           key={reloadKey}
           srcDoc={srcDoc}
           title="Live p5.js Thumbnail"
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts"
+          referrerPolicy="no-referrer"
           className="w-full h-full border-0 block"
         style={{
           pointerEvents: interactive ? 'auto' : 'none',
