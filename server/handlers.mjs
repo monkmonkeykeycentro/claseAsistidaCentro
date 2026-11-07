@@ -40,6 +40,10 @@ export function sendApiError(res, error) {
   } else if (error?.name === 'MongoServerError' && error.code === 13) {
     code = 'database-permission-denied';
     message = 'El usuario de base de datos no tiene acceso a la base configurada.';
+  } else if (error?.name === 'MongoWaitQueueTimeoutError') {
+    code = 'database-busy';
+    message = 'La base de datos está ocupada. Vuelve a intentarlo en unos segundos.';
+    res.setHeader('Retry-After', '5');
   } else if (['MongoServerSelectionError', 'MongoNetworkError', 'MongoNetworkTimeoutError'].includes(error?.name) || ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'EAI_AGAIN', 'EREFUSED'].includes(error?.code)) {
     code = 'database-unreachable';
     message = 'La API no pudo conectar con Atlas. Revisa acceso de red, DNS y disponibilidad del clúster.';

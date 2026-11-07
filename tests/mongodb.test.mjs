@@ -175,3 +175,82 @@ test('a read following a committed write does not join a pending read from befor
   assert.equal((await before).data().title, 'Before');
   assert.equal((await after).data().title, 'After');
 });
+
+test('a browser burst sends at most four API requests concurrently', async () => {
+  let active = 0;
+  let peak = 0;
+  const waiting = [];
+  const transport = createMongoTransport(async () => undefined, async () => {
+    active++; peak = Math.max(peak, active);
+    await new Promise((resolve) => waiting.push(resolve));
+    active--;
+    return Response.json({ data: {} });
+  });
+  const requests = Array.from({ length: 12 }, (_, index) => transport.getDoc(transport.doc(null, 'cms_nodes', `node_${index}`)));
+  for (let wave = 0; wave < 3; wave++) {
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(waiting.length, 4);
+    waiting.splice(0).forEach((resolve) => resolve());
+  }
+  await Promise.all(requests);
+  assert.equal(peak, 4);
+  assert.equal(active, 0);
+});
+
+test('subscriptions pause in hidden or offline pages and resume once on return', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const before = Object.fromEntries(['window', 'document', 'navigator'].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  const page = Object.assign(new EventTarget(), { visibilityState: 'visible' });
+  const browser = new EventTarget();
+  const network = { onLine: true };
+  for (const [key, value] of Object.entries({ document: page, window: browser, navigator: network })) Object.defineProperty(globalThis, key, { value, configurable: true });
+  const paths = [];
+  const transport = createMongoTransport(async () => 'session', async (_url, init) => {
+    paths.push(JSON.parse(init.body).path);
+    return Response.json({ data: {} });
+  });
+  const stopHome = transport.onSnapshot(transport.doc(null, 'cms_site_content', 'home_config'), () => {});
+  const stopAdmin = transport.onSnapshot(transport.doc(null, 'admins', 'editor'), () => {});
+  t.after(() => {
+    stopHome(); stopAdmin();
+    for (const [key, descriptor] of Object.entries(before)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key];
+    }
+  });
+  const settle = () => new Promise((resolve) => setImmediate(resolve));
+  await settle();
+  assert.equal(paths.length, 2);
+  t.mock.timers.tick(15000); await settle();
+  assert.equal(paths.filter((path) => path === 'admins/editor').length, 2);
+  assert.equal(paths.filter((path) => path === 'cms_site_content/home_config').length, 1);
+  page.visibilityState = 'hidden'; page.dispatchEvent(new Event('visibilitychange'));
+  const paused = paths.length;
+  t.mock.timers.tick(120000); await settle();
+  assert.equal(paths.length, paused);
+  page.visibilityState = 'visible'; page.dispatchEvent(new Event('visibilitychange')); browser.dispatchEvent(new Event('focus'));
+  await settle(); t.mock.timers.tick(0); await settle();
+  assert.equal(paths.length, paused + 2);
+  network.onLine = false; browser.dispatchEvent(new Event('offline'));
+  t.mock.timers.tick(120000); await settle();
+  assert.equal(paths.length, paused + 2);
+  network.onLine = true; browser.dispatchEvent(new Event('online')); await settle();
+  assert.equal(paths.length, paused + 4);
+});
+
+test('saturated database responses respect Retry-After instead of immediately retrying queued refreshes', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let reads = 0;
+  const transport = createMongoTransport(async () => undefined, async (_url, init) => {
+    if (JSON.parse(init.body).action === 'commit') return Response.json({ ok: true });
+    reads++;
+    return Response.json({ code: 'database-busy' }, { status: 503, headers: { 'Retry-After': '30' } });
+  });
+  t.after(transport.onSnapshot(transport.doc(null, 'cms_site_content', 'home_config'), () => {}, () => {}));
+  const settle = () => new Promise((resolve) => setImmediate(resolve));
+  await settle();
+  assert.equal(reads, 1);
+  t.mock.timers.tick(29000); await settle();
+  assert.equal(reads, 1);
+  t.mock.timers.tick(1000); await settle();
+  assert.equal(reads, 2);
+});

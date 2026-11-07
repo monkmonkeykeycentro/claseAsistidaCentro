@@ -71,12 +71,14 @@ test('health returns a successful ping and distinguishes Atlas failures using sa
         [{ name: 'MongoServerSelectionError' }, 'database-unreachable'],
         [{ code: 'EREFUSED' }, 'database-unreachable'],
         [{ name: 'MongoParseError' }, 'database-configuration-invalid'],
+        [{ name: 'MongoWaitQueueTimeoutError' }, 'database-busy'],
         [{ code: 'ERR_MODULE_NOT_FOUND' }, 'dependency-missing'],
       ]) {
         databaseError = Object.assign(new Error('private-canary'), details);
         const res = response(); await health({ method: 'GET' }, res);
         assert.equal(res.statusCode, 503);
         assert.equal(res.json().code, expected);
+        if (expected === 'database-busy') assert.equal(res.headers['retry-after'], '5');
         assert.doesNotMatch(res.body, /private-canary/);
       }
     });

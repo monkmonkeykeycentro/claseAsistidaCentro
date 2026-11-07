@@ -1,16 +1,31 @@
 import { fail } from './dataModel.mjs';
 
-let connection;
+// Share one pool even if the server module is loaded more than once in the
+// same process. Separate Vercel instances still have independent pools.
+const key = Symbol.for('clase-asistida.mongodb');
+const state = globalThis[key] ??= { connection: undefined };
 export async function connectDatabase() {
   if (!process.env.MONGODB_URI || !process.env.MONGODB_DB) {
     fail('Configura MONGODB_URI y MONGODB_DB en el servidor.', 503, 'unavailable');
   }
-  if (!connection) {
+  if (!state.connection) {
     // Cache before awaiting imports/connect, so concurrent requests share a pool.
-    connection = (async () => {
+    state.connection = (async () => {
       const { MongoClient } = await import('mongodb');
-      const client = new MongoClient(process.env.MONGODB_URI, { maxPoolSize: 10, serverSelectionTimeoutMS: 10000 });
+      const client = new MongoClient(process.env.MONGODB_URI, {
+        maxPoolSize: 3,
+        minPoolSize: 0,
+        maxConnecting: 1,
+        maxIdleTimeMS: 30000,
+        waitQueueTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 10000,
+        appName: 'clase-asistida-api',
+      });
       try {
+        if (process.env.VERCEL === '1') {
+          const { attachDatabasePool } = await import('@vercel/functions/db-connections');
+          attachDatabasePool(client);
+        }
         await client.connect();
         return { client, db: client.db(process.env.MONGODB_DB) };
       } catch (error) {
@@ -18,9 +33,9 @@ export async function connectDatabase() {
         throw error;
       }
     })().catch((error) => {
-      connection = undefined;
+      state.connection = undefined;
       throw error;
     });
   }
-  return connection;
+  return state.connection;
 }

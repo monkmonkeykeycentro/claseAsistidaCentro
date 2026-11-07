@@ -1,3 +1,5 @@
+import { createRequestQueue } from './requestQueue';
+
 // Only application requests cross this boundary. Database credentials stay on the server.
 type Reference = { path: string; kind: 'document' | 'collection'; constraints?: Constraint[] };
 type Constraint = { kind: 'where' | 'orderBy'; field: string; op?: string; value?: unknown; direction?: string };
@@ -5,8 +7,26 @@ type Operation = { type: 'set' | 'update' | 'delete'; path: string; data?: unkno
 type Row = { path: string; data: Record<string, any> };
 
 export function createMongoTransport(getToken: () => Promise<string | undefined>, request = globalThis.fetch) {
-  const listeners = new Map<() => void, Reference>();
+  const listeners = new Map<() => void, { ref: Reference; pause: () => void; wake: () => void }>();
   const pendingReads = new Map<string, Promise<any>>();
+  const runRequest = createRequestQueue(4);
+  const page = typeof document === 'undefined' ? undefined : document;
+  const browser = typeof window === 'undefined' ? undefined : window;
+  const activePage = () => page?.visibilityState !== 'hidden' && (typeof navigator === 'undefined' || navigator.onLine !== false);
+  const resume = () => listeners.forEach(({ pause, wake }) => { if (activePage()) wake(); else pause(); });
+  function watchPage(watch: boolean) {
+    if (watch) {
+      page?.addEventListener('visibilitychange', resume);
+      browser?.addEventListener('online', resume);
+      browser?.addEventListener('offline', resume);
+      browser?.addEventListener('focus', resume);
+    } else {
+      page?.removeEventListener('visibilitychange', resume);
+      browser?.removeEventListener('online', resume);
+      browser?.removeEventListener('offline', resume);
+      browser?.removeEventListener('focus', resume);
+    }
+  }
   let generation = 0;
   async function call(body: { action: string; [key: string]: unknown }): Promise<any> {
     const token = await getToken();
@@ -16,16 +36,22 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
     const key = `${generation}:${token || ''}:${serialized}`;
     const read = body.action === 'get' || body.action === 'list';
     if (read && pendingReads.has(key)) return pendingReads.get(key);
+    const signal = AbortSignal.timeout(read ? 20000 : 60000);
     const perform = async () => {
       const response = await request('/api/data', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: serialized, cache: 'no-store', signal: AbortSignal.timeout(20000),
+        body: serialized, cache: 'no-store', signal,
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw Object.assign(new Error(result.error || 'No se pudo acceder a los datos.'), { code: result.code || 'unavailable' });
+      if (!response.ok) {
+        const retry = Number(response.headers.get('Retry-After'));
+        throw Object.assign(new Error(result.error || 'No se pudo acceder a los datos.'), {
+          code: result.code || 'unavailable', retryAfterMs: Number.isFinite(retry) ? Math.min(Math.max(retry * 1000, 0), 120000) : 0,
+        });
+      }
       return result;
     };
-    const result = perform();
+    const result = runRequest(perform, signal);
     if (read) pendingReads.set(key, result);
     try { return await result; }
     finally { if (read) pendingReads.delete(key); }
@@ -60,7 +86,7 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
     if (!operations.length) return;
     await call({ action: 'commit', operations });
     generation++;
-    listeners.forEach((ref, refresh) => {
+    listeners.forEach(({ ref }, refresh) => {
       if (operations.some((op) => ref.kind === 'document' ? ref.path === op.path : op.path.slice(0, op.path.lastIndexOf('/')) === ref.path)) refresh();
     });
   }
@@ -83,39 +109,51 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
     let queued = false;
     let previous: string | undefined;
     let emitted = false;
-    let retryDelay = 2000;
+    let retryDelay = 5000;
     let timer: ReturnType<typeof setTimeout>;
     async function refresh() {
-      if (stopped) return;
+      if (stopped || !activePage()) return;
       if (running) { queued = true; return; }
       clearTimeout(timer);
       running = true;
       let failed = false;
+      let serverDelay = 0;
       try {
         const result = ref.kind === 'document' ? await getDoc(ref) : await getDocs(ref);
         const current = JSON.stringify('docs' in result ? result.docs.map((doc) => ({ id: doc.id, data: doc.data() })) : result.data());
         if (!stopped && (!emitted || current !== previous)) { next(result); previous = current; emitted = true; }
-        retryDelay = 2000;
+        retryDelay = 5000;
       } catch (reason) {
         // Consumers may clear content or permissions after an error. Re-emit the
         // next successful server response even when its data has not changed.
         emitted = false;
         failed = true;
+        serverDelay = typeof reason === 'object' && reason && 'retryAfterMs' in reason ? Number(reason.retryAfterMs) || 0 : 0;
         if (!stopped) error?.(reason);
       }
       finally {
         running = false;
-        if (!stopped) {
-          const delay = queued ? 0 : failed ? retryDelay : 15000;
-          if (failed) retryDelay = Math.min(retryDelay * 2, 15000);
+        if (!stopped && activePage()) {
+          const interval = ref.path.startsWith('admins/') ? 15000 : 60000;
+          // Back off failures even if writes queued another refresh. A saturated
+          // server must not receive a stream of immediate retries.
+          const delay = failed ? Math.max(retryDelay, serverDelay) : queued ? 0 : interval;
+          if (failed) retryDelay = Math.min(retryDelay * 2, 60000);
           queued = false;
           timer = setTimeout(refresh, delay);
         }
       }
     }
-    listeners.set(refresh, ref);
+    if (listeners.size === 0) watchPage(true);
+    listeners.set(refresh, {
+      ref, pause: () => { clearTimeout(timer); queued = false; },
+      wake: () => { if (!running) void refresh(); },
+    });
     void refresh();
-    return () => { stopped = true; clearTimeout(timer); listeners.delete(refresh); };
+    return () => {
+      stopped = true; clearTimeout(timer); listeners.delete(refresh);
+      if (listeners.size === 0) watchPage(false);
+    };
   }
   return {
     doc: (_db: unknown, ...parts: string[]): Reference => ({ path: parts.join('/'), kind: 'document' }),
