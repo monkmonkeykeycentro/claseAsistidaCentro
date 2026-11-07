@@ -43,12 +43,12 @@ export function sendApiError(res, error) {
   } else if (error?.name === 'MongoWaitQueueTimeoutError') {
     code = 'database-busy';
     message = 'La base de datos está ocupada. Vuelve a intentarlo en unos segundos.';
-    res.setHeader('Retry-After', '5');
   } else if (['MongoServerSelectionError', 'MongoNetworkError', 'MongoNetworkTimeoutError'].includes(error?.name) || ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'EAI_AGAIN', 'EREFUSED'].includes(error?.code)) {
     code = 'database-unreachable';
     message = 'La API no pudo conectar con Atlas. Revisa acceso de red, DNS y disponibilidad del clúster.';
   }
   // Do not log SDK errors: messages/causes may contain URIs, tokens and identities.
+  if (code === 'database-busy') res.setHeader('Retry-After', '5');
   if (status >= 500) console.error(JSON.stringify({ event: 'api_request_failed', code, status }));
   sendJson(res, status, { ok: false, code, error: message });
 }

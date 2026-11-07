@@ -29,3 +29,5 @@ Las respuestas anteriores y nuevas tuvieron el mismo SHA-256. Estos tiempos mide
 6. Comprobar como visitante que borradores, contenido oculto y metadatos privados siguen excluidos. Cerrar una sesión administradora mientras se previsualizan borradores debe ocultarlos.
 
 Las pruebas en `dataPerformance.test.mjs`, `curriculumLoading.test.mjs`, `mongodb.test.mjs` y `cms.test.mjs` cubren número de consultas, igualdad de visibilidad, privacidad, navegación, recuperación de errores y guardados rechazados.
+
+La cantidad de conexiones se controla por separado del número de consultas. Consulta [límites de pools, actividad de pestañas y comprobación en Atlas](mongodb-connections.md) para los ajustes adicionales ante saturación de conexiones.

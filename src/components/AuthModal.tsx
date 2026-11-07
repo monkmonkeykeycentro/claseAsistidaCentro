@@ -1,6 +1,7 @@
 import { logSafeError } from '../utils/safeError';
 import React, { useState } from 'react';
 import { AppUser, signInWithGoogle, signOutApp, FIREBASE_PROJECT_ID } from '../services/firebase';
+import { firebaseRuntime } from '../config/firebaseRuntime';
 import {
   X,
   ShieldCheck,
@@ -410,6 +411,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {/* Google Sign In Button */}
+              {firebaseRuntime.useEmulators && (
+                <p className="text-xs text-amber-900">
+                  Acceso local simulado: selecciona jmartineza@centro.edu.mx para administrar el CMS de prueba.
+                </p>
+              )}
               <button
                 onClick={handleSignIn}
                 disabled={loading}

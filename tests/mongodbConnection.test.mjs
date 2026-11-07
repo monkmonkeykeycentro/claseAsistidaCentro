@@ -5,35 +5,39 @@ const constructed = [];
 const attached = [];
 let failure;
 let gate;
+let connectStarted;
+let notifyConnect;
 mock.module('mongodb', { namedExports: { MongoClient: class {
   constructor(uri, options) { this.uri = uri; this.options = options; this.closed = 0; this.connects = 0; constructed.push(this); }
-  async connect() { this.connects++; if (gate) await gate; if (failure) throw failure; return this; }
+  async connect() { this.connects++; notifyConnect(); if (gate) await gate; if (failure) throw failure; return this; }
   async close() { this.closed++; }
   db(name) { return { name }; }
 } } });
 mock.module('@vercel/functions/db-connections', { namedExports: { attachDatabasePool: (client) => attached.push(client) } });
 const { connectDatabase } = await import('../server/mongodb.mjs');
 const shared = globalThis[Symbol.for('clase-asistida.mongodb')];
-const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 beforeEach((t) => {
-  constructed.length = 0; attached.length = 0; failure = undefined; gate = undefined; shared.connection = undefined;
+  constructed.length = 0; attached.length = 0; failure = undefined; gate = undefined; shared.connection = undefined; shared.retryAt = 0;
+  connectStarted = new Promise((resolve) => { notifyConnect = resolve; });
   const before = Object.fromEntries(['MONGODB_URI', 'MONGODB_DB', 'VERCEL'].map((key) => [key, process.env[key]]));
   Object.assign(process.env, { MONGODB_URI: 'mongodb://private-canary', MONGODB_DB: 'test_database', VERCEL: '1' });
   t.after(() => {
     shared.connection = undefined;
+    shared.retryAt = 0;
     for (const [key, value] of Object.entries(before)) {
       if (value === undefined) delete process.env[key]; else process.env[key] = value;
     }
   });
 });
 
-test('concurrent calls and duplicate module loads share one bounded MongoDB pool', async () => {
+test('concurrent calls and duplicate module loads share one bounded MongoDB pool', async (t) => {
   let release;
   gate = new Promise((resolve) => { release = resolve; });
+  t.after(() => release());
   const anotherModule = await import('../server/mongodb.mjs?duplicate-bundle');
   const requests = Array.from({ length: 40 }, (_, index) => index % 2 ? connectDatabase() : anotherModule.connectDatabase());
-  await settle();
+  await connectStarted;
   assert.equal(constructed.length, 1);
   assert.equal(attached.length, 1);
   assert.equal(constructed[0].connects, 1);
@@ -47,7 +51,8 @@ test('concurrent calls and duplicate module loads share one bounded MongoDB pool
   assert.equal(connections[0].db.name, 'test_database');
 });
 
-test('a failed shared connection is closed once and a later request can recover', async () => {
+test('a failed shared connection is closed once, backs off repeated attempts and can recover', async (t) => {
+  t.mock.timers.enable({ apis: ['Date'] });
   failure = new Error('private-canary');
   const attempts = await Promise.allSettled(Array.from({ length: 20 }, () => connectDatabase()));
   assert.ok(attempts.every((attempt) => attempt.status === 'rejected'));
@@ -55,6 +60,9 @@ test('a failed shared connection is closed once and a later request can recover'
   assert.equal(constructed[0].closed, 1);
   assert.equal(shared.connection, undefined);
   failure = undefined;
+  await assert.rejects(connectDatabase(), { status: 503, code: 'database-busy' });
+  assert.equal(constructed.length, 1);
+  t.mock.timers.tick(5000);
   const recovered = await connectDatabase();
   assert.equal(constructed.length, 2);
   assert.equal(recovered.client, constructed[1]);

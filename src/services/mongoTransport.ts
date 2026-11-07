@@ -110,6 +110,7 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
     let previous: string | undefined;
     let emitted = false;
     let retryDelay = 5000;
+    let blockedUntil = 0;
     let timer: ReturnType<typeof setTimeout>;
     async function refresh() {
       if (stopped || !activePage()) return;
@@ -118,17 +119,22 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
       running = true;
       let failed = false;
       let serverDelay = 0;
+      let nextRetry = 0;
       try {
         const result = ref.kind === 'document' ? await getDoc(ref) : await getDocs(ref);
         const current = JSON.stringify('docs' in result ? result.docs.map((doc) => ({ id: doc.id, data: doc.data() })) : result.data());
         if (!stopped && (!emitted || current !== previous)) { next(result); previous = current; emitted = true; }
         retryDelay = 5000;
+        blockedUntil = 0;
       } catch (reason) {
         // Consumers may clear content or permissions after an error. Re-emit the
         // next successful server response even when its data has not changed.
         emitted = false;
         failed = true;
         serverDelay = typeof reason === 'object' && reason && 'retryAfterMs' in reason ? Number(reason.retryAfterMs) || 0 : 0;
+        // Spread recovery attempts across tabs rather than retrying in lockstep.
+        nextRetry = Math.max(serverDelay, Math.min(60000, Math.round(retryDelay * (1 + Math.random() * 0.2))));
+        blockedUntil = Date.now() + nextRetry;
         if (!stopped) error?.(reason);
       }
       finally {
@@ -137,7 +143,7 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
           const interval = ref.path.startsWith('admins/') ? 15000 : 60000;
           // Back off failures even if writes queued another refresh. A saturated
           // server must not receive a stream of immediate retries.
-          const delay = failed ? Math.max(retryDelay, serverDelay) : queued ? 0 : interval;
+          const delay = failed ? nextRetry : queued ? 0 : interval;
           if (failed) retryDelay = Math.min(retryDelay * 2, 60000);
           queued = false;
           timer = setTimeout(refresh, delay);
@@ -147,7 +153,12 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
     if (listeners.size === 0) watchPage(true);
     listeners.set(refresh, {
       ref, pause: () => { clearTimeout(timer); queued = false; },
-      wake: () => { if (!running) void refresh(); },
+      wake: () => {
+        if (running) return;
+        const remaining = blockedUntil - Date.now();
+        if (remaining > 0) { clearTimeout(timer); timer = setTimeout(refresh, remaining); }
+        else void refresh();
+      },
     });
     void refresh();
     return () => {

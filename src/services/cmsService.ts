@@ -1408,6 +1408,7 @@ export async function getCmsRevisions(entityId?: string): Promise<CmsRevision[]>
 }
 export async function exportCurriculumBackup(): Promise<CurriculumExportData> {
   const user = await requireCmsAdmin();
+<<<<<<< Updated upstream
   const [modules, lessons, sections, blocks, siteDocuments, media, categories, nodes, nodeRelations, nodeBlocks] = await Promise.all([
     readCollection<CmsModule>('cms_modules'), readCollection<CmsLesson>('cms_lessons'),
     readCollection<CmsSection>('cms_sections'), readCollection<CmsBlock>('cms_blocks'),
@@ -1419,6 +1420,19 @@ export async function exportCurriculumBackup(): Promise<CurriculumExportData> {
   const backup: CurriculumExportData = { version: '2.0.0', exportedAt: new Date().toISOString(), exportedBy: user.email || user.uid,
     source: databaseSource,
     modules, lessons, sections, blocks, siteContent, media, categories, nodes, nodeRelations, nodeBlocks };
+=======
+  const [modules, lessons, sections, blocks, siteContent, media, categories, nodes, nodeRelations, nodeBlocks] = await Promise.all([
+    readCollection<CmsModule>('cms_modules'), readCollection<CmsLesson>('cms_lessons'),
+    readCollection<CmsSection>('cms_sections'), readCollection<CmsBlock>('cms_blocks'),
+    getAllSiteContent(), getCmsMediaResources(),
+    readCollection<CmsCategory>('cms_categories'), readCollection<CmsNode>('cms_nodes'),
+    readCollection<CmsNodeRelation>('cms_node_relations'), readCollection<CmsNodeBlock>('cms_node_blocks'),
+  ]);
+  const backup = { version: '1.1.0', exportedAt: new Date().toISOString(), exportedBy: user.email || user.uid,
+    modules, lessons, sections, blocks,
+    siteContent: Object.entries(siteContent).map(([key, item]) => ({ ...item, key })),
+    media, categories, nodes, nodeRelations, nodeBlocks };
+>>>>>>> Stashed changes
   await createCmsRevision('full_backup', 'curriculum', backup, 'Exportación de respaldo general');
   return backup;
 }
@@ -1428,11 +1442,28 @@ export async function importCurriculumBackup(backup: CurriculumExportData): Prom
   const groups: [string, { id?: string; key?: string }[]][] = [
     ['cms_modules', backup.modules], ['cms_lessons', backup.lessons], ['cms_sections', backup.sections || []],
     ['cms_blocks', backup.blocks || []], ['cms_site_content', backup.siteContent || []], ['cms_media', backup.media || []],
+<<<<<<< Updated upstream
     ['cms_categories', backup.categories || []], ['cms_nodes', backup.nodes || []],
     ['cms_node_relations', backup.nodeRelations || []], ['cms_node_blocks', backup.nodeBlocks || []],
   ];
   // Validate the whole file before making the destination backup or any writes.
   // Older v1 backups remain usable; missing new collections are left untouched.
+=======
+    ['cms_categories', backup.categories ?? []], ['cms_nodes', backup.nodes ?? []],
+    ['cms_node_relations', backup.nodeRelations ?? []], ['cms_node_blocks', backup.nodeBlocks ?? []],
+  ];
+  // Reject malformed files before creating revisions or writing partial imports.
+  for (const [name, items] of groups) {
+    if (!Array.isArray(items)) throw new Error(`Respaldo no válido: ${name} debe ser una lista.`);
+    for (const item of items) {
+      const id = name === 'cms_site_content' ? item?.key : item?.id;
+      if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id)) {
+        throw new Error(`Respaldo no válido: identificador incorrecto en ${name}.`);
+      }
+    }
+  }
+  await exportCurriculumBackup();
+>>>>>>> Stashed changes
   for (const [name, items] of groups) {
     if (!Array.isArray(items)) throw new Error(`Respaldo no válido: ${name} debe ser una lista.`);
     const seen = new Set<string>();

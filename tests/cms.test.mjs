@@ -614,6 +614,41 @@ test('connection and session failures give their own corrective instructions', (
   assert.match(unknown, /Unexpected document format/);
 });
 
+test('CMS backups retain categories, composable content and keyed site configuration across imports', async () => {
+  administrator();
+  curriculum();
+  const category = { id: 'cat_custom', name: 'Categoría local', slug: 'local', position: 0, visible: true };
+  for (const [name, item] of [['cms_categories', category], ['cms_nodes', node], ['cms_node_relations', nodeRelation], ['cms_node_blocks', nodeBlock]]) {
+    state.documents.set(`${name}/${item.id}`, item);
+  }
+  // Some configuration documents are keyed by their Firestore path rather than a key field.
+  state.documents.set('cms_site_content/units_curriculum_status', { statuses: { u1: 'draft' } });
+  const backup = await cms.exportCurriculumBackup();
+  assert.equal(backup.version, '1.1.0');
+  assert.deepEqual(backup.categories, [category]);
+  assert.deepEqual(backup.nodes, [node]);
+  assert.deepEqual(backup.nodeRelations, [nodeRelation]);
+  assert.deepEqual(backup.nodeBlocks, [nodeBlock]);
+  state.documents.clear();
+  await cms.importCurriculumBackup(backup);
+  assert.deepEqual(state.documents.get('cms_categories/cat_custom'), category);
+  assert.deepEqual(state.documents.get('cms_nodes/node_unit'), node);
+  assert.deepEqual(state.documents.get('cms_node_relations/rel_unit_tool'), nodeRelation);
+  assert.deepEqual(state.documents.get('cms_node_blocks/node_block'), nodeBlock);
+  assert.deepEqual(state.documents.get('cms_site_content/units_curriculum_status').statuses, { u1: 'draft' });
+});
+
+test('legacy backups remain importable and malformed backups fail before writes', async () => {
+  administrator();
+  const legacy = { version: '1.0.0', modules: [moduleData], lessons: [lesson] };
+  await cms.importCurriculumBackup(legacy);
+  assert.equal(state.documents.get(`cms_modules/${moduleData.id}`).title, moduleData.title);
+  state.writes = [];
+  await assert.rejects(cms.importCurriculumBackup({ ...legacy, nodes: {} }), /cms_nodes debe ser una lista/);
+  await assert.rejects(cms.importCurriculumBackup({ ...legacy, siteContent: [{ content: 'Sin identificador' }] }), /identificador incorrecto/);
+  assert.equal(state.writes.length, 0);
+});
+
 test('code blocks and lessons execute p5 live thumbnail while displaying Processing Java code', async () => {
   curriculum();
   const dualLesson = {

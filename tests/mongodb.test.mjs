@@ -238,16 +238,30 @@ test('subscriptions pause in hidden or offline pages and resume once on return',
 });
 
 test('saturated database responses respect Retry-After instead of immediately retrying queued refreshes', async (t) => {
-  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  const browser = new EventTarget();
+  Object.defineProperty(globalThis, 'window', { value: browser, configurable: true });
+  t.after(() => {
+    if (previousWindow) Object.defineProperty(globalThis, 'window', previousWindow); else delete globalThis.window;
+  });
   let reads = 0;
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
   const transport = createMongoTransport(async () => undefined, async (_url, init) => {
     if (JSON.parse(init.body).action === 'commit') return Response.json({ ok: true });
     reads++;
+    if (reads === 1) await pending;
     return Response.json({ code: 'database-busy' }, { status: 503, headers: { 'Retry-After': '30' } });
   });
   t.after(transport.onSnapshot(transport.doc(null, 'cms_site_content', 'home_config'), () => {}, () => {}));
   const settle = () => new Promise((resolve) => setImmediate(resolve));
   await settle();
+  assert.equal(reads, 1);
+  await transport.setDoc(transport.doc(null, 'cms_site_content', 'home_config'), { title: 'Saved' });
+  release(); await settle();
+  browser.dispatchEvent(new Event('focus')); await settle();
+  t.mock.timers.tick(0); await settle();
   assert.equal(reads, 1);
   t.mock.timers.tick(29000); await settle();
   assert.equal(reads, 1);

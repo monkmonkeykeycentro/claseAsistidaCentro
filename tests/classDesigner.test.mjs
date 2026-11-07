@@ -21,6 +21,7 @@ mock.module('firebase/app', {
 });
 mock.module('firebase/auth', {
   namedExports: {
+    connectAuthEmulator: () => {},
     getAuth: () => ({ currentUser: null }),
     connectAuthEmulator: () => {},
     GoogleAuthProvider: class { setCustomParameters() {} },
@@ -31,6 +32,7 @@ mock.module('firebase/auth', {
 });
 mock.module('firebase/firestore', {
   namedExports: {
+    connectFirestoreEmulator: () => {},
     getFirestore: () => ({}),
     connectFirestoreEmulator: () => {},
     doc: (_db, ...parts) => ({ path: parts.join('/') }),

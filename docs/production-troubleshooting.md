@@ -28,6 +28,7 @@ El build de Vercel cancela si faltan variables privadas obligatorias. Informa ú
 | `database-unreachable` | Revisa DNS, disponibilidad del clúster y las IP de salida del servidor autorizadas en Atlas. |
 | `database-authentication-failed` | Revisa el usuario de base de datos y su contraseña codificada para la URI. |
 | `database-permission-denied` | Revisa los roles del usuario de base de datos sobre la base configurada. |
+| `database-busy` | La conexión está en recuperación o el pool está ocupado. Respeta `Retry-After` y consulta el [diagnóstico de conexiones](mongodb-connections.md). |
 | `api-initialization-failed` o `dependency-missing` | Revisa que el despliegue contenga los archivos del servidor y sus dependencias. `vercel.json` incluye explícitamente `server/**`. |
 
 Una respuesta correcta de health comprueba conectividad, no la existencia de todas las colecciones ni el rol de una sesión particular. Si el catálogo está vacío, comprueba que `MONGODB_DB` sea la base a la que se importaron los documentos. Si Google inicia sesión pero falta el CMS, comprueba el UID de esa cuenta contra el directorio privado de administradores o la variable privada correspondiente.
