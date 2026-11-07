@@ -17,7 +17,9 @@ import {
   deleteCmsBlock,
   duplicateCmsBlock,
   reorderCmsItems,
+  saveCmsMediaResource,
 } from '../../services/cmsService';
+import { uploadDriveFile, isDriveConfigured } from '../../services/googleDriveService';
 import { StudentPreviewModal } from './StudentPreviewModal';
 import { ProcessingCodeBlock } from '../ProcessingCodeBlock';
 import { RichTextEditor } from './RichTextEditor';
@@ -45,6 +47,7 @@ import {
   HelpCircle,
   Clock,
   ExternalLink,
+  Upload,
 } from 'lucide-react';
 
 interface AdminLessonEditorProps {
@@ -1137,15 +1140,73 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
 
                       {block.type === 'image' && (
                         <div className="space-y-2 text-xs">
-                          <input
-                            type="text"
-                            value={block.content}
-                            onChange={(e) =>
-                              handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)
-                            }
-                            placeholder="URL de la imagen..."
-                            className="w-full px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl font-mono"
-                          />
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={block.content}
+                              onChange={(e) =>
+                                handleUpdateBlockField(activeSection.id, block.id, 'content', e.target.value)
+                              }
+                              placeholder="URL de la imagen (Drive o enlace público)..."
+                              className="flex-1 px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl font-mono"
+                            />
+                            {isDriveConfigured() && (
+                              <label
+                                className="px-3 py-1.5 bg-[#E8EEE8] hover:bg-[#D4E3D4] border border-[#A4C4B5] text-[#28543D] rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs shrink-0"
+                                title="Subir imagen a Google Drive con permisos de solo lectura para que sea visible públicamente en los contenidos"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Subir a Drive (Solo lectura)</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    try {
+                                      setIsLoading(true);
+                                      const uploaded = await uploadDriveFile(file);
+                                      const driveUrl = `https://drive.google.com/file/d/${uploaded.id}/view`;
+                                      handleUpdateBlockField(activeSection.id, block.id, 'content', driveUrl);
+                                      if (!block.caption) {
+                                        handleUpdateBlockField(
+                                          activeSection.id,
+                                          block.id,
+                                          'caption',
+                                          file.name.replace(/\.[^/.]+$/, '')
+                                        );
+                                      }
+                                      await saveCmsMediaResource({
+                                        id: `med_drive_${uploaded.id}`,
+                                        title: uploaded.name,
+                                        url: uploaded.webViewLink,
+                                        driveWebViewLink: uploaded.webViewLink,
+                                        driveThumbnailLink: uploaded.thumbnailLink,
+                                        driveShortUrl: driveUrl,
+                                        driveFileId: uploaded.id,
+                                        mimeType: uploaded.mimeType,
+                                        provider: 'google-drive',
+                                        altText: file.name.replace(/\.[^/.]+$/, ''),
+                                        category: 'imagenes',
+                                        createdAt: new Date().toISOString(),
+                                      });
+                                      setSaveSuccessMsg(
+                                        `"${file.name}" se subió a Drive con permisos de solo lectura.`
+                                      );
+                                      setTimeout(() => setSaveSuccessMsg(null), 4000);
+                                    } catch (err: any) {
+                                      setActionError(
+                                        err?.message || 'Error al subir imagen a Google Drive.'
+                                      );
+                                    } finally {
+                                      setIsLoading(false);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            )}
+                          </div>
                           <input
                             type="text"
                             value={block.caption || ''}
@@ -1155,6 +1216,9 @@ export const AdminLessonEditor: React.FC<AdminLessonEditorProps> = ({
                             placeholder="Pie de foto / descripción..."
                             className="w-full px-2.5 py-1.5 bg-white border border-[#E1E7E1] rounded-xl"
                           />
+                          <p className="text-[11px] text-[#59645C]">
+                            Las imágenes subidas a Google Drive se configuran automáticamente con <strong>permiso de solo lectura</strong> para visualizarse correctamente en los contenidos de todos los estudiantes.
+                          </p>
                           {block.content && (
                             <MediaImage
                               src={block.content}
