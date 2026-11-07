@@ -76,7 +76,12 @@ export function createMongoTransport(getToken: () => Promise<string | undefined>
         const result = ref.kind === 'document' ? await getDoc(ref) : await getDocs(ref);
         const current = JSON.stringify('docs' in result ? result.docs.map((doc) => ({ id: doc.id, data: doc.data() })) : result.data());
         if (!stopped && (!emitted || current !== previous)) { next(result); previous = current; emitted = true; }
-      } catch (reason) { if (!stopped) error?.(reason); }
+      } catch (reason) {
+        // Consumers may clear content or permissions after an error. Re-emit the
+        // next successful server response even when its data has not changed.
+        emitted = false;
+        if (!stopped) error?.(reason);
+      }
       finally {
         running = false;
         if (!stopped) {

@@ -77,3 +77,38 @@ test('Mongo subscriptions emit absent documents and cancel polling cleanly', asy
   assert.equal(snapshot.exists(), false);
   assert.equal(snapshot.data(), undefined);
 });
+
+test('Mongo subscriptions restore verified admin membership after a failed read with unchanged data', async (t) => {
+  let failRead = false;
+  const transport = createMongoTransport(async () => 'verified-session', async (_url, init) => {
+    const { action } = JSON.parse(init.body);
+    if (action === 'commit') return Response.json({ ok: true });
+    return failRead
+      ? Response.json({ code: 'database-unreachable' }, { status: 503 })
+      : Response.json({ data: { configured: true } });
+  });
+  const roles = [];
+  const errors = [];
+  const stop = transport.onSnapshot(transport.doc(null, 'admins', 'test-admin'), (snapshot) => {
+    roles.push(snapshot.exists() && !snapshot.metadata.fromCache ? 'admin' : 'student');
+  }, (error) => {
+    errors.push(error.code);
+    roles.push('student');
+  });
+  t.after(stop);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(roles, ['admin']);
+
+  // Successful writes also refresh subscriptions without waiting for the polling timer.
+  const profile = transport.doc(null, 'users', 'test-admin');
+  failRead = true;
+  await transport.setDoc(profile, { displayName: 'Test' });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(errors, ['database-unreachable']);
+  assert.deepEqual(roles, ['admin', 'student']);
+
+  failRead = false;
+  await transport.setDoc(profile, { displayName: 'Test' });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(roles, ['admin', 'student', 'admin']);
+});
