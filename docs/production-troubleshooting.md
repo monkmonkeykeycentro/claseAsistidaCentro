@@ -33,3 +33,29 @@ El build de Vercel cancela si faltan variables privadas obligatorias. Informa ú
 Una respuesta correcta de health comprueba conectividad, no la existencia de todas las colecciones ni el rol de una sesión particular. Si el catálogo está vacío, comprueba que `MONGODB_DB` sea la base a la que se importaron los documentos. Si Google inicia sesión pero falta el CMS, comprueba el UID de esa cuenta contra el directorio privado de administradores o la variable privada correspondiente.
 
 Puedes compartir la respuesta JSON de health para diagnosticar el despliegue. No incluye contraseñas, URI, correos, UID, tokens ni mensajes completos de los SDK. Las respuestas no se almacenan en caché y los registros del servidor conservan únicamente códigos de diagnóstico.
+
+## Google inicia sesión pero no aparece el CMS
+
+`/api/health` comprueba MongoDB, pero no carga Firebase Admin. Por eso puede responder correctamente aunque fallen todas las peticiones con `Authorization` y no se pueda consultar el permiso de administrador.
+
+La combinación de Firebase Admin 14, `jwks-rsa` 4 y `jose` 6 puede lanzar `ERR_REQUIRE_ESM` al cargar la autenticación en un servidor sin interoperabilidad `require(ESM)`. Se reprodujo en este proyecto ejecutando Node con `--no-experimental-require-module`. Firebase mantiene [el reporte y la solución provisional](https://github.com/firebase/firebase-admin-node/issues/3181). `package.json` aplica `jose` 5.10 mediante un override limitado a `jwks-rsa`; las otras dependencias conservan su versión. La prueba `tests/auth.test.mjs` carga el SDK real con ese modo de Node, convierte una clave JWKS, verifica una firma y comprueba que un token inválido reciba 401.
+
+Para publicar esta corrección, incluye **`package.json`, `package-lock.json` y `server/auth.mjs`**. Conserva `installCommand` de Vercel con npm, que aplica ese override y lockfile. Realiza un nuevo despliegue; reintentar la sesión en un despliegue anterior no cambia sus dependencias.
+
+Antes y después de desplegar, ejecuta:
+
+```sh
+npm run production:check -- https://clase-asistida-centro.vercel.app
+```
+
+La comprobación solo lee la API y envía un token de prueba deliberadamente inválido. Debe mostrar HTTP **200** para MongoDB y **401** para autenticación. Ese 401 confirma que el SDK cargó y rechazó la sesión de prueba; no comprueba la firma de una sesión real ni los permisos de una cuenta. Si usas un dominio de preview protegido, su protección debe permitir estas peticiones para que los resultados correspondan a la API.
+
+Si todavía devuelve 503, los registros de `/api/data` y la respuesta JSON distinguen:
+
+| Código | Comprobar |
+| --- | --- |
+| `auth-dependency-incompatible` | Que el despliegue instaló el override de `jose` para `jwks-rsa`. |
+| `auth-dependency-missing` | Que las dependencias de producción incluyan Firebase Admin y sus módulos. |
+| `auth-initialization-failed` | La configuración e inicialización de Firebase Admin en el servidor. |
+
+Tras obtener 200/401, vuelve a iniciar sesión con tu cuenta real y confirma que aparece el CMS. Si la consulta `POST /api/data` con `action: get` y `path: admins/<UID de tu sesión>` devuelve HTTP 200 y `data: null`, falta el permiso para ese UID en el entorno usado. Si devuelve `data` con un objeto, la API reconoce el permiso. El UID del usuario ficticio del emulador no sustituye al UID de Firebase Authentication de producción. No compartas tokens de sesión ni cabeceras Authorization.

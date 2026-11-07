@@ -22,7 +22,8 @@
     "mongo:verify": "node scripts/mongodb-migrate.mjs verify",
     "firebase:export-local": "node scripts/export-firestore-local.mjs",
     "mongo:transfer-user": "node scripts/mongodb-transfer-user.mjs",
-    "security:check": "node scripts/security-check.mjs"
+    "security:check": "node scripts/security-check.mjs",
+    "production:check": "node scripts/production-check.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -58,6 +59,9 @@
   "overrides": {
     "esbuild": "^0.28.0",
     "@grpc/grpc-js": "^1.14.7",
+    "jwks-rsa": {
+      "jose": "^5.10.0"
+    },
     "gaxios@^6.0.0": {
       "uuid": "^11.1.1"
     },
